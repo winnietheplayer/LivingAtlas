@@ -1,0 +1,23 @@
+bin/
+obj/
+.vs/
+.idea/
+.vscode/
+*.user
+*.suo
+*.nupkg
+TestResults/
+coverage/
+*.log
+
+# Rider
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local app/cache data
+.local/
+.cache/
+exports/

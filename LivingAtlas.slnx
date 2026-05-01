@@ -1,0 +1,14 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/LivingAtlas.AI/LivingAtlas.AI.csproj" />
+    <Project Path="src/LivingAtlas.Desktop/LivingAtlas.Desktop.csproj" />
+    <Project Path="src/LivingAtlas.Domain/LivingAtlas.Domain.csproj" />
+    <Project Path="src/LivingAtlas.Editor/LivingAtlas.Editor.csproj" />
+    <Project Path="src/LivingAtlas.Export/LivingAtlas.Export.csproj" />
+    <Project Path="src/LivingAtlas.ProjectSystem/LivingAtlas.ProjectSystem.csproj" />
+    <Project Path="src/LivingAtlas.Rendering/LivingAtlas.Rendering.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/LivingAtlas.Tests/LivingAtlas.Tests.csproj" />
+  </Folder>
+</Solution>
