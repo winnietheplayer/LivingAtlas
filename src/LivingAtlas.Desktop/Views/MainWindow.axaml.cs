@@ -384,6 +384,13 @@ public partial class MainWindow : Window
             return true;
         }
 
+        if (e.KeyModifiers == KeyModifiers.None && e.Key == Key.G)
+        {
+            viewModel.ToggleSnapToGrid();
+            e.Handled = true;
+            return true;
+        }
+
         if (e.KeyModifiers.HasFlag(KeyModifiers.Control) && e.Key == Key.Z)
         {
             if (viewModel.MapViewport.Undo())

@@ -52,6 +52,8 @@
                           Click="OpenSelectedChildMap_Click"/>
                 <Separator/>
                 <MenuItem Header="Toggle _Snap to Grid"
+                          ToggleType="CheckBox"
+                          IsChecked="{Binding IsSnapToGridEnabled}"
                           Click="ToggleSnapToGrid_Click"/>
             </MenuItem>
             <MenuItem Header="_View">

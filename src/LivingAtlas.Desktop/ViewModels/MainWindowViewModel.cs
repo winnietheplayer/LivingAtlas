@@ -134,6 +134,8 @@ public class MainWindowViewModel : ViewModelBase
 
 	public string WindowTitle => "Living Atlas - " + Project.Name + (IsDirty ? "*" : string.Empty);
 
+	public bool IsSnapToGridEnabled => MapViewport?.Map?.GridSettings.SnapToGrid ?? false;
+
 	public bool CanUseSelectionChildMapAction => MapViewport.SelectedObject is DistrictShape;
 
 	public bool CanCreateChildMapFromSelection => MapViewport.SelectedObject is DistrictShape { ChildMapId: var childMapId } && !childMapId.HasValue;
@@ -366,6 +368,7 @@ public class MainWindowViewModel : ViewModelBase
 		SetActiveMap(project.RootMap, null);
 		IsDirty = false;
 		OnPropertyChanged("WindowTitle");
+		OnPropertyChanged(nameof(IsSnapToGridEnabled));
 		StatusBar.SetMessage(MapViewport.StatusText);
 	}
 
@@ -409,6 +412,7 @@ public class MainWindowViewModel : ViewModelBase
 		RefreshBreadcrumbs();
 		StatusBar.SetMessage(statusMessage ?? MapViewport.StatusText);
 		NotifyChildMapNavigationStateChanged();
+		OnPropertyChanged(nameof(IsSnapToGridEnabled));
 	}
 
 	private void SaveCameraStateForCurrentMap()
@@ -426,6 +430,7 @@ public class MainWindowViewModel : ViewModelBase
 		var current = map.GridSettings;
 		map.SetGridSettings(new GridSettings(current.IsEnabled, current.CellSizeMeters, current.ShowGrid, !current.SnapToGrid));
 		MarkDirty();
+		OnPropertyChanged(nameof(IsSnapToGridEnabled));
 		StatusBar.SetMessage($"Snap to Grid: {(map.GridSettings.SnapToGrid ? "On" : "Off")}");
 	}
 
