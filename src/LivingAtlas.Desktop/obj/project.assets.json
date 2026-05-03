@@ -1759,11 +1759,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "D:\\Projects\\LivingAtlas\\src\\LivingAtlas.Desktop\\LivingAtlas.Desktop.csproj",
+      "projectUniqueName": "D:\\Projects\\LivingAtlas_RECOVERED\\src\\LivingAtlas.Desktop\\LivingAtlas.Desktop.csproj",
       "projectName": "LivingAtlas.Desktop",
-      "projectPath": "D:\\Projects\\LivingAtlas\\src\\LivingAtlas.Desktop\\LivingAtlas.Desktop.csproj",
+      "projectPath": "D:\\Projects\\LivingAtlas_RECOVERED\\src\\LivingAtlas.Desktop\\LivingAtlas.Desktop.csproj",
       "packagesPath": "C:\\Users\\aLex8\\.nuget\\packages\\",
-      "outputPath": "D:\\Projects\\LivingAtlas\\src\\LivingAtlas.Desktop\\obj\\",
+      "outputPath": "D:\\Projects\\LivingAtlas_RECOVERED\\src\\LivingAtlas.Desktop\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "C:\\Users\\aLex8\\AppData\\Roaming\\NuGet\\NuGet.Config"
@@ -1778,20 +1778,20 @@
         "net10.0": {
           "targetAlias": "net10.0",
           "projectReferences": {
-            "D:\\Projects\\LivingAtlas\\src\\LivingAtlas.Domain\\LivingAtlas.Domain.csproj": {
-              "projectPath": "D:\\Projects\\LivingAtlas\\src\\LivingAtlas.Domain\\LivingAtlas.Domain.csproj"
+            "D:\\Projects\\LivingAtlas_RECOVERED\\src\\LivingAtlas.Domain\\LivingAtlas.Domain.csproj": {
+              "projectPath": "D:\\Projects\\LivingAtlas_RECOVERED\\src\\LivingAtlas.Domain\\LivingAtlas.Domain.csproj"
             },
-            "D:\\Projects\\LivingAtlas\\src\\LivingAtlas.Editor\\LivingAtlas.Editor.csproj": {
-              "projectPath": "D:\\Projects\\LivingAtlas\\src\\LivingAtlas.Editor\\LivingAtlas.Editor.csproj"
+            "D:\\Projects\\LivingAtlas_RECOVERED\\src\\LivingAtlas.Editor\\LivingAtlas.Editor.csproj": {
+              "projectPath": "D:\\Projects\\LivingAtlas_RECOVERED\\src\\LivingAtlas.Editor\\LivingAtlas.Editor.csproj"
             },
-            "D:\\Projects\\LivingAtlas\\src\\LivingAtlas.Export\\LivingAtlas.Export.csproj": {
-              "projectPath": "D:\\Projects\\LivingAtlas\\src\\LivingAtlas.Export\\LivingAtlas.Export.csproj"
+            "D:\\Projects\\LivingAtlas_RECOVERED\\src\\LivingAtlas.Export\\LivingAtlas.Export.csproj": {
+              "projectPath": "D:\\Projects\\LivingAtlas_RECOVERED\\src\\LivingAtlas.Export\\LivingAtlas.Export.csproj"
             },
-            "D:\\Projects\\LivingAtlas\\src\\LivingAtlas.ProjectSystem\\LivingAtlas.ProjectSystem.csproj": {
-              "projectPath": "D:\\Projects\\LivingAtlas\\src\\LivingAtlas.ProjectSystem\\LivingAtlas.ProjectSystem.csproj"
+            "D:\\Projects\\LivingAtlas_RECOVERED\\src\\LivingAtlas.ProjectSystem\\LivingAtlas.ProjectSystem.csproj": {
+              "projectPath": "D:\\Projects\\LivingAtlas_RECOVERED\\src\\LivingAtlas.ProjectSystem\\LivingAtlas.ProjectSystem.csproj"
             },
-            "D:\\Projects\\LivingAtlas\\src\\LivingAtlas.Rendering\\LivingAtlas.Rendering.csproj": {
-              "projectPath": "D:\\Projects\\LivingAtlas\\src\\LivingAtlas.Rendering\\LivingAtlas.Rendering.csproj"
+            "D:\\Projects\\LivingAtlas_RECOVERED\\src\\LivingAtlas.Rendering\\LivingAtlas.Rendering.csproj": {
+              "projectPath": "D:\\Projects\\LivingAtlas_RECOVERED\\src\\LivingAtlas.Rendering\\LivingAtlas.Rendering.csproj"
             }
           }
         }

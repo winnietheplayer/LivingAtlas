@@ -9,3 +9,15 @@ D:\Projects\LivingAtlas\src\LivingAtlas.Domain\obj\Debug\net10.0\LivingAtlas.Dom
 D:\Projects\LivingAtlas\src\LivingAtlas.Domain\obj\Debug\net10.0\refint\LivingAtlas.Domain.dll
 D:\Projects\LivingAtlas\src\LivingAtlas.Domain\obj\Debug\net10.0\LivingAtlas.Domain.pdb
 D:\Projects\LivingAtlas\src\LivingAtlas.Domain\obj\Debug\net10.0\ref\LivingAtlas.Domain.dll
+D:\Projects\LivingAtlas_RECOVERED\src\LivingAtlas.Domain\bin\Debug\net10.0\LivingAtlas.Domain.deps.json
+D:\Projects\LivingAtlas_RECOVERED\src\LivingAtlas.Domain\bin\Debug\net10.0\LivingAtlas.Domain.dll
+D:\Projects\LivingAtlas_RECOVERED\src\LivingAtlas.Domain\bin\Debug\net10.0\LivingAtlas.Domain.pdb
+D:\Projects\LivingAtlas_RECOVERED\src\LivingAtlas.Domain\obj\Debug\net10.0\LivingAtlas.Domain.GeneratedMSBuildEditorConfig.editorconfig
+D:\Projects\LivingAtlas_RECOVERED\src\LivingAtlas.Domain\obj\Debug\net10.0\LivingAtlas.Domain.AssemblyInfoInputs.cache
+D:\Projects\LivingAtlas_RECOVERED\src\LivingAtlas.Domain\obj\Debug\net10.0\LivingAtlas.Domain.AssemblyInfo.cs
+D:\Projects\LivingAtlas_RECOVERED\src\LivingAtlas.Domain\obj\Debug\net10.0\LivingAtlas.Domain.csproj.CoreCompileInputs.cache
+D:\Projects\LivingAtlas_RECOVERED\src\LivingAtlas.Domain\obj\Debug\net10.0\LivingAtlas.Domain.sourcelink.json
+D:\Projects\LivingAtlas_RECOVERED\src\LivingAtlas.Domain\obj\Debug\net10.0\LivingAtlas.Domain.dll
+D:\Projects\LivingAtlas_RECOVERED\src\LivingAtlas.Domain\obj\Debug\net10.0\refint\LivingAtlas.Domain.dll
+D:\Projects\LivingAtlas_RECOVERED\src\LivingAtlas.Domain\obj\Debug\net10.0\LivingAtlas.Domain.pdb
+D:\Projects\LivingAtlas_RECOVERED\src\LivingAtlas.Domain\obj\Debug\net10.0\ref\LivingAtlas.Domain.dll

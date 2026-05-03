@@ -246,11 +246,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "D:\\Projects\\LivingAtlas\\src\\LivingAtlas.Rendering\\LivingAtlas.Rendering.csproj",
+      "projectUniqueName": "D:\\Projects\\LivingAtlas_RECOVERED\\src\\LivingAtlas.Rendering\\LivingAtlas.Rendering.csproj",
       "projectName": "LivingAtlas.Rendering",
-      "projectPath": "D:\\Projects\\LivingAtlas\\src\\LivingAtlas.Rendering\\LivingAtlas.Rendering.csproj",
+      "projectPath": "D:\\Projects\\LivingAtlas_RECOVERED\\src\\LivingAtlas.Rendering\\LivingAtlas.Rendering.csproj",
       "packagesPath": "C:\\Users\\aLex8\\.nuget\\packages\\",
-      "outputPath": "D:\\Projects\\LivingAtlas\\src\\LivingAtlas.Rendering\\obj\\",
+      "outputPath": "D:\\Projects\\LivingAtlas_RECOVERED\\src\\LivingAtlas.Rendering\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "C:\\Users\\aLex8\\AppData\\Roaming\\NuGet\\NuGet.Config"
@@ -265,8 +265,8 @@
         "net10.0": {
           "targetAlias": "net10.0",
           "projectReferences": {
-            "D:\\Projects\\LivingAtlas\\src\\LivingAtlas.Domain\\LivingAtlas.Domain.csproj": {
-              "projectPath": "D:\\Projects\\LivingAtlas\\src\\LivingAtlas.Domain\\LivingAtlas.Domain.csproj"
+            "D:\\Projects\\LivingAtlas_RECOVERED\\src\\LivingAtlas.Domain\\LivingAtlas.Domain.csproj": {
+              "projectPath": "D:\\Projects\\LivingAtlas_RECOVERED\\src\\LivingAtlas.Domain\\LivingAtlas.Domain.csproj"
             }
           }
         }

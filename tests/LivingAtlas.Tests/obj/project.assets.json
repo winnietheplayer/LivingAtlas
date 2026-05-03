@@ -973,11 +973,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "D:\\Projects\\LivingAtlas\\tests\\LivingAtlas.Tests\\LivingAtlas.Tests.csproj",
+      "projectUniqueName": "D:\\Projects\\LivingAtlas_RECOVERED\\tests\\LivingAtlas.Tests\\LivingAtlas.Tests.csproj",
       "projectName": "LivingAtlas.Tests",
-      "projectPath": "D:\\Projects\\LivingAtlas\\tests\\LivingAtlas.Tests\\LivingAtlas.Tests.csproj",
+      "projectPath": "D:\\Projects\\LivingAtlas_RECOVERED\\tests\\LivingAtlas.Tests\\LivingAtlas.Tests.csproj",
       "packagesPath": "C:\\Users\\aLex8\\.nuget\\packages\\",
-      "outputPath": "D:\\Projects\\LivingAtlas\\tests\\LivingAtlas.Tests\\obj\\",
+      "outputPath": "D:\\Projects\\LivingAtlas_RECOVERED\\tests\\LivingAtlas.Tests\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "C:\\Users\\aLex8\\AppData\\Roaming\\NuGet\\NuGet.Config"
@@ -992,14 +992,14 @@
         "net10.0": {
           "targetAlias": "net10.0",
           "projectReferences": {
-            "D:\\Projects\\LivingAtlas\\src\\LivingAtlas.Domain\\LivingAtlas.Domain.csproj": {
-              "projectPath": "D:\\Projects\\LivingAtlas\\src\\LivingAtlas.Domain\\LivingAtlas.Domain.csproj"
+            "D:\\Projects\\LivingAtlas_RECOVERED\\src\\LivingAtlas.Domain\\LivingAtlas.Domain.csproj": {
+              "projectPath": "D:\\Projects\\LivingAtlas_RECOVERED\\src\\LivingAtlas.Domain\\LivingAtlas.Domain.csproj"
             },
-            "D:\\Projects\\LivingAtlas\\src\\LivingAtlas.Editor\\LivingAtlas.Editor.csproj": {
-              "projectPath": "D:\\Projects\\LivingAtlas\\src\\LivingAtlas.Editor\\LivingAtlas.Editor.csproj"
+            "D:\\Projects\\LivingAtlas_RECOVERED\\src\\LivingAtlas.Editor\\LivingAtlas.Editor.csproj": {
+              "projectPath": "D:\\Projects\\LivingAtlas_RECOVERED\\src\\LivingAtlas.Editor\\LivingAtlas.Editor.csproj"
             },
-            "D:\\Projects\\LivingAtlas\\src\\LivingAtlas.ProjectSystem\\LivingAtlas.ProjectSystem.csproj": {
-              "projectPath": "D:\\Projects\\LivingAtlas\\src\\LivingAtlas.ProjectSystem\\LivingAtlas.ProjectSystem.csproj"
+            "D:\\Projects\\LivingAtlas_RECOVERED\\src\\LivingAtlas.ProjectSystem\\LivingAtlas.ProjectSystem.csproj": {
+              "projectPath": "D:\\Projects\\LivingAtlas_RECOVERED\\src\\LivingAtlas.ProjectSystem\\LivingAtlas.ProjectSystem.csproj"
             }
           }
         }

@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "6mbEzt70NvU=",
+  "dgSpecHash": "TJdRBiQPKas=",
   "success": true,
-  "projectFilePath": "D:\\Projects\\LivingAtlas\\tests\\LivingAtlas.Tests\\LivingAtlas.Tests.csproj",
+  "projectFilePath": "D:\\Projects\\LivingAtlas_RECOVERED\\tests\\LivingAtlas.Tests\\LivingAtlas.Tests.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\aLex8\\.nuget\\packages\\coverlet.collector\\6.0.4\\coverlet.collector.6.0.4.nupkg.sha512",
     "C:\\Users\\aLex8\\.nuget\\packages\\microsoft.codecoverage\\17.14.1\\microsoft.codecoverage.17.14.1.nupkg.sha512",

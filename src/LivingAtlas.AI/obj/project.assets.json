@@ -32,11 +32,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "D:\\Projects\\LivingAtlas\\src\\LivingAtlas.AI\\LivingAtlas.AI.csproj",
+      "projectUniqueName": "D:\\Projects\\LivingAtlas_RECOVERED\\src\\LivingAtlas.AI\\LivingAtlas.AI.csproj",
       "projectName": "LivingAtlas.AI",
-      "projectPath": "D:\\Projects\\LivingAtlas\\src\\LivingAtlas.AI\\LivingAtlas.AI.csproj",
+      "projectPath": "D:\\Projects\\LivingAtlas_RECOVERED\\src\\LivingAtlas.AI\\LivingAtlas.AI.csproj",
       "packagesPath": "C:\\Users\\aLex8\\.nuget\\packages\\",
-      "outputPath": "D:\\Projects\\LivingAtlas\\src\\LivingAtlas.AI\\obj\\",
+      "outputPath": "D:\\Projects\\LivingAtlas_RECOVERED\\src\\LivingAtlas.AI\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "C:\\Users\\aLex8\\AppData\\Roaming\\NuGet\\NuGet.Config"
@@ -51,8 +51,8 @@
         "net10.0": {
           "targetAlias": "net10.0",
           "projectReferences": {
-            "D:\\Projects\\LivingAtlas\\src\\LivingAtlas.Domain\\LivingAtlas.Domain.csproj": {
-              "projectPath": "D:\\Projects\\LivingAtlas\\src\\LivingAtlas.Domain\\LivingAtlas.Domain.csproj"
+            "D:\\Projects\\LivingAtlas_RECOVERED\\src\\LivingAtlas.Domain\\LivingAtlas.Domain.csproj": {
+              "projectPath": "D:\\Projects\\LivingAtlas_RECOVERED\\src\\LivingAtlas.Domain\\LivingAtlas.Domain.csproj"
             }
           }
         }

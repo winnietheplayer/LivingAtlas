@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "D:\\Projects\\LivingAtlas\\src\\LivingAtlas.Export\\LivingAtlas.Export.csproj": {}
+    "D:\\Projects\\LivingAtlas_RECOVERED\\src\\LivingAtlas.Export\\LivingAtlas.Export.csproj": {}
   },
   "projects": {
-    "D:\\Projects\\LivingAtlas\\src\\LivingAtlas.Domain\\LivingAtlas.Domain.csproj": {
+    "D:\\Projects\\LivingAtlas_RECOVERED\\src\\LivingAtlas.Domain\\LivingAtlas.Domain.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\Projects\\LivingAtlas\\src\\LivingAtlas.Domain\\LivingAtlas.Domain.csproj",
+        "projectUniqueName": "D:\\Projects\\LivingAtlas_RECOVERED\\src\\LivingAtlas.Domain\\LivingAtlas.Domain.csproj",
         "projectName": "LivingAtlas.Domain",
-        "projectPath": "D:\\Projects\\LivingAtlas\\src\\LivingAtlas.Domain\\LivingAtlas.Domain.csproj",
+        "projectPath": "D:\\Projects\\LivingAtlas_RECOVERED\\src\\LivingAtlas.Domain\\LivingAtlas.Domain.csproj",
         "packagesPath": "C:\\Users\\aLex8\\.nuget\\packages\\",
-        "outputPath": "D:\\Projects\\LivingAtlas\\src\\LivingAtlas.Domain\\obj\\",
+        "outputPath": "D:\\Projects\\LivingAtlas_RECOVERED\\src\\LivingAtlas.Domain\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\aLex8\\AppData\\Roaming\\NuGet\\NuGet.Config"
@@ -337,14 +337,14 @@
         }
       }
     },
-    "D:\\Projects\\LivingAtlas\\src\\LivingAtlas.Export\\LivingAtlas.Export.csproj": {
+    "D:\\Projects\\LivingAtlas_RECOVERED\\src\\LivingAtlas.Export\\LivingAtlas.Export.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\Projects\\LivingAtlas\\src\\LivingAtlas.Export\\LivingAtlas.Export.csproj",
+        "projectUniqueName": "D:\\Projects\\LivingAtlas_RECOVERED\\src\\LivingAtlas.Export\\LivingAtlas.Export.csproj",
         "projectName": "LivingAtlas.Export",
-        "projectPath": "D:\\Projects\\LivingAtlas\\src\\LivingAtlas.Export\\LivingAtlas.Export.csproj",
+        "projectPath": "D:\\Projects\\LivingAtlas_RECOVERED\\src\\LivingAtlas.Export\\LivingAtlas.Export.csproj",
         "packagesPath": "C:\\Users\\aLex8\\.nuget\\packages\\",
-        "outputPath": "D:\\Projects\\LivingAtlas\\src\\LivingAtlas.Export\\obj\\",
+        "outputPath": "D:\\Projects\\LivingAtlas_RECOVERED\\src\\LivingAtlas.Export\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\aLex8\\AppData\\Roaming\\NuGet\\NuGet.Config"
@@ -359,8 +359,8 @@
           "net10.0": {
             "targetAlias": "net10.0",
             "projectReferences": {
-              "D:\\Projects\\LivingAtlas\\src\\LivingAtlas.Domain\\LivingAtlas.Domain.csproj": {
-                "projectPath": "D:\\Projects\\LivingAtlas\\src\\LivingAtlas.Domain\\LivingAtlas.Domain.csproj"
+              "D:\\Projects\\LivingAtlas_RECOVERED\\src\\LivingAtlas.Domain\\LivingAtlas.Domain.csproj": {
+                "projectPath": "D:\\Projects\\LivingAtlas_RECOVERED\\src\\LivingAtlas.Domain\\LivingAtlas.Domain.csproj"
               }
             }
           }

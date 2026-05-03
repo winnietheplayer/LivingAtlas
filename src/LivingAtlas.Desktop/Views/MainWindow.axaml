@@ -1,20 +1,197 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="using:LivingAtlas.Desktop.Controls"
         xmlns:vm="using:LivingAtlas.Desktop.ViewModels"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        mc:Ignorable="d"
+        d:DesignWidth="1280"
+        d:DesignHeight="800"
         x:Class="LivingAtlas.Desktop.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Icon="/Assets/avalonia-logo.ico"
-        Title="LivingAtlas.Desktop">
+        Title="{Binding WindowTitle}"
+        Width="1280"
+        Height="800"
+        MinWidth="900"
+        MinHeight="600">
 
     <Design.DataContext>
-        <!-- This only sets the DataContext for the previewer in an IDE,
-             to set the actual DataContext for runtime, set the DataContext property in code (look at App.axaml.cs) -->
         <vm:MainWindowViewModel/>
     </Design.DataContext>
 
-    <TextBlock Text="{Binding Greeting}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+    <Grid RowDefinitions="Auto,Auto,Auto,*,Auto">
+        <Menu Grid.Row="0">
+            <MenuItem Header="_File">
+                <MenuItem Header="_New Project"
+                          Click="NewProject_Click"/>
+                <MenuItem Header="_Open Project"
+                          Click="OpenProject_Click"/>
+                <MenuItem Header="_Save Project"
+                          Click="SaveProject_Click"/>
+                <MenuItem Header="Save Project _As"
+                          Click="SaveProjectAs_Click"/>
+            </MenuItem>
+            <MenuItem Header="_Edit">
+                <MenuItem Header="_Undo" IsEnabled="False"/>
+                <MenuItem Header="_Redo" IsEnabled="False"/>
+            </MenuItem>
+            <MenuItem Header="_Map">
+                <MenuItem Header="_Open Root Map"
+                          IsEnabled="{Binding CanOpenRootMap}"
+                          Click="OpenRootMap_Click"/>
+                <MenuItem Header="_Back to Parent"
+                          IsEnabled="{Binding CanOpenParentMap}"
+                          Click="BackToParentMap_Click"/>
+                <Separator/>
+                <MenuItem Header="_Create Child Map From Selection"
+                          IsEnabled="{Binding CanCreateChildMapFromSelection}"
+                          Click="CreateChildMapFromSelection_Click"/>
+                <MenuItem Header="_Open Selected Child Map"
+                          IsEnabled="{Binding CanOpenSelectedChildMap}"
+                          Click="OpenSelectedChildMap_Click"/>
+            </MenuItem>
+            <MenuItem Header="_View">
+                <MenuItem Header="_Project Tree" IsEnabled="False"/>
+                <MenuItem Header="_Inspector" IsEnabled="False"/>
+            </MenuItem>
+            <MenuItem Header="_Help">
+                <MenuItem Header="_About" IsEnabled="False"/>
+            </MenuItem>
+        </Menu>
 
+        <Border Grid.Row="1"
+                BorderBrush="{DynamicResource ThemeBorderMidBrush}"
+                BorderThickness="0,0,0,1"
+                Padding="8,6">
+            <DockPanel LastChildFill="False">
+                <StackPanel Orientation="Horizontal"
+                            Spacing="6">
+                    <Button Content="Select/Move"
+                            Click="SelectMoveTool_Click"/>
+                    <Button Content="Pan"
+                            Click="PanTool_Click"/>
+                    <Button Content="District"
+                            Click="DistrictTool_Click"/>
+                    <Button Content="Road"
+                            Click="RoadTool_Click"/>
+                    <Button Content="POI"
+                            Click="PointOfInterestTool_Click"/>
+                    <Button Content="Label"
+                            Click="LabelTool_Click"/>
+                </StackPanel>
+                <TextBlock DockPanel.Dock="Right"
+                           VerticalAlignment="Center"
+                           Text="{Binding MapViewport.ActiveToolText}"
+                           FontWeight="SemiBold"/>
+            </DockPanel>
+        </Border>
+
+        <Border Grid.Row="2"
+                BorderBrush="{DynamicResource ThemeBorderMidBrush}"
+                BorderThickness="0,0,0,1"
+                Padding="12,6">
+            <DockPanel LastChildFill="True">
+                <TextBlock DockPanel.Dock="Left"
+                           Text="Map"
+                           VerticalAlignment="Center"
+                           FontWeight="SemiBold"
+                           Margin="0,0,10,0"/>
+                <ItemsControl ItemsSource="{Binding Breadcrumbs}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <StackPanel Orientation="Horizontal"
+                                        Spacing="4"/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate DataType="{x:Type vm:BreadcrumbItemViewModel}">
+                            <Button Content="{Binding DisplayText}"
+                                    IsEnabled="{Binding CanOpen}"
+                                    CommandParameter="{Binding MapId}"
+                                    Click="Breadcrumb_Click"
+                                    Padding="6,2"/>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </DockPanel>
+        </Border>
+
+        <Grid Grid.Row="3" ColumnDefinitions="260,*,300">
+            <Border Grid.Column="0"
+                    BorderBrush="{DynamicResource ThemeBorderMidBrush}"
+                    BorderThickness="0,0,1,0"
+                    Padding="16">
+                <DockPanel>
+                    <TextBlock DockPanel.Dock="Top"
+                               Text="Project Tree"
+                               FontWeight="SemiBold"/>
+                    <TreeView Margin="0,12,0,0"
+                              ItemsSource="{Binding ProjectTree.RootItems}"
+                              SelectionChanged="ProjectTree_SelectionChanged">
+                        <TreeView.Styles>
+                            <Style Selector="TreeViewItem">
+                                <Setter Property="IsExpanded" Value="True"/>
+                            </Style>
+                        </TreeView.Styles>
+                        <TreeView.DataTemplates>
+                            <TreeDataTemplate DataType="{x:Type vm:ProjectTreeItemViewModel}"
+                                              ItemsSource="{Binding Children}">
+                                <TextBlock Text="{Binding DisplayName}"/>
+                            </TreeDataTemplate>
+                        </TreeView.DataTemplates>
+                    </TreeView>
+                </DockPanel>
+            </Border>
+
+            <Border Grid.Column="1"
+                    Background="{DynamicResource ThemeBackgroundBrush}"
+                    Padding="0">
+                <controls:MapViewportControl x:Name="MapViewport"
+                                             DataContext="{Binding MapViewport}"/>
+            </Border>
+
+            <Border Grid.Column="2"
+                    BorderBrush="{DynamicResource ThemeBorderMidBrush}"
+                    BorderThickness="1,0,0,0"
+                    Padding="16">
+                <DockPanel>
+                    <TextBlock DockPanel.Dock="Top"
+                               Text="Inspector"
+                               FontWeight="SemiBold"/>
+                    <StackPanel Margin="0,12,0,0"
+                                Spacing="10">
+                        <TextBlock Text="Name"
+                                   FontWeight="SemiBold"/>
+                        <TextBox Text="{Binding Inspector.EditableName, Mode=TwoWay}"
+                                 IsEnabled="{Binding Inspector.HasSelection}"/>
+                        <TextBlock Text="Text"
+                                   FontWeight="SemiBold"
+                                   IsVisible="{Binding Inspector.IsMapLabelSelected}"/>
+                        <TextBox Text="{Binding Inspector.EditableLabelText, Mode=TwoWay}"
+                                 IsEnabled="{Binding Inspector.IsMapLabelSelected}"
+                                 IsVisible="{Binding Inspector.IsMapLabelSelected}"/>
+                        <Button Content="Apply"
+                                IsEnabled="{Binding Inspector.HasSelection}"
+                                Click="ApplyInspector_Click"/>
+                        <TextBlock Text="{Binding Inspector.SelectionDetails}"
+                                   TextWrapping="Wrap"/>
+                        <Button Content="{Binding SelectionChildMapActionText}"
+                                IsEnabled="{Binding CanUseSelectionChildMapAction}"
+                                Click="SelectionChildMapAction_Click"/>
+                        <Button Content="Back to Parent"
+                                IsEnabled="{Binding CanOpenParentMap}"
+                                Click="BackToParentMap_Click"/>
+                    </StackPanel>
+                </DockPanel>
+            </Border>
+        </Grid>
+
+        <Border Grid.Row="4"
+                BorderBrush="{DynamicResource ThemeBorderMidBrush}"
+                BorderThickness="0,1,0,0"
+                Padding="12,6">
+            <TextBlock Text="{Binding StatusBar.Message}"/>
+        </Border>
+    </Grid>
 </Window>

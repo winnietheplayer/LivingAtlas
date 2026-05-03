@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "t4h/SdFTxbQ=",
+  "dgSpecHash": "W4HfSVzIdlc=",
   "success": true,
-  "projectFilePath": "D:\\Projects\\LivingAtlas\\src\\LivingAtlas.Rendering\\LivingAtlas.Rendering.csproj",
+  "projectFilePath": "D:\\Projects\\LivingAtlas_RECOVERED\\src\\LivingAtlas.Rendering\\LivingAtlas.Rendering.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\aLex8\\.nuget\\packages\\skiasharp\\3.119.4-preview.1.1\\skiasharp.3.119.4-preview.1.1.nupkg.sha512",
     "C:\\Users\\aLex8\\.nuget\\packages\\skiasharp.nativeassets.macos\\3.119.4-preview.1.1\\skiasharp.nativeassets.macos.3.119.4-preview.1.1.nupkg.sha512",
