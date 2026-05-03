@@ -5,6 +5,7 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
+using LivingAtlas.Desktop.Controls;
 using LivingAtlas.Desktop.ViewModels;
 using LivingAtlas.Editor.Tools;
 
@@ -245,6 +246,11 @@ public partial class MainWindow : Window
 
     private bool TryHandleEditorKey(KeyEventArgs e)
     {
+        if (EditorHotkeyGuard.ShouldIgnoreEditorHotkeys(e))
+        {
+            return false;
+        }
+
         if (DataContext is not MainWindowViewModel viewModel)
         {
             return false;

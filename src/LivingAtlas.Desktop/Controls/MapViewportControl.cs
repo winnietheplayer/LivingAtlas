@@ -264,6 +264,10 @@ public sealed class MapViewportControl : Control
 	protected override void OnKeyDown(KeyEventArgs e)
 	{
 		base.OnKeyDown(e);
+		if (EditorHotkeyGuard.ShouldIgnoreEditorHotkeys(e))
+		{
+			return;
+		}
 		if (!(base.DataContext is MapViewportViewModel mapViewportViewModel))
 		{
 			return;
