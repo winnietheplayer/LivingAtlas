@@ -296,7 +296,7 @@ public static class ProjectJsonSerializer
 			throw new ArgumentException("Project path cannot be empty.", "path");
 		}
 		string fullPath = Path.GetFullPath(path);
-		string directory = Path.GetDirectoryName(fullPath);
+		string? directory = Path.GetDirectoryName(fullPath);
 		if (!string.IsNullOrEmpty(directory))
 		{
 			Directory.CreateDirectory(directory);

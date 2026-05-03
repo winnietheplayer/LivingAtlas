@@ -31,7 +31,7 @@ public static class MapObjectCreationService
 	public static AddMapObjectCommand CreatePointOfInterestCommand(MapDocument map, PointD position)
 	{
 		ArgumentNullException.ThrowIfNull(map, "map");
-		MapLayer mapLayer = map.Layers.FirstOrDefault((MapLayer candidate) => candidate.LayerType == MapLayerType.PointsOfInterest);
+		MapLayer? mapLayer = map.Layers.FirstOrDefault((MapLayer candidate) => candidate.LayerType == MapLayerType.PointsOfInterest);
 		bool createsLayer = mapLayer == null;
 		if (mapLayer == null)
 		{
@@ -44,7 +44,7 @@ public static class MapObjectCreationService
 	public static AddMapObjectCommand CreateLabelCommand(MapDocument map, PointD position)
 	{
 		ArgumentNullException.ThrowIfNull(map, "map");
-		MapLayer mapLayer = map.Layers.FirstOrDefault((MapLayer candidate) => candidate.LayerType == MapLayerType.Labels);
+		MapLayer? mapLayer = map.Layers.FirstOrDefault((MapLayer candidate) => candidate.LayerType == MapLayerType.Labels);
 		bool createsLayer = mapLayer == null;
 		if (mapLayer == null)
 		{
@@ -59,7 +59,7 @@ public static class MapObjectCreationService
 	{
 		ArgumentNullException.ThrowIfNull(map, "map");
 		ArgumentNullException.ThrowIfNull(points, "points");
-		MapLayer mapLayer = map.Layers.FirstOrDefault((MapLayer candidate) => candidate.LayerType == MapLayerType.Streets);
+		MapLayer? mapLayer = map.Layers.FirstOrDefault((MapLayer candidate) => candidate.LayerType == MapLayerType.Streets);
 		bool createsLayer = mapLayer == null;
 		if (mapLayer == null)
 		{
@@ -73,7 +73,7 @@ public static class MapObjectCreationService
 	{
 		ArgumentNullException.ThrowIfNull(map, "map");
 		ArgumentNullException.ThrowIfNull(polygonPoints, "polygonPoints");
-		MapLayer mapLayer = map.Layers.FirstOrDefault((MapLayer candidate) => candidate.LayerType == MapLayerType.Districts);
+		MapLayer? mapLayer = map.Layers.FirstOrDefault((MapLayer candidate) => candidate.LayerType == MapLayerType.Districts);
 		bool createsLayer = mapLayer == null;
 		if (mapLayer == null)
 		{

@@ -53,7 +53,7 @@ public sealed class MoveMapObjectDragSession
 	{
 		foreach (MapLayer layer in _map.Layers)
 		{
-			MapObject mapObject = layer.Objects.FirstOrDefault((MapObject candidate) => candidate.Id == _objectId);
+			MapObject? mapObject = layer.Objects.FirstOrDefault((MapObject candidate) => candidate.Id == _objectId);
 			if (mapObject != null)
 			{
 				return mapObject;

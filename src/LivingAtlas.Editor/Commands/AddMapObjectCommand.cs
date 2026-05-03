@@ -47,7 +47,7 @@ public sealed class AddMapObjectCommand : IEditorCommand
 	public void Undo()
 	{
 		MapLayer mapLayer = FindLayer() ?? throw new InvalidOperationException($"Layer '{_layer.Id}' was not found in map '{_map.Id}'.");
-		MapObject mapObject = mapLayer.RemoveObject(_mapObject.Id);
+		MapObject? mapObject = mapLayer.RemoveObject(_mapObject.Id);
 		if (mapObject == null)
 		{
 			throw new InvalidOperationException($"Map object '{_mapObject.Id}' was not found in layer '{mapLayer.Id}'.");
@@ -60,7 +60,7 @@ public sealed class AddMapObjectCommand : IEditorCommand
 
 	private MapLayer EnsureLayerForExecute()
 	{
-		MapLayer mapLayer = FindLayer();
+		MapLayer? mapLayer = FindLayer();
 		if (mapLayer != null)
 		{
 			return mapLayer;

@@ -43,7 +43,7 @@ public sealed class DeleteMapObjectCommand : IEditorCommand
 	public void Execute()
 	{
 		MapLayer mapLayer = ResolveLayer();
-		MapObject mapObject = mapLayer.RemoveObject(_objectId);
+		MapObject? mapObject = mapLayer.RemoveObject(_objectId);
 		if (mapObject == null)
 		{
 			throw new InvalidOperationException($"Map object '{_objectId}' was not found in layer '{_layerId}'.");
