@@ -9,6 +9,7 @@ using LivingAtlas.Domain.Maps;
 using LivingAtlas.Domain.Maps.Objects;
 using LivingAtlas.Domain.Projects;
 using LivingAtlas.Editor.Commands;
+using LivingAtlas.Editor.Viewport;
 using LivingAtlas.Editor.Navigation;
 using LivingAtlas.ProjectSystem;
 
@@ -31,6 +32,8 @@ public class MainWindowViewModel : ViewModelBase
 	private bool _isDirty;
 
 	private readonly Dictionary<Guid, MapViewportViewModel> _mapViewportsByMapId = new Dictionary<Guid, MapViewportViewModel>();
+
+	private readonly CameraStateCache _cameraStateCache = new CameraStateCache();
 
 	public CampaignMapProject Project
 	{
@@ -356,6 +359,7 @@ public class MainWindowViewModel : ViewModelBase
 	{
 		DetachMapViewportEvents();
 		_mapViewportsByMapId.Clear();
+		_cameraStateCache.Clear();
 		Project = project;
 		CurrentProjectPath = currentProjectPath;
 		ProjectTree = new ProjectTreeViewModel(project, project.RootMapId);
@@ -390,9 +394,13 @@ public class MainWindowViewModel : ViewModelBase
 
 	private void SetActiveMap(MapDocument map, string? statusMessage)
 	{
+		SaveCameraStateForCurrentMap();
 		DetachMapViewportEvents();
 		MapViewport = GetOrCreateMapViewport(map);
-		MapViewport.ResetCameraFit();
+		if (!_cameraStateCache.TryRestore(map.Id, MapViewport.Camera))
+		{
+			MapViewport.ResetCameraFit();
+		}
 		Inspector = new InspectorViewModel();
 		Inspector.SetSelection(MapViewport.SelectedObject);
 		MapViewport.PropertyChanged += OnMapViewportPropertyChanged;
@@ -401,6 +409,14 @@ public class MainWindowViewModel : ViewModelBase
 		RefreshBreadcrumbs();
 		StatusBar.SetMessage(statusMessage ?? MapViewport.StatusText);
 		NotifyChildMapNavigationStateChanged();
+	}
+
+	private void SaveCameraStateForCurrentMap()
+	{
+		if (_mapViewport != null)
+		{
+			_cameraStateCache.Save(_mapViewport.Map.Id, _mapViewport.Camera);
+		}
 	}
 
 	private MapViewportViewModel GetOrCreateMapViewport(MapDocument map)
