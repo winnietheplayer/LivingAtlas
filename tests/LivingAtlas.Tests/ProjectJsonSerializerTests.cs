@@ -63,33 +63,60 @@ public sealed class ProjectJsonSerializerTests
         }
     }
 
-    [Fact]
-    public async Task SaveAndLoadAsync_RoundTripsGridSettings()
-    {
-        MapDocument map = TestData.CreateCityMap();
-        map.SetGridSettings(new GridSettings(isEnabled: true, 12.5, showGrid: true, snapToGrid: true));
-        CampaignMapProject project = TestData.CreateProject(map);
-        string path = Path.Combine("C:\\tmp", "LivingAtlas.Tests", $"{Guid.NewGuid()}.json");
+	[Fact]
+	public async Task SaveAndLoadAsync_RoundTripsGridSettings()
+	{
+		string tempFileName = Path.GetTempFileName();
+		try
+		{
+			MapDocument rootMap = TestData.CreateCityMap();
+			CampaignMapProject project = TestData.CreateProject(rootMap);
+			GridSettings gridSettings = new GridSettings(isEnabled: true, 5.0, showGrid: true, snapToGrid: true);
+			rootMap.SetGridSettings(gridSettings);
+			await ProjectJsonSerializer.SaveAsync(project, tempFileName);
+			CampaignMapProject project2 = await ProjectJsonSerializer.LoadAsync(tempFileName);
+			GridSettings gridSettings2 = project2.RootMap.GridSettings;
+			Assert.Equal(gridSettings.IsEnabled, gridSettings2.IsEnabled);
+			Assert.Equal(gridSettings.CellSizeMeters, gridSettings2.CellSizeMeters);
+			Assert.Equal(gridSettings.ShowGrid, gridSettings2.ShowGrid);
+			Assert.Equal(gridSettings.SnapToGrid, gridSettings2.SnapToGrid);
+		}
+		finally
+		{
+			if (File.Exists(tempFileName))
+			{
+				File.Delete(tempFileName);
+			}
+		}
+	}
 
-        try
-        {
-            await ProjectJsonSerializer.SaveAsync(project, path);
-            CampaignMapProject loaded = await ProjectJsonSerializer.LoadAsync(path);
-            GridSettings loadedSettings = loaded.RootMap.GridSettings;
+	[Fact]
+	public async Task SaveAndLoadAsync_RoundTripsLayerVisibility()
+	{
+		string tempFileName = Path.GetTempFileName();
+		try
+		{
+			MapDocument rootMap = TestData.CreateCityMap();
+			var layer = new MapLayer(Guid.NewGuid(), "Test Layer", MapLayerType.PointsOfInterest);
+			rootMap.AddLayer(layer);
 
-            Assert.True(loadedSettings.IsEnabled);
-            Assert.Equal(12.5, loadedSettings.CellSizeMeters);
-            Assert.True(loadedSettings.ShowGrid);
-            Assert.True(loadedSettings.SnapToGrid);
-        }
-        finally
-        {
-            if (File.Exists(path))
-            {
-                File.Delete(path);
-            }
-        }
-    }
+			CampaignMapProject project = TestData.CreateProject(rootMap);
+			layer.SetVisibility(false);
+
+			await ProjectJsonSerializer.SaveAsync(project, tempFileName);
+			CampaignMapProject loaded = await ProjectJsonSerializer.LoadAsync(tempFileName);
+
+			var loadedLayer = loaded.RootMap.Layers.First(l => l.Id == layer.Id);
+			Assert.False(loadedLayer.IsVisible);
+		}
+		finally
+		{
+			if (File.Exists(tempFileName))
+			{
+				File.Delete(tempFileName);
+			}
+		}
+	}
 
     private static (CampaignMapProject Project, MapDocument RootMap, Guid ChildMapId) CreateProjectWithHierarchy()
     {

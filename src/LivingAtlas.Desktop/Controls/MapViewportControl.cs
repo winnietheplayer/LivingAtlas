@@ -98,6 +98,28 @@ public sealed class MapViewportControl : Control
 		base.Focusable = true;
 	}
 
+	protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
+	{
+		base.OnPropertyChanged(change);
+		if (change.Property == DataContextProperty)
+		{
+			if (change.OldValue is MapViewportViewModel oldVm)
+			{
+				oldVm.RedrawRequested -= OnRedrawRequested;
+			}
+			if (change.NewValue is MapViewportViewModel newVm)
+			{
+				newVm.RedrawRequested -= OnRedrawRequested;
+				newVm.RedrawRequested += OnRedrawRequested;
+			}
+		}
+	}
+
+	private void OnRedrawRequested(object? sender, EventArgs e)
+	{
+		InvalidateVisual();
+	}
+
 	public override void Render(DrawingContext context)
 	{
 		base.Render(context);

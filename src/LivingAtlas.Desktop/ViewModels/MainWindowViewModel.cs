@@ -58,7 +58,17 @@ public class MainWindowViewModel : ViewModelBase
 		}
 		private set
 		{
-			SetProperty(ref _projectTree, value, "ProjectTree");
+			if (_projectTree != null)
+			{
+				_projectTree.LayerVisibilityChanged -= OnLayerVisibilityChanged;
+			}
+			if (SetProperty(ref _projectTree, value, "ProjectTree"))
+			{
+				if (_projectTree != null)
+				{
+					_projectTree.LayerVisibilityChanged += OnLayerVisibilityChanged;
+				}
+			}
 		}
 	}
 
@@ -432,6 +442,30 @@ public class MainWindowViewModel : ViewModelBase
 		MarkDirty();
 		OnPropertyChanged(nameof(IsSnapToGridEnabled));
 		StatusBar.SetMessage($"Snap to Grid: {(map.GridSettings.SnapToGrid ? "On" : "Off")}");
+	}
+
+	private void OnLayerVisibilityChanged(object? sender, (Guid MapId, Guid LayerId, bool IsVisible) e)
+	{
+		var map = Project.FindMap(e.MapId);
+		var layer = map?.Layers.FirstOrDefault(l => l.Id == e.LayerId);
+		if (layer != null && layer.IsVisible != e.IsVisible)
+		{
+			layer.SetVisibility(e.IsVisible);
+			MarkDirty();
+			
+			if (MapViewport.Map.Id == e.MapId)
+			{
+				MapViewport.RequestViewportRedraw();
+			}
+
+			if (MapViewport.Map.Id == e.MapId && !e.IsVisible && MapViewport.SelectedObject != null)
+			{
+				if (MapViewport.SelectedObject.LayerId == e.LayerId)
+				{
+					MapViewport.ClearSelection();
+				}
+			}
+		}
 	}
 
 	private MapViewportViewModel GetOrCreateMapViewport(MapDocument map)

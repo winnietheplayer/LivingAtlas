@@ -142,7 +142,14 @@
                         <TreeView.DataTemplates>
                             <TreeDataTemplate DataType="{x:Type vm:ProjectTreeItemViewModel}"
                                               ItemsSource="{Binding Children}">
-                                <TextBlock Text="{Binding DisplayName}"/>
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <CheckBox IsChecked="{Binding IsVisible, Mode=TwoWay}"
+                                              IsVisible="{Binding IsLayer}"
+                                              MinWidth="0" Padding="0"
+                                              VerticalAlignment="Center"/>
+                                    <TextBlock Text="{Binding DisplayName}"
+                                               VerticalAlignment="Center"/>
+                                </StackPanel>
                             </TreeDataTemplate>
                         </TreeView.DataTemplates>
                     </TreeView>

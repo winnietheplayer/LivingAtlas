@@ -146,7 +146,7 @@ public static class ProjectJsonSerializer
 
 		public MapLayerType LayerType { get; init; }
 
-		public bool IsVisible { get; init; }
+		public bool IsVisible { get; init; } = true;
 
 		public List<MapObjectDto> Objects { get; init; } = new List<MapObjectDto>();
 

@@ -99,11 +99,18 @@ public sealed class MapViewportViewModel : ViewModelBase
 
 	public event EventHandler? ProjectMutated;
 
+	public event EventHandler? RedrawRequested;
+
 	public MapViewportViewModel(MapDocument map, CampaignMapProject? project = null)
 	{
 		Map = map ?? throw new ArgumentNullException("map");
 		Project = project;
 		RefreshStatus();
+	}
+
+	public void RequestViewportRedraw()
+	{
+		RedrawRequested?.Invoke(this, EventArgs.Empty);
 	}
 
 	public void SetActiveTool(EditorToolType activeTool)
@@ -241,6 +248,11 @@ public sealed class MapViewportViewModel : ViewModelBase
 		StatusText = "Created: " + districtShape.Name;
 		NotifyProjectMutated();
 		return true;
+	}
+
+	public void ClearSelection()
+	{
+		SelectedObject = null;
 	}
 
 	public bool CancelDistrictDrawing()

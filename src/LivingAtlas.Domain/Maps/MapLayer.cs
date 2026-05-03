@@ -15,7 +15,7 @@ public sealed class MapLayer
 
 	public MapLayerType LayerType { get; }
 
-	public bool IsVisible { get; }
+	public bool IsVisible { get; private set; }
 
 	public IReadOnlyList<MapObject> Objects => _objects;
 
@@ -32,6 +32,11 @@ public sealed class MapLayer
 		Id = id;
 		Name = name;
 		LayerType = layerType;
+		IsVisible = isVisible;
+	}
+
+	public void SetVisibility(bool isVisible)
+	{
 		IsVisible = isVisible;
 	}
 
