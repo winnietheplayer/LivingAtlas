@@ -166,6 +166,14 @@ public partial class MainWindow : Window
         }
     }
 
+    private void ToggleSnapToGrid_Click(object? sender, RoutedEventArgs e)
+    {
+        if (DataContext is MainWindowViewModel viewModel)
+        {
+            viewModel.ToggleSnapToGrid();
+        }
+    }
+
     private void SelectionChildMapAction_Click(object? sender, RoutedEventArgs e)
     {
         if (DataContext is not MainWindowViewModel viewModel)

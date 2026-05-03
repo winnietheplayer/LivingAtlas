@@ -19,6 +19,8 @@ public sealed class MapViewportViewModel : ViewModelBase
 	private PointD? _lastScreenPoint;
 
 	private MoveMapObjectDragSession? _activeMoveSession;
+	private PointD? _dragStartAnchor;
+	private PointD _dragAccumulatedRawDelta;
 
 	private readonly DistrictDrawingSession _districtDrawingSession = new DistrictDrawingSession();
 
@@ -159,7 +161,7 @@ public sealed class MapViewportViewModel : ViewModelBase
 	public PointOfInterest CreatePointOfInterestAtScreenPoint(PointD screenPoint)
 	{
 		_lastScreenPoint = screenPoint;
-		PointD position = Camera.ScreenToWorld(screenPoint);
+		PointD position = GridSnapper.Snap(Camera.ScreenToWorld(screenPoint), Map.GridSettings);
 		AddMapObjectCommand addMapObjectCommand = MapObjectCreationService.CreatePointOfInterestCommand(Map, position);
 		History.Execute(addMapObjectCommand);
 		PointOfInterest pointOfInterest = (PointOfInterest)(SelectedObject = (PointOfInterest)addMapObjectCommand.MapObject);
@@ -171,7 +173,7 @@ public sealed class MapViewportViewModel : ViewModelBase
 	public MapLabel CreateLabelAtScreenPoint(PointD screenPoint)
 	{
 		_lastScreenPoint = screenPoint;
-		PointD position = Camera.ScreenToWorld(screenPoint);
+		PointD position = GridSnapper.Snap(Camera.ScreenToWorld(screenPoint), Map.GridSettings);
 		AddMapObjectCommand addMapObjectCommand = MapObjectCreationService.CreateLabelCommand(Map, position);
 		History.Execute(addMapObjectCommand);
 		MapLabel mapLabel = (MapLabel)(SelectedObject = (MapLabel)addMapObjectCommand.MapObject);
@@ -183,7 +185,7 @@ public sealed class MapViewportViewModel : ViewModelBase
 	public void AddRoadPointAtScreenPoint(PointD screenPoint)
 	{
 		_lastScreenPoint = screenPoint;
-		_roadDrawingSession.AddPoint(Camera.ScreenToWorld(screenPoint));
+		_roadDrawingSession.AddPoint(GridSnapper.Snap(Camera.ScreenToWorld(screenPoint), Map.GridSettings));
 		NotifyRoadPreviewChanged();
 		RefreshStatus();
 	}
@@ -216,7 +218,7 @@ public sealed class MapViewportViewModel : ViewModelBase
 	public void AddDistrictPointAtScreenPoint(PointD screenPoint)
 	{
 		_lastScreenPoint = screenPoint;
-		_districtDrawingSession.AddPoint(Camera.ScreenToWorld(screenPoint));
+		_districtDrawingSession.AddPoint(GridSnapper.Snap(Camera.ScreenToWorld(screenPoint), Map.GridSettings));
 		NotifyDistrictPreviewChanged();
 		RefreshStatus();
 	}
@@ -281,19 +283,50 @@ public sealed class MapViewportViewModel : ViewModelBase
 		_lastScreenPoint = screenPoint;
 		_isMovingSelectedObject = SelectedObject != null;
 		_activeMoveSession = ((SelectedObject == null) ? null : new MoveMapObjectDragSession(Map, SelectedObject.Id));
+		_dragStartAnchor = SelectedObject != null ? GetAnchorPoint(SelectedObject) : null;
+		_dragAccumulatedRawDelta = default;
 		RefreshStatus();
+	}
+
+	private PointD GetAnchorPoint(MapObject mapObject)
+	{
+		return mapObject switch
+		{
+			PointOfInterest poi => poi.Position,
+			MapLabel label => label.Position,
+			RoadLine road => road.Points.FirstOrDefault(),
+			DistrictShape district => district.PolygonPoints.FirstOrDefault(),
+			_ => default
+		};
 	}
 
 	public void MoveSelectedObjectByScreenDelta(PointD currentScreenPoint, double screenDeltaX, double screenDeltaY)
 	{
 		_lastScreenPoint = currentScreenPoint;
-		if (SelectedObject == null)
+		if (SelectedObject == null || _activeMoveSession == null)
 		{
 			RefreshStatus();
 			return;
 		}
-		PointD delta = new PointD(screenDeltaX / Camera.Zoom, screenDeltaY / Camera.Zoom);
-		_activeMoveSession?.PreviewMoveBy(delta);
+		PointD rawDelta = new PointD(screenDeltaX / Camera.Zoom, screenDeltaY / Camera.Zoom);
+		_dragAccumulatedRawDelta = new PointD(_dragAccumulatedRawDelta.X + rawDelta.X, _dragAccumulatedRawDelta.Y + rawDelta.Y);
+
+		if (Map.GridSettings.IsEnabled && Map.GridSettings.SnapToGrid && _dragStartAnchor.HasValue)
+		{
+			PointD rawTargetAnchor = new PointD(_dragStartAnchor.Value.X + _dragAccumulatedRawDelta.X, _dragStartAnchor.Value.Y + _dragAccumulatedRawDelta.Y);
+			PointD snappedTargetAnchor = GridSnapper.Snap(rawTargetAnchor, Map.GridSettings);
+			
+			PointD targetTotalDelta = new PointD(snappedTargetAnchor.X - _dragStartAnchor.Value.X, snappedTargetAnchor.Y - _dragStartAnchor.Value.Y);
+			PointD currentTotalDelta = _activeMoveSession.TotalDelta;
+			PointD incrementalDelta = new PointD(targetTotalDelta.X - currentTotalDelta.X, targetTotalDelta.Y - currentTotalDelta.Y);
+			
+			_activeMoveSession.PreviewMoveBy(incrementalDelta);
+		}
+		else
+		{
+			_activeMoveSession.PreviewMoveBy(rawDelta);
+		}
+		
 		RefreshStatus();
 		OnPropertyChanged("SelectedObject");
 	}
@@ -310,6 +343,8 @@ public sealed class MapViewportViewModel : ViewModelBase
 				NotifyProjectMutated();
 			}
 			_activeMoveSession = null;
+			_dragStartAnchor = null;
+			_dragAccumulatedRawDelta = default;
 			RefreshStatus();
 			OnPropertyChanged("SelectedObject");
 		}
@@ -386,12 +421,12 @@ public sealed class MapViewportViewModel : ViewModelBase
 		_lastScreenPoint = screenPoint;
 		if (ActiveTool == EditorToolType.Road && _roadDrawingSession.IsDrawing)
 		{
-			_roadDrawingSession.UpdatePreviewPoint(Camera.ScreenToWorld(screenPoint));
+			_roadDrawingSession.UpdatePreviewPoint(GridSnapper.Snap(Camera.ScreenToWorld(screenPoint), Map.GridSettings));
 			OnPropertyChanged("RoadPreviewPoint");
 		}
 		if (ActiveTool == EditorToolType.District && _districtDrawingSession.IsDrawing)
 		{
-			_districtDrawingSession.UpdatePreviewPoint(Camera.ScreenToWorld(screenPoint));
+			_districtDrawingSession.UpdatePreviewPoint(GridSnapper.Snap(Camera.ScreenToWorld(screenPoint), Map.GridSettings));
 			OnPropertyChanged("DistrictPreviewPoint");
 		}
 		RefreshStatus();

@@ -419,6 +419,16 @@ public class MainWindowViewModel : ViewModelBase
 		}
 	}
 
+	public void ToggleSnapToGrid()
+	{
+		if (MapViewport == null) return;
+		var map = MapViewport.Map;
+		var current = map.GridSettings;
+		map.SetGridSettings(new GridSettings(current.IsEnabled, current.CellSizeMeters, current.ShowGrid, !current.SnapToGrid));
+		MarkDirty();
+		StatusBar.SetMessage($"Snap to Grid: {(map.GridSettings.SnapToGrid ? "On" : "Off")}");
+	}
+
 	private MapViewportViewModel GetOrCreateMapViewport(MapDocument map)
 	{
 		if (_mapViewportsByMapId.TryGetValue(map.Id, out MapViewportViewModel? value))

@@ -50,6 +50,9 @@
                 <MenuItem Header="_Open Selected Child Map"
                           IsEnabled="{Binding CanOpenSelectedChildMap}"
                           Click="OpenSelectedChildMap_Click"/>
+                <Separator/>
+                <MenuItem Header="Toggle _Snap to Grid"
+                          Click="ToggleSnapToGrid_Click"/>
             </MenuItem>
             <MenuItem Header="_View">
                 <MenuItem Header="_Project Tree" IsEnabled="False"/>

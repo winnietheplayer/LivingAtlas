@@ -63,6 +63,34 @@ public sealed class ProjectJsonSerializerTests
         }
     }
 
+    [Fact]
+    public async Task SaveAndLoadAsync_RoundTripsGridSettings()
+    {
+        MapDocument map = TestData.CreateCityMap();
+        map.SetGridSettings(new GridSettings(isEnabled: true, 12.5, showGrid: true, snapToGrid: true));
+        CampaignMapProject project = TestData.CreateProject(map);
+        string path = Path.Combine("C:\\tmp", "LivingAtlas.Tests", $"{Guid.NewGuid()}.json");
+
+        try
+        {
+            await ProjectJsonSerializer.SaveAsync(project, path);
+            CampaignMapProject loaded = await ProjectJsonSerializer.LoadAsync(path);
+            GridSettings loadedSettings = loaded.RootMap.GridSettings;
+
+            Assert.True(loadedSettings.IsEnabled);
+            Assert.Equal(12.5, loadedSettings.CellSizeMeters);
+            Assert.True(loadedSettings.ShowGrid);
+            Assert.True(loadedSettings.SnapToGrid);
+        }
+        finally
+        {
+            if (File.Exists(path))
+            {
+                File.Delete(path);
+            }
+        }
+    }
+
     private static (CampaignMapProject Project, MapDocument RootMap, Guid ChildMapId) CreateProjectWithHierarchy()
     {
         MapDocument rootMap = TestData.CreateCityMap();

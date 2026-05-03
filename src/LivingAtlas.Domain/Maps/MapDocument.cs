@@ -25,7 +25,7 @@ public sealed class MapDocument
 
 	public IReadOnlyList<Guid> ChildrenMapIds => _childrenMapIds;
 
-	public GridSettings GridSettings { get; }
+	public GridSettings GridSettings { get; private set; }
 
 	public MapDocument(Guid id, string name, MapScaleType scaleType, SizeD realSizeMeters, Guid? parentMapId = null, GridSettings? gridSettings = null)
 	{
@@ -47,6 +47,11 @@ public sealed class MapDocument
 		RealSizeMeters = realSizeMeters;
 		ParentMapId = parentMapId;
 		GridSettings = gridSettings ?? GridSettings.Disabled;
+	}
+
+	public void SetGridSettings(GridSettings gridSettings)
+	{
+		GridSettings = gridSettings;
 	}
 
 	public void AddLayer(MapLayer layer)
