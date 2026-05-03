@@ -19,14 +19,77 @@ public partial class MainWindow : Window
         MimeTypes = new[] { "application/json" }
     };
 
+    private bool _closeConfirmed;
+
     public MainWindow()
     {
         InitializeComponent();
     }
 
-    private void NewProject_Click(object? sender, RoutedEventArgs e)
+    protected override async void OnClosing(WindowClosingEventArgs e)
+    {
+        base.OnClosing(e);
+
+        if (_closeConfirmed)
+        {
+            return;
+        }
+
+        if (DataContext is MainWindowViewModel viewModel && viewModel.IsDirty)
+        {
+            e.Cancel = true;
+
+            bool canClose = await HandleUnsavedChangesAsync(viewModel);
+            if (canClose)
+            {
+                _closeConfirmed = true;
+                Close();
+            }
+        }
+    }
+
+    private async Task<bool> HandleUnsavedChangesAsync(MainWindowViewModel viewModel)
+    {
+        if (!viewModel.IsDirty)
+        {
+            return true;
+        }
+
+        var dialog = new UnsavedChangesDialog();
+        var result = await dialog.ShowDialog<UnsavedChangesDialogResult>(this);
+
+        if (result == UnsavedChangesDialogResult.Cancel)
+        {
+            viewModel.SetStatusMessage("Action cancelled");
+            return false;
+        }
+
+        if (result == UnsavedChangesDialogResult.DontSave)
+        {
+            return true;
+        }
+
+        if (result == UnsavedChangesDialogResult.Save)
+        {
+            if (viewModel.HasProjectPath)
+            {
+                return await viewModel.SaveProjectAsync();
+            }
+            
+            return await SaveProjectAsCoreAsync(viewModel);
+        }
+
+        return false;
+    }
+
+    private async void NewProject_Click(object? sender, RoutedEventArgs e)
     {
         if (DataContext is not MainWindowViewModel viewModel)
+        {
+            return;
+        }
+
+        if (!await HandleUnsavedChangesAsync(viewModel))
         {
             return;
         }
@@ -38,6 +101,11 @@ public partial class MainWindow : Window
     private async void OpenProject_Click(object? sender, RoutedEventArgs e)
     {
         if (DataContext is not MainWindowViewModel viewModel)
+        {
+            return;
+        }
+
+        if (!await HandleUnsavedChangesAsync(viewModel))
         {
             return;
         }
@@ -368,7 +436,7 @@ public partial class MainWindow : Window
         MapViewport.Focus();
     }
 
-    private async Task SaveProjectAsCoreAsync(MainWindowViewModel viewModel)
+    private async Task<bool> SaveProjectAsCoreAsync(MainWindowViewModel viewModel)
     {
         try
         {
@@ -384,14 +452,15 @@ public partial class MainWindow : Window
             var path = file?.TryGetLocalPath();
             if (string.IsNullOrWhiteSpace(path))
             {
-                return;
+                return false;
             }
 
-            await viewModel.SaveProjectAsAsync(path);
+            return await viewModel.SaveProjectAsAsync(path);
         }
         catch (Exception exception)
         {
             viewModel.SetStatusMessage($"Save failed: {exception.Message}");
+            return false;
         }
     }
 
