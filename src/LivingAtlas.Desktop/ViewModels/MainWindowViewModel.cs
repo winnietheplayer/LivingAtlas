@@ -16,15 +16,15 @@ namespace LivingAtlas.Desktop.ViewModels;
 
 public class MainWindowViewModel : ViewModelBase
 {
-	private CampaignMapProject _project = null;
+	private CampaignMapProject _project = null!;
 
-	private ProjectTreeViewModel _projectTree = null;
+	private ProjectTreeViewModel _projectTree = null!;
 
 	private IReadOnlyList<BreadcrumbItemViewModel> _breadcrumbs = Array.Empty<BreadcrumbItemViewModel>();
 
-	private MapViewportViewModel _mapViewport = null;
+	private MapViewportViewModel _mapViewport = null!;
 
-	private InspectorViewModel _inspector = null;
+	private InspectorViewModel _inspector = null!;
 
 	private string? _currentProjectPath;
 
@@ -298,7 +298,7 @@ public class MainWindowViewModel : ViewModelBase
 
 	public bool ApplyInspectorChanges()
 	{
-		MapObject selectedObject = MapViewport.SelectedObject;
+			MapObject? selectedObject = MapViewport.SelectedObject;
 		if (selectedObject == null)
 		{
 			StatusBar.SetMessage("Inspector apply failed: no selection");
@@ -307,7 +307,7 @@ public class MainWindowViewModel : ViewModelBase
 		try
 		{
 			string text = Inspector.EditableName.Trim();
-			string text2 = ((selectedObject is MapLabel) ? Inspector.EditableLabelText.Trim() : null);
+			string? text2 = ((selectedObject is MapLabel) ? Inspector.EditableLabelText.Trim() : null);
 			bool flag = !string.Equals(text, selectedObject.Name, StringComparison.Ordinal);
 			bool flag2 = selectedObject is MapLabel mapLabel && !string.Equals(text2, mapLabel.Text, StringComparison.Ordinal);
 			if (!flag && !flag2)
@@ -329,7 +329,7 @@ public class MainWindowViewModel : ViewModelBase
 
 	public bool OpenMap(Guid mapId)
 	{
-		MapDocument mapDocument = Project.FindMap(mapId);
+		MapDocument? mapDocument = Project.FindMap(mapId);
 		if (mapDocument == null)
 		{
 			StatusBar.SetMessage($"Open map failed: map '{mapId}' was not found");
@@ -405,9 +405,9 @@ public class MainWindowViewModel : ViewModelBase
 
 	private MapViewportViewModel GetOrCreateMapViewport(MapDocument map)
 	{
-		if (_mapViewportsByMapId.TryGetValue(map.Id, out MapViewportViewModel value))
+		if (_mapViewportsByMapId.TryGetValue(map.Id, out MapViewportViewModel? value))
 		{
-			return value;
+			return value!;
 		}
 		value = new MapViewportViewModel(map, Project);
 		_mapViewportsByMapId.Add(map.Id, value);

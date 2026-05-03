@@ -126,7 +126,7 @@ public sealed class MapViewportControl : Control
 		PointerPoint currentPoint = e.GetCurrentPoint(this);
 		if (currentPoint.Properties.IsLeftButtonPressed)
 		{
-			MapViewportViewModel mapViewportViewModel = base.DataContext as MapViewportViewModel;
+			MapViewportViewModel? mapViewportViewModel = base.DataContext as MapViewportViewModel;
 			if (mapViewportViewModel != null && mapViewportViewModel.ActiveTool == EditorToolType.PointOfInterest)
 			{
 				Focus();
@@ -159,7 +159,7 @@ public sealed class MapViewportControl : Control
 				e.Handled = true;
 				return;
 			}
-			MapObject mapObject = ((mapViewportViewModel != null && mapViewportViewModel.Tools.AllowsSelectionChanges) ? mapViewportViewModel.SelectAtScreenPoint(ToPointD(currentPoint.Position), 10.0) : null);
+			MapObject? mapObject = ((mapViewportViewModel != null && mapViewportViewModel.Tools.AllowsSelectionChanges) ? mapViewportViewModel.SelectAtScreenPoint(ToPointD(currentPoint.Position), 10.0) : null);
 			Focus();
 			_isPointerDown = true;
 			_isMovingObject = false;
@@ -449,7 +449,7 @@ public sealed class MapViewportControl : Control
 		{
 			return;
 		}
-		MapDocument mapDocument = project.FindMap(valueOrDefault);
+		MapDocument? mapDocument = project.FindMap(valueOrDefault);
 		if (mapDocument == null || mapDocument.Id == parentMap.Id || mapDocument.RealSizeMeters.Width <= 0.0 || mapDocument.RealSizeMeters.Height <= 0.0)
 		{
 			return;

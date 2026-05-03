@@ -303,7 +303,7 @@ public sealed class MapViewportViewModel : ViewModelBase
 		if (_isMovingSelectedObject)
 		{
 			_isMovingSelectedObject = false;
-			MoveMapObjectCommand moveMapObjectCommand = _activeMoveSession?.CreateCommandFromPreview();
+			MoveMapObjectCommand? moveMapObjectCommand = _activeMoveSession?.CreateCommandFromPreview();
 			if (moveMapObjectCommand != null)
 			{
 				History.Execute(moveMapObjectCommand);
@@ -318,7 +318,7 @@ public sealed class MapViewportViewModel : ViewModelBase
 	public bool Undo()
 	{
 		Guid? guid = SelectedObject?.Id;
-		IEditorCommand editorCommand = History.Undo();
+		IEditorCommand? editorCommand = History.Undo();
 		if (editorCommand == null)
 		{
 			return false;
@@ -343,7 +343,7 @@ public sealed class MapViewportViewModel : ViewModelBase
 
 	public bool Redo()
 	{
-		IEditorCommand editorCommand = History.Redo();
+		IEditorCommand? editorCommand = History.Redo();
 		if (editorCommand == null)
 		{
 			return false;
@@ -485,7 +485,7 @@ public sealed class MapViewportViewModel : ViewModelBase
 		}
 		foreach (MapLayer layer in Map.Layers)
 		{
-			MapObject mapObject = layer.Objects.FirstOrDefault((MapObject candidate) => candidate.Id == SelectedObject.Id);
+			MapObject? mapObject = layer.Objects.FirstOrDefault((MapObject candidate) => candidate.Id == SelectedObject.Id);
 			if (mapObject != null)
 			{
 				SelectedObject = mapObject;
