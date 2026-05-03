@@ -1,6 +1,5 @@
 using System;
 using System.Globalization;
-using System.Runtime.CompilerServices;
 using LivingAtlas.Domain.Geometry;
 using LivingAtlas.Domain.Maps.Objects;
 
@@ -104,47 +103,40 @@ public sealed class InspectorViewModel : ViewModelBase
 
 	private static string FormatSelectionDetails(MapObject mapObject)
 	{
-		string text = ((mapObject.Tags.Count == 0) ? "-" : string.Join(", ", mapObject.Tags));
-		if (1 == 0)
+		string tags = mapObject.Tags.Count == 0 ? "-" : string.Join(", ", mapObject.Tags);
+		string details;
+		if (mapObject is DistrictShape districtShape)
 		{
-		}
-		string text2;
-		if (!(mapObject is DistrictShape districtShape))
-		{
-			text2 = ((mapObject is RoadLine roadLine) ? $"Points: {roadLine.Points.Count}" : ((mapObject is PointOfInterest pointOfInterest) ? ("Position: " + FormatPoint(pointOfInterest.Position)) : ((!(mapObject is MapLabel mapLabel)) ? string.Empty : $"Text: {mapLabel.Text}{Environment.NewLine}Position: {FormatPoint(mapLabel.Position)}")));
+			details = string.Join(Environment.NewLine, new[]
+			{
+				$"Polygon points: {districtShape.PolygonPoints.Count}",
+				"ChildMapId: " + FormatOptionalId(districtShape.ChildMapId)
+			});
 		}
 		else
 		{
-			string newLine = Environment.NewLine;
-			InlineArray2<string> buffer = default(InlineArray2<string>);
-			buffer[0] = $"Polygon points: {districtShape.PolygonPoints.Count}";
-			buffer[1] = "ChildMapId: " + FormatOptionalId(districtShape.ChildMapId);
-			text2 = string.Join(newLine, (ReadOnlySpan<string?>)buffer);
+			details = mapObject switch
+			{
+				RoadLine roadLine => $"Points: {roadLine.Points.Count}",
+				PointOfInterest pointOfInterest => "Position: " + FormatPoint(pointOfInterest.Position),
+				MapLabel mapLabel => $"Text: {mapLabel.Text}{Environment.NewLine}Position: {FormatPoint(mapLabel.Position)}",
+				_ => string.Empty
+			};
 		}
-		if (1 == 0)
+
+		return string.Join(Environment.NewLine, new[]
 		{
-		}
-		string text3 = text2;
-		string newLine2 = Environment.NewLine;
-		InlineArray5<string> buffer2 = default(InlineArray5<string>);
-		buffer2[0] = $"ObjectType: {mapObject.ObjectType}";
-		buffer2[1] = $"LayerId: {mapObject.LayerId}";
-		buffer2[2] = "Tags: " + text;
-		buffer2[3] = "Style: " + FormatStyle(mapObject.StyleKey);
-		buffer2[4] = text3;
-		return string.Join(newLine2, (ReadOnlySpan<string?>)buffer2);
+			$"ObjectType: {mapObject.ObjectType}",
+			$"LayerId: {mapObject.LayerId}",
+			"Tags: " + tags,
+			"Style: " + FormatStyle(mapObject.StyleKey),
+			details
+		});
 	}
 
 	private static string FormatPoint(PointD point)
 	{
-		IFormatProvider invariantCulture = CultureInfo.InvariantCulture;
-		DefaultInterpolatedStringHandler handler = new DefaultInterpolatedStringHandler(12, 2, invariantCulture);
-		handler.AppendLiteral("X: ");
-		handler.AppendFormatted(point.X, "F2");
-		handler.AppendLiteral(" m, Y: ");
-		handler.AppendFormatted(point.Y, "F2");
-		handler.AppendLiteral(" m");
-		return string.Create(invariantCulture, ref handler);
+		return string.Create(CultureInfo.InvariantCulture, $"X: {point.X:F2} m, Y: {point.Y:F2} m");
 	}
 
 	private static string FormatStyle(string styleKey)

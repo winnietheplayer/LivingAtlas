@@ -199,55 +199,30 @@ public static class ProjectJsonSerializer
 
 		public static MapObjectDto FromMapObject(MapObject mapObject)
 		{
-			if (1 == 0)
+			return mapObject switch
 			{
-			}
-			MapObjectDto result;
-			if (!(mapObject is DistrictShape districtShape))
-			{
-				if (!(mapObject is RoadLine roadLine))
-				{
-					if (!(mapObject is MapLabel mapLabel))
-					{
-						if (!(mapObject is PointOfInterest pointOfInterest))
-						{
-							throw new NotSupportedException("Unsupported map object type '" + mapObject.GetType().Name + "'.");
-						}
-						result = CreateBase(mapObject)with
-						{
-							Position = PointDto.FromPoint(pointOfInterest.Position),
-							IconKey = pointOfInterest.IconKey
-						};
-					}
-					else
-					{
-						result = CreateBase(mapObject)with
-						{
-							Position = PointDto.FromPoint(mapLabel.Position),
-							Text = mapLabel.Text
-						};
-					}
-				}
-				else
-				{
-					result = CreateBase(mapObject)with
-					{
-						Points = roadLine.Points.Select(PointDto.FromPoint).ToList()
-					};
-				}
-			}
-			else
-			{
-				result = CreateBase(mapObject)with
+				DistrictShape districtShape => CreateBase(mapObject)with
 				{
 					Points = districtShape.PolygonPoints.Select(PointDto.FromPoint).ToList(),
 					ChildMapId = districtShape.ChildMapId
-				};
-			}
-			if (1 == 0)
-			{
-			}
-			return result;
+				},
+				RoadLine roadLine => CreateBase(mapObject)with
+				{
+					Points = roadLine.Points.Select(PointDto.FromPoint).ToList()
+				},
+				MapLabel mapLabel => CreateBase(mapObject)with
+				{
+					Position = PointDto.FromPoint(mapLabel.Position),
+					Text = mapLabel.Text
+				},
+				PointOfInterest pointOfInterest => CreateBase(mapObject)with
+				{
+					Position = PointDto.FromPoint(pointOfInterest.Position),
+					IconKey = pointOfInterest.IconKey
+				},
+				_ => throw new NotSupportedException("Unsupported map object type '" + mapObject.GetType().Name + "'.")
+			};
+
 			static MapObjectDto CreateBase(MapObject mapObject2)
 			{
 				return new MapObjectDto
@@ -264,11 +239,7 @@ public static class ProjectJsonSerializer
 
 		public MapObject ToMapObject()
 		{
-			MapObjectType objectType = ObjectType;
-			if (1 == 0)
-			{
-			}
-			MapObject result = objectType switch
+			return ObjectType switch
 			{
 				MapObjectType.DistrictShape => new DistrictShape(Id, Name, LayerId, Points.Select((PointDto point) => point.ToPointD()), Tags, StyleKey, ChildMapId), 
 				MapObjectType.RoadLine => new RoadLine(Id, Name, LayerId, Points.Select((PointDto point) => point.ToPointD()), Tags, StyleKey), 
@@ -276,10 +247,6 @@ public static class ProjectJsonSerializer
 				MapObjectType.PointOfInterest => new PointOfInterest(Id, Name, LayerId, RequirePosition().ToPointD(), RequireIconKey(), Tags, StyleKey), 
 				_ => throw new NotSupportedException($"Unsupported map object type '{ObjectType}'."), 
 			};
-			if (1 == 0)
-			{
-			}
-			return result;
 		}
 
 		private PointDto RequirePosition()

@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using LivingAtlas.Domain.Geometry;
 using LivingAtlas.Domain.Maps;
 using LivingAtlas.Domain.Maps.Objects;
@@ -407,191 +406,66 @@ public sealed class MapViewportViewModel : ViewModelBase
 
 	private string FormatStatus(PointD worldPoint, double zoom)
 	{
-		string value = FormatCoordinates(worldPoint, zoom);
-		IFormatProvider invariantCulture = CultureInfo.InvariantCulture;
-		IFormatProvider provider = invariantCulture;
-		DefaultInterpolatedStringHandler handler = new DefaultInterpolatedStringHandler(6, 1, invariantCulture);
-		handler.AppendLiteral("Tool: ");
-		handler.AppendFormatted(ActiveToolText);
-		string value2 = string.Create(provider, ref handler);
+		string coordinates = FormatCoordinates(worldPoint, zoom);
+		string toolText = $"Tool: {ActiveToolText}";
 		if (_isMovingSelectedObject && SelectedObject != null)
 		{
-			invariantCulture = CultureInfo.InvariantCulture;
-			IFormatProvider provider2 = invariantCulture;
-			DefaultInterpolatedStringHandler handler2 = new DefaultInterpolatedStringHandler(14, 3, invariantCulture);
-			handler2.AppendFormatted(value);
-			handler2.AppendLiteral(" | ");
-			handler2.AppendFormatted(value2);
-			handler2.AppendLiteral(" | Moving: ");
-			handler2.AppendFormatted(SelectedObject.Name);
-			return string.Create(provider2, ref handler2);
+			return $"{coordinates} | {toolText} | Moving: {SelectedObject.Name}";
 		}
 		if (ActiveTool == EditorToolType.PointOfInterest)
 		{
-			string result;
 			if (SelectedObject != null)
 			{
-				invariantCulture = CultureInfo.InvariantCulture;
-				IFormatProvider provider3 = invariantCulture;
-				DefaultInterpolatedStringHandler handler3 = new DefaultInterpolatedStringHandler(49, 3, invariantCulture);
-				handler3.AppendFormatted(value);
-				handler3.AppendLiteral(" | ");
-				handler3.AppendFormatted(value2);
-				handler3.AppendLiteral(" | POI Tool: click to place point | Selected: ");
-				handler3.AppendFormatted(SelectedObject.Name);
-				result = string.Create(provider3, ref handler3);
+				return $"{coordinates} | {toolText} | POI Tool: click to place point | Selected: {SelectedObject.Name}";
 			}
-			else
-			{
-				invariantCulture = CultureInfo.InvariantCulture;
-				IFormatProvider provider4 = invariantCulture;
-				DefaultInterpolatedStringHandler handler4 = new DefaultInterpolatedStringHandler(36, 2, invariantCulture);
-				handler4.AppendFormatted(value);
-				handler4.AppendLiteral(" | ");
-				handler4.AppendFormatted(value2);
-				handler4.AppendLiteral(" | POI Tool: click to place point");
-				result = string.Create(provider4, ref handler4);
-			}
-			return result;
+
+			return $"{coordinates} | {toolText} | POI Tool: click to place point";
 		}
 		if (ActiveTool == EditorToolType.Label)
 		{
-			string result2;
 			if (SelectedObject != null)
 			{
-				invariantCulture = CultureInfo.InvariantCulture;
-				IFormatProvider provider5 = invariantCulture;
-				DefaultInterpolatedStringHandler handler5 = new DefaultInterpolatedStringHandler(50, 3, invariantCulture);
-				handler5.AppendFormatted(value);
-				handler5.AppendLiteral(" | ");
-				handler5.AppendFormatted(value2);
-				handler5.AppendLiteral(" | Label Tool: click to place text | Selected: ");
-				handler5.AppendFormatted(SelectedObject.Name);
-				result2 = string.Create(provider5, ref handler5);
+				return $"{coordinates} | {toolText} | Label Tool: click to place text | Selected: {SelectedObject.Name}";
 			}
-			else
-			{
-				invariantCulture = CultureInfo.InvariantCulture;
-				IFormatProvider provider6 = invariantCulture;
-				DefaultInterpolatedStringHandler handler6 = new DefaultInterpolatedStringHandler(37, 2, invariantCulture);
-				handler6.AppendFormatted(value);
-				handler6.AppendLiteral(" | ");
-				handler6.AppendFormatted(value2);
-				handler6.AppendLiteral(" | Label Tool: click to place text");
-				result2 = string.Create(provider6, ref handler6);
-			}
-			return result2;
+
+			return $"{coordinates} | {toolText} | Label Tool: click to place text";
 		}
 		if (ActiveTool == EditorToolType.Road)
 		{
-			string value3 = (_roadDrawingSession.IsDrawing ? "Road Tool: click to add point, Enter to finish, Esc to cancel" : "Road Tool: click to start road");
-			string result3;
+			string roadText = _roadDrawingSession.IsDrawing ? "Road Tool: click to add point, Enter to finish, Esc to cancel" : "Road Tool: click to start road";
 			if (SelectedObject != null)
 			{
-				invariantCulture = CultureInfo.InvariantCulture;
-				IFormatProvider provider7 = invariantCulture;
-				DefaultInterpolatedStringHandler handler7 = new DefaultInterpolatedStringHandler(19, 4, invariantCulture);
-				handler7.AppendFormatted(value);
-				handler7.AppendLiteral(" | ");
-				handler7.AppendFormatted(value2);
-				handler7.AppendLiteral(" | ");
-				handler7.AppendFormatted(value3);
-				handler7.AppendLiteral(" | Selected: ");
-				handler7.AppendFormatted(SelectedObject.Name);
-				result3 = string.Create(provider7, ref handler7);
+				return $"{coordinates} | {toolText} | {roadText} | Selected: {SelectedObject.Name}";
 			}
-			else
-			{
-				invariantCulture = CultureInfo.InvariantCulture;
-				IFormatProvider provider8 = invariantCulture;
-				DefaultInterpolatedStringHandler handler8 = new DefaultInterpolatedStringHandler(6, 3, invariantCulture);
-				handler8.AppendFormatted(value);
-				handler8.AppendLiteral(" | ");
-				handler8.AppendFormatted(value2);
-				handler8.AppendLiteral(" | ");
-				handler8.AppendFormatted(value3);
-				result3 = string.Create(provider8, ref handler8);
-			}
-			return result3;
+
+			return $"{coordinates} | {toolText} | {roadText}";
 		}
 		if (ActiveTool == EditorToolType.District)
 		{
-			string value4 = (_districtDrawingSession.IsDrawing ? "District Tool: click to add vertex, Enter to finish, Esc to cancel" : "District Tool: click to start polygon");
-			string result4;
+			string districtText = _districtDrawingSession.IsDrawing ? "District Tool: click to add vertex, Enter to finish, Esc to cancel" : "District Tool: click to start polygon";
 			if (SelectedObject != null)
 			{
-				invariantCulture = CultureInfo.InvariantCulture;
-				IFormatProvider provider9 = invariantCulture;
-				DefaultInterpolatedStringHandler handler9 = new DefaultInterpolatedStringHandler(19, 4, invariantCulture);
-				handler9.AppendFormatted(value);
-				handler9.AppendLiteral(" | ");
-				handler9.AppendFormatted(value2);
-				handler9.AppendLiteral(" | ");
-				handler9.AppendFormatted(value4);
-				handler9.AppendLiteral(" | Selected: ");
-				handler9.AppendFormatted(SelectedObject.Name);
-				result4 = string.Create(provider9, ref handler9);
+				return $"{coordinates} | {toolText} | {districtText} | Selected: {SelectedObject.Name}";
 			}
-			else
-			{
-				invariantCulture = CultureInfo.InvariantCulture;
-				IFormatProvider provider10 = invariantCulture;
-				DefaultInterpolatedStringHandler handler10 = new DefaultInterpolatedStringHandler(6, 3, invariantCulture);
-				handler10.AppendFormatted(value);
-				handler10.AppendLiteral(" | ");
-				handler10.AppendFormatted(value2);
-				handler10.AppendLiteral(" | ");
-				handler10.AppendFormatted(value4);
-				result4 = string.Create(provider10, ref handler10);
-			}
-			return result4;
+
+			return $"{coordinates} | {toolText} | {districtText}";
 		}
-		string result5;
 		if (SelectedObject != null)
 		{
-			invariantCulture = CultureInfo.InvariantCulture;
-			IFormatProvider provider11 = invariantCulture;
-			DefaultInterpolatedStringHandler handler11 = new DefaultInterpolatedStringHandler(16, 3, invariantCulture);
-			handler11.AppendFormatted(value);
-			handler11.AppendLiteral(" | ");
-			handler11.AppendFormatted(value2);
-			handler11.AppendLiteral(" | Selected: ");
-			handler11.AppendFormatted(SelectedObject.Name);
-			result5 = string.Create(provider11, ref handler11);
+			return $"{coordinates} | {toolText} | Selected: {SelectedObject.Name}";
 		}
-		else
-		{
-			invariantCulture = CultureInfo.InvariantCulture;
-			IFormatProvider provider12 = invariantCulture;
-			DefaultInterpolatedStringHandler handler12 = new DefaultInterpolatedStringHandler(3, 2, invariantCulture);
-			handler12.AppendFormatted(value);
-			handler12.AppendLiteral(" | ");
-			handler12.AppendFormatted(value2);
-			result5 = string.Create(provider12, ref handler12);
-		}
-		return result5;
+
+		return $"{coordinates} | {toolText}";
 	}
 
 	private static string FormatCoordinates(PointD worldPoint, double zoom)
 	{
-		IFormatProvider invariantCulture = CultureInfo.InvariantCulture;
-		DefaultInterpolatedStringHandler handler = new DefaultInterpolatedStringHandler(21, 3, invariantCulture);
-		handler.AppendLiteral("X: ");
-		handler.AppendFormatted(worldPoint.X, "F2");
-		handler.AppendLiteral(" m, Y: ");
-		handler.AppendFormatted(worldPoint.Y, "F2");
-		handler.AppendLiteral(" m, Zoom: ");
-		handler.AppendFormatted(zoom * 100.0, "F0");
-		handler.AppendLiteral("%");
-		return string.Create(invariantCulture, ref handler);
+		return string.Create(CultureInfo.InvariantCulture, $"X: {worldPoint.X:F2} m, Y: {worldPoint.Y:F2} m, Zoom: {zoom * 100.0:F0}%");
 	}
 
 	private static string FormatToolName(EditorToolType tool)
 	{
-		if (1 == 0)
-		{
-		}
-		string result = tool switch
+		return tool switch
 		{
 			EditorToolType.SelectMove => "Select/Move", 
 			EditorToolType.Pan => "Pan", 
@@ -601,10 +475,6 @@ public sealed class MapViewportViewModel : ViewModelBase
 			EditorToolType.Label => "Label", 
 			_ => tool.ToString(), 
 		};
-		if (1 == 0)
-		{
-		}
-		return result;
 	}
 
 	private void RefreshSelectedObjectReference()

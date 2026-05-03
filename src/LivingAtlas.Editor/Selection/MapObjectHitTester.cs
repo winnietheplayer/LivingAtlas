@@ -43,14 +43,14 @@ public static class MapObjectHitTester
 
 	private static HitCandidate? HitTestObject(MapObject mapObject, PointD worldPoint, double worldTolerance, int drawOrder)
 	{
-		if (1 == 0)
+		return mapObject switch
 		{
-		}
-		HitCandidate? result = ((mapObject is PointOfInterest poi) ? HitTestPointOfInterest(poi, worldPoint, worldTolerance, drawOrder) : ((mapObject is MapLabel label) ? HitTestMapLabel(label, worldPoint, worldTolerance, drawOrder) : ((mapObject is RoadLine road) ? HitTestRoadLine(road, worldPoint, worldTolerance, drawOrder) : ((!(mapObject is DistrictShape district)) ? ((HitCandidate?)null) : HitTestDistrictShape(district, worldPoint, drawOrder)))));
-		if (1 == 0)
-		{
-		}
-		return result;
+			PointOfInterest poi => HitTestPointOfInterest(poi, worldPoint, worldTolerance, drawOrder),
+			MapLabel label => HitTestMapLabel(label, worldPoint, worldTolerance, drawOrder),
+			RoadLine road => HitTestRoadLine(road, worldPoint, worldTolerance, drawOrder),
+			DistrictShape district => HitTestDistrictShape(district, worldPoint, drawOrder),
+			_ => null
+		};
 	}
 
 	private static HitCandidate? HitTestPointOfInterest(PointOfInterest poi, PointD worldPoint, double worldTolerance, int drawOrder)

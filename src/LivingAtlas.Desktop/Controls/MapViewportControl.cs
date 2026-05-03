@@ -728,9 +728,6 @@ public sealed class MapViewportControl : Control
 
 	private static bool TrySetToolFromKey(MapViewportViewModel viewModel, Key key)
 	{
-		if (1 == 0)
-		{
-		}
 		EditorToolType? editorToolType;
 		switch (key)
 		{
@@ -757,9 +754,6 @@ public sealed class MapViewportControl : Control
 		default:
 			editorToolType = null;
 			break;
-		}
-		if (1 == 0)
-		{
 		}
 		EditorToolType? editorToolType2 = editorToolType;
 		if (!editorToolType2.HasValue)

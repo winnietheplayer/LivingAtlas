@@ -29,10 +29,6 @@ public static class MapBreadcrumbService
 			if (parentMapId.HasValue)
 			{
 				Guid valueOrDefault = parentMapId.GetValueOrDefault();
-				if (1 == 0)
-				{
-					break;
-				}
 				mapDocument = project.FindMap(valueOrDefault) ?? throw new InvalidOperationException($"Parent map '{valueOrDefault}' is not present in project '{project.Id}'.");
 				continue;
 			}
