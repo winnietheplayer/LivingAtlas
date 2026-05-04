@@ -59,6 +59,7 @@ public sealed class ProjectTreeViewModel : ViewModelBase
         {
             var layerItem = new ProjectTreeItemViewModel(
                 layer.Name,
+                mapId: map.Id,
                 layerId: layer.Id,
                 isVisible: layer.IsVisible,
                 isLocked: layer.IsLocked);

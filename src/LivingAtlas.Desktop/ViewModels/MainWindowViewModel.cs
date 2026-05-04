@@ -489,6 +489,29 @@ public class MainWindowViewModel : ViewModelBase
 		}
 	}
 
+	public bool RenameLayer(Guid mapId, Guid layerId, string newName)
+	{
+		var map = Project.FindMap(mapId);
+		var layer = map?.Layers.FirstOrDefault(l => l.Id == layerId);
+		if (layer == null)
+		{
+			return false;
+		}
+
+		string oldName = layer.Name;
+		string trimmedName = newName.Trim();
+		if (string.Equals(oldName, trimmedName, StringComparison.Ordinal))
+		{
+			return false; // No change
+		}
+
+		layer.Rename(trimmedName);
+		MarkDirty();
+		ProjectTree = new ProjectTreeViewModel(Project, MapViewport.Map.Id);
+		StatusBar.SetMessage($"Layer renamed: {trimmedName}");
+		return true;
+	}
+
 	private MapViewportViewModel GetOrCreateMapViewport(MapDocument map)
 	{
 		if (_mapViewportsByMapId.TryGetValue(map.Id, out MapViewportViewModel? value))

@@ -145,6 +145,33 @@ public sealed class ProjectJsonSerializerTests
 		}
 	}
 
+	[Fact]
+	public async Task SaveAndLoadAsync_RoundTripsLayerRename()
+	{
+		string tempFileName = Path.GetTempFileName();
+		try
+		{
+			MapDocument rootMap = TestData.CreateCityMap();
+			var layer = new MapLayer(Guid.NewGuid(), "Test Layer", MapLayerType.PointsOfInterest);
+			rootMap.AddLayer(layer);
+			layer.Rename("Renamed Layer");
+
+			CampaignMapProject project = TestData.CreateProject(rootMap);
+			await ProjectJsonSerializer.SaveAsync(project, tempFileName);
+			CampaignMapProject loaded = await ProjectJsonSerializer.LoadAsync(tempFileName);
+
+			var loadedLayer = loaded.RootMap.Layers.First(l => l.Id == layer.Id);
+			Assert.Equal("Renamed Layer", loadedLayer.Name);
+		}
+		finally
+		{
+			if (File.Exists(tempFileName))
+			{
+				File.Delete(tempFileName);
+			}
+		}
+	}
+
     private static (CampaignMapProject Project, MapDocument RootMap, Guid ChildMapId) CreateProjectWithHierarchy()
     {
         MapDocument rootMap = TestData.CreateCityMap();

@@ -11,7 +11,7 @@ public sealed class MapLayer
 
 	public Guid Id { get; }
 
-	public string Name { get; }
+	public string Name { get; private set; }
 
 	public MapLayerType LayerType { get; }
 
@@ -46,6 +46,17 @@ public sealed class MapLayer
 	public void SetLocked(bool isLocked)
 	{
 		IsLocked = isLocked;
+	}
+
+	public void Rename(string name)
+	{
+		ArgumentNullException.ThrowIfNull(name, nameof(name));
+		name = name.Trim();
+		if (string.IsNullOrWhiteSpace(name))
+		{
+			throw new ArgumentException("Layer name cannot be empty.", nameof(name));
+		}
+		Name = name;
 	}
 
 	public void AddObject(MapObject mapObject)

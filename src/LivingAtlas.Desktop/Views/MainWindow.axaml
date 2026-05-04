@@ -142,7 +142,14 @@
                         <TreeView.DataTemplates>
                             <TreeDataTemplate DataType="{x:Type vm:ProjectTreeItemViewModel}"
                                               ItemsSource="{Binding Children}">
-                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                <StackPanel Orientation="Horizontal" Spacing="6" Background="Transparent" DoubleTapped="LayerName_DoubleTapped">
+                                    <StackPanel.ContextMenu>
+                                        <ContextMenu>
+                                            <MenuItem Header="Rename" 
+                                                      IsVisible="{Binding IsLayer}"
+                                                      Click="RenameLayer_Click"/>
+                                        </ContextMenu>
+                                    </StackPanel.ContextMenu>
                                     <CheckBox IsChecked="{Binding IsVisible, Mode=TwoWay}"
                                               IsVisible="{Binding IsLayer}"
                                               MinWidth="0" Padding="0"

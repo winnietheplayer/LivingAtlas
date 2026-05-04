@@ -1,0 +1,18 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="LivingAtlas.Desktop.Views.RenameLayerDialog"
+        Title="Rename Layer"
+        Width="350" Height="160"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False"
+        WindowDecorations="BorderOnly">
+    <StackPanel Margin="20" Spacing="16" VerticalAlignment="Center">
+        <TextBox x:Name="LayerNameTextBox"
+                 Watermark="Layer name"
+                 TextChanged="LayerNameTextBox_TextChanged"/>
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="10">
+            <Button x:Name="OkButton" Content="OK" Click="Ok_Click" IsEnabled="False" IsDefault="True"/>
+            <Button Content="Cancel" Click="Cancel_Click" IsCancel="True"/>
+        </StackPanel>
+    </StackPanel>
+</Window>

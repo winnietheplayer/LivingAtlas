@@ -269,14 +269,64 @@ public partial class MainWindow : Window
     private void ProjectTree_SelectionChanged(object? sender, SelectionChangedEventArgs e)
     {
         if (DataContext is not MainWindowViewModel viewModel
-            || sender is not TreeView { SelectedItem: ProjectTreeItemViewModel { MapId: Guid mapId } })
+            || sender is not TreeView { SelectedItem: ProjectTreeItemViewModel item }
+            || item.MapId == null
+            || item.IsLayer) // Skip map switching if a layer is selected to avoid UI refresh during double-clicks
         {
             return;
         }
 
-        if (viewModel.OpenMap(mapId))
+        if (viewModel.OpenMap(item.MapId.Value))
         {
             RefreshProjectVisuals();
+        }
+    }
+
+    private async void RenameLayer_Click(object? sender, RoutedEventArgs e)
+    {
+        if (DataContext is not MainWindowViewModel viewModel) return;
+        
+        ProjectTreeItemViewModel? item = null;
+        if (sender is MenuItem menuItem)
+        {
+            item = menuItem.DataContext as ProjectTreeItemViewModel;
+        }
+
+        if (item is null || !item.IsLayer || item.MapId == null || item.LayerId == null)
+        {
+            return;
+        }
+
+        await ExecuteRenameAsync(viewModel, item.MapId.Value, item.LayerId.Value, item.Name);
+    }
+
+    private async void LayerName_DoubleTapped(object? sender, TappedEventArgs e)
+    {
+        if (DataContext is not MainWindowViewModel viewModel) return;
+        
+        ProjectTreeItemViewModel? item = null;
+        if (sender is Control control)
+        {
+            item = control.DataContext as ProjectTreeItemViewModel;
+        }
+
+        if (item is null || !item.IsLayer || item.MapId == null || item.LayerId == null)
+        {
+            return;
+        }
+
+        await ExecuteRenameAsync(viewModel, item.MapId.Value, item.LayerId.Value, item.Name);
+        e.Handled = true;
+    }
+
+    private async Task ExecuteRenameAsync(MainWindowViewModel viewModel, Guid mapId, Guid layerId, string currentName)
+    {
+        var dialog = new RenameLayerDialog(currentName);
+        var newName = await dialog.ShowDialog<string?>(this);
+
+        if (!string.IsNullOrWhiteSpace(newName))
+        {
+            viewModel.RenameLayer(mapId, layerId, newName);
         }
     }
 
