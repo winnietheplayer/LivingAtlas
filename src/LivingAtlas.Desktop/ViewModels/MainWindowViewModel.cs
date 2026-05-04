@@ -61,12 +61,14 @@ public class MainWindowViewModel : ViewModelBase
 			if (_projectTree != null)
 			{
 				_projectTree.LayerVisibilityChanged -= OnLayerVisibilityChanged;
+				_projectTree.LayerLockChanged -= OnLayerLockChanged;
 			}
 			if (SetProperty(ref _projectTree, value, "ProjectTree"))
 			{
 				if (_projectTree != null)
 				{
 					_projectTree.LayerVisibilityChanged += OnLayerVisibilityChanged;
+					_projectTree.LayerLockChanged += OnLayerLockChanged;
 				}
 			}
 		}
@@ -459,6 +461,25 @@ public class MainWindowViewModel : ViewModelBase
 			}
 
 			if (MapViewport.Map.Id == e.MapId && !e.IsVisible && MapViewport.SelectedObject != null)
+			{
+				if (MapViewport.SelectedObject.LayerId == e.LayerId)
+				{
+					MapViewport.ClearSelection();
+				}
+			}
+		}
+	}
+
+	private void OnLayerLockChanged(object? sender, (Guid MapId, Guid LayerId, bool IsLocked) e)
+	{
+		var map = Project.FindMap(e.MapId);
+		var layer = map?.Layers.FirstOrDefault(l => l.Id == e.LayerId);
+		if (layer != null && layer.IsLocked != e.IsLocked)
+		{
+			layer.SetLocked(e.IsLocked);
+			MarkDirty();
+
+			if (MapViewport.Map.Id == e.MapId && e.IsLocked && MapViewport.SelectedObject != null)
 			{
 				if (MapViewport.SelectedObject.LayerId == e.LayerId)
 				{

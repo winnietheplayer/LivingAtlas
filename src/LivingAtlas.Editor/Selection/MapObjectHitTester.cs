@@ -22,7 +22,7 @@ public static class MapObjectHitTester
 		int num = 0;
 		foreach (MapLayer layer in map.Layers)
 		{
-			if (!layer.IsVisible)
+			if (!layer.IsVisible || layer.IsLocked)
 			{
 				continue;
 			}

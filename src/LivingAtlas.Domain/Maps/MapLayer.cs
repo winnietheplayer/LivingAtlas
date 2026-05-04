@@ -17,9 +17,11 @@ public sealed class MapLayer
 
 	public bool IsVisible { get; private set; }
 
+	public bool IsLocked { get; private set; }
+
 	public IReadOnlyList<MapObject> Objects => _objects;
 
-	public MapLayer(Guid id, string name, MapLayerType layerType, bool isVisible = true)
+	public MapLayer(Guid id, string name, MapLayerType layerType, bool isVisible = true, bool isLocked = false)
 	{
 		if (id == Guid.Empty)
 		{
@@ -33,11 +35,17 @@ public sealed class MapLayer
 		Name = name;
 		LayerType = layerType;
 		IsVisible = isVisible;
+		IsLocked = isLocked;
 	}
 
 	public void SetVisibility(bool isVisible)
 	{
 		IsVisible = isVisible;
+	}
+
+	public void SetLocked(bool isLocked)
+	{
+		IsLocked = isLocked;
 	}
 
 	public void AddObject(MapObject mapObject)

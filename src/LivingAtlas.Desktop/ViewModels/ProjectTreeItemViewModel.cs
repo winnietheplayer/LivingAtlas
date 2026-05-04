@@ -8,6 +8,8 @@ public sealed class ProjectTreeItemViewModel : ViewModelBase
 {
 	private bool _isVisible;
 
+	private bool _isLocked;
+
 	public string Name { get; }
 
 	public string DisplayName { get; }
@@ -32,9 +34,23 @@ public sealed class ProjectTreeItemViewModel : ViewModelBase
 		}
 	}
 
+	public bool IsLocked
+	{
+		get => _isLocked;
+		set
+		{
+			if (SetProperty(ref _isLocked, value))
+			{
+				LockChanged?.Invoke(this, EventArgs.Empty);
+			}
+		}
+	}
+
 	public IReadOnlyList<ProjectTreeItemViewModel> Children { get; }
 
 	public event EventHandler? VisibilityChanged;
+
+	public event EventHandler? LockChanged;
 
 	public ProjectTreeItemViewModel(
 		string name, 
@@ -42,6 +58,7 @@ public sealed class ProjectTreeItemViewModel : ViewModelBase
 		Guid? layerId = null,
 		bool isActive = false, 
 		bool isVisible = true,
+		bool isLocked = false,
 		IEnumerable<ProjectTreeItemViewModel>? children = null)
 	{
 		if (string.IsNullOrWhiteSpace(name))
@@ -61,6 +78,7 @@ public sealed class ProjectTreeItemViewModel : ViewModelBase
 		LayerId = layerId;
 		IsActive = isActive;
 		_isVisible = isVisible;
+		_isLocked = isLocked;
 		Children = children?.ToList() ?? new List<ProjectTreeItemViewModel>();
 		DisplayName = (isActive ? (name + " (active)") : name);
 	}

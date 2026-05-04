@@ -147,6 +147,11 @@
                                               IsVisible="{Binding IsLayer}"
                                               MinWidth="0" Padding="0"
                                               VerticalAlignment="Center"/>
+                                    <CheckBox IsChecked="{Binding IsLocked, Mode=TwoWay}"
+                                              IsVisible="{Binding IsLayer}"
+                                              Content="Lock"
+                                              MinWidth="0" Padding="0"
+                                              VerticalAlignment="Center"/>
                                     <TextBlock Text="{Binding DisplayName}"
                                                VerticalAlignment="Center"/>
                                 </StackPanel>

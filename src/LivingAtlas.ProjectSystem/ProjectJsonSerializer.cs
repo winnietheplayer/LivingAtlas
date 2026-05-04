@@ -148,6 +148,8 @@ public static class ProjectJsonSerializer
 
 		public bool IsVisible { get; init; } = true;
 
+		public bool IsLocked { get; init; }
+
 		public List<MapObjectDto> Objects { get; init; } = new List<MapObjectDto>();
 
 		public static MapLayerDto FromLayer(MapLayer layer)
@@ -158,13 +160,14 @@ public static class ProjectJsonSerializer
 				Name = layer.Name,
 				LayerType = layer.LayerType,
 				IsVisible = layer.IsVisible,
+				IsLocked = layer.IsLocked,
 				Objects = layer.Objects.Select(MapObjectDto.FromMapObject).ToList()
 			};
 		}
 
 		public MapLayer ToMapLayer()
 		{
-			MapLayer mapLayer = new MapLayer(Id, Name, LayerType, IsVisible);
+			MapLayer mapLayer = new MapLayer(Id, Name, LayerType, IsVisible, IsLocked);
 			foreach (MapObjectDto @object in Objects)
 			{
 				mapLayer.AddObject(@object.ToMapObject());
