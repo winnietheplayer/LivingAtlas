@@ -330,6 +330,28 @@ public partial class MainWindow : Window
         }
     }
 
+    private void MoveLayerUp_Click(object? sender, RoutedEventArgs e)
+    {
+        if (DataContext is not MainWindowViewModel viewModel
+            || sender is not Button { DataContext: ProjectTreeItemViewModel { MapId: Guid mapId, LayerId: Guid layerId } })
+        {
+            return;
+        }
+
+        viewModel.MoveLayerUp(mapId, layerId);
+    }
+
+    private void MoveLayerDown_Click(object? sender, RoutedEventArgs e)
+    {
+        if (DataContext is not MainWindowViewModel viewModel
+            || sender is not Button { DataContext: ProjectTreeItemViewModel { MapId: Guid mapId, LayerId: Guid layerId } })
+        {
+            return;
+        }
+
+        viewModel.MoveLayerDown(mapId, layerId);
+    }
+
     protected override void OnKeyDown(KeyEventArgs e)
     {
         if (TryHandleEditorKey(e))

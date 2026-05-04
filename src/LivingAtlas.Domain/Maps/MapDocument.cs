@@ -80,6 +80,34 @@ public sealed class MapDocument
 		return result;
 	}
 
+	public bool MoveLayerUp(Guid layerId)
+	{
+		int index = _layers.FindIndex(l => l.Id == layerId);
+		if (index < 0 || index >= _layers.Count - 1)
+		{
+			return false;
+		}
+
+		MapLayer layer = _layers[index];
+		_layers.RemoveAt(index);
+		_layers.Insert(index + 1, layer);
+		return true;
+	}
+
+	public bool MoveLayerDown(Guid layerId)
+	{
+		int index = _layers.FindIndex(l => l.Id == layerId);
+		if (index <= 0)
+		{
+			return false;
+		}
+
+		MapLayer layer = _layers[index];
+		_layers.RemoveAt(index);
+		_layers.Insert(index - 1, layer);
+		return true;
+	}
+
 	public void AddChildMapId(Guid childMapId)
 	{
 		if (childMapId == Guid.Empty)

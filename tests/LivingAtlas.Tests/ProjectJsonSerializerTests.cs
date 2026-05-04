@@ -172,6 +172,45 @@ public sealed class ProjectJsonSerializerTests
 		}
 	}
 
+	[Fact]
+	public async Task SaveAndLoadAsync_RoundTripsLayerOrder()
+	{
+		string tempFileName = Path.GetTempFileName();
+		try
+		{
+			MapDocument rootMap = TestData.CreateCityMap();
+			var layer1 = new MapLayer(Guid.NewGuid(), "Layer 1", MapLayerType.PointsOfInterest);
+			var layer2 = new MapLayer(Guid.NewGuid(), "Layer 2", MapLayerType.Streets);
+			rootMap.AddLayer(layer1);
+			rootMap.AddLayer(layer2);
+
+			CampaignMapProject project = TestData.CreateProject(rootMap);
+			
+			// Initial order: layer1, layer2
+			Assert.Equal(layer1.Id, rootMap.Layers[rootMap.Layers.Count - 2].Id);
+			Assert.Equal(layer2.Id, rootMap.Layers[rootMap.Layers.Count - 1].Id);
+
+			rootMap.MoveLayerDown(layer2.Id); // Move layer2 down (before layer1)
+			
+			await ProjectJsonSerializer.SaveAsync(project, tempFileName);
+			CampaignMapProject loaded = await ProjectJsonSerializer.LoadAsync(tempFileName);
+
+			var loadedLayers = loaded.RootMap.Layers;
+			// Find our test layers in the loaded list
+			int idx1 = loadedLayers.Select((l, i) => new { l, i }).First(x => x.l.Id == layer1.Id).i;
+			int idx2 = loadedLayers.Select((l, i) => new { l, i }).First(x => x.l.Id == layer2.Id).i;
+
+			Assert.Equal(idx1, idx2 + 1); // layer1 should be after layer2
+		}
+		finally
+		{
+			if (File.Exists(tempFileName))
+			{
+				File.Delete(tempFileName);
+			}
+		}
+	}
+
     private static (CampaignMapProject Project, MapDocument RootMap, Guid ChildMapId) CreateProjectWithHierarchy()
     {
         MapDocument rootMap = TestData.CreateCityMap();

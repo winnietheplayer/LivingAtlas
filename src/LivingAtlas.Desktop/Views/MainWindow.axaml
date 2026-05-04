@@ -161,6 +161,18 @@
                                               VerticalAlignment="Center"/>
                                     <TextBlock Text="{Binding DisplayName}"
                                                VerticalAlignment="Center"/>
+                                    <Button Content="↑"
+                                            IsVisible="{Binding IsLayer}"
+                                            Click="MoveLayerUp_Click"
+                                            Padding="4,1"
+                                            FontSize="11"
+                                            VerticalAlignment="Center"/>
+                                    <Button Content="↓"
+                                            IsVisible="{Binding IsLayer}"
+                                            Click="MoveLayerDown_Click"
+                                            Padding="4,1"
+                                            FontSize="11"
+                                            VerticalAlignment="Center"/>
                                 </StackPanel>
                             </TreeDataTemplate>
                         </TreeView.DataTemplates>

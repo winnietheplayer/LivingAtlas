@@ -54,8 +54,8 @@ public sealed class ProjectTreeViewModel : ViewModelBase
     {
         List<ProjectTreeItemViewModel> children = new List<ProjectTreeItemViewModel>();
 
-        // Add layers first
-        foreach (var layer in map.Layers)
+        // Add layers first (in reverse order so top layers appear at the top of the tree)
+        foreach (var layer in map.Layers.AsEnumerable().Reverse())
         {
             var layerItem = new ProjectTreeItemViewModel(
                 layer.Name,

@@ -512,6 +512,36 @@ public class MainWindowViewModel : ViewModelBase
 		return true;
 	}
 
+	public bool MoveLayerUp(Guid mapId, Guid layerId)
+	{
+		var map = Project.FindMap(mapId);
+		if (map == null || !map.MoveLayerUp(layerId))
+		{
+			return false;
+		}
+
+		MarkDirty();
+		ProjectTree = new ProjectTreeViewModel(Project, MapViewport.Map.Id);
+		MapViewport.RequestViewportRedraw();
+		StatusBar.SetMessage("Layer moved up");
+		return true;
+	}
+
+	public bool MoveLayerDown(Guid mapId, Guid layerId)
+	{
+		var map = Project.FindMap(mapId);
+		if (map == null || !map.MoveLayerDown(layerId))
+		{
+			return false;
+		}
+
+		MarkDirty();
+		ProjectTree = new ProjectTreeViewModel(Project, MapViewport.Map.Id);
+		MapViewport.RequestViewportRedraw();
+		StatusBar.SetMessage("Layer moved down");
+		return true;
+	}
+
 	private MapViewportViewModel GetOrCreateMapViewport(MapDocument map)
 	{
 		if (_mapViewportsByMapId.TryGetValue(map.Id, out MapViewportViewModel? value))
