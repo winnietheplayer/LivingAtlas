@@ -13,11 +13,11 @@ public sealed class MapDocument
 
 	public Guid Id { get; }
 
-	public string Name { get; }
+	public string Name { get; private set; }
 
-	public MapScaleType ScaleType { get; }
+	public MapScaleType ScaleType { get; private set; }
 
-	public SizeD RealSizeMeters { get; }
+	public SizeD RealSizeMeters { get; private set; }
 
 	public IReadOnlyList<MapLayer> Layers => _layers;
 
@@ -47,6 +47,29 @@ public sealed class MapDocument
 		RealSizeMeters = realSizeMeters;
 		ParentMapId = parentMapId;
 		GridSettings = gridSettings ?? GridSettings.Disabled;
+	}
+
+	public void Rename(string name)
+	{
+		if (string.IsNullOrWhiteSpace(name))
+		{
+			throw new ArgumentException("Map name cannot be empty.", "name");
+		}
+		Name = name.Trim();
+	}
+
+	public void SetScaleType(MapScaleType scaleType)
+	{
+		ScaleType = scaleType;
+	}
+
+	public void SetRealSize(SizeD realSize)
+	{
+		if (realSize.Width <= 0 || realSize.Height <= 0)
+		{
+			throw new ArgumentException("Map size must be positive.");
+		}
+		RealSizeMeters = realSize;
 	}
 
 	public void SetGridSettings(GridSettings gridSettings)

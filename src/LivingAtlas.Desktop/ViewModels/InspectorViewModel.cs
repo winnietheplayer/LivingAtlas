@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using LivingAtlas.Domain.Geometry;
 using LivingAtlas.Domain.Maps.Objects;
@@ -12,6 +13,10 @@ public sealed class InspectorViewModel : ViewModelBase
 	private string _editableName = string.Empty;
 
 	private string _editableLabelText = string.Empty;
+
+	private string _editableStyleKey = string.Empty;
+
+	private IReadOnlyList<string> _availableStylePresets = Array.Empty<string>();
 
 	private string _selectionDetails = "No selection";
 
@@ -53,6 +58,24 @@ public sealed class InspectorViewModel : ViewModelBase
 		{
 			SetProperty(ref _editableLabelText, value, "EditableLabelText");
 		}
+	}
+
+	public string EditableStyleKey
+	{
+		get
+		{
+			return _editableStyleKey;
+		}
+		set
+		{
+			SetProperty(ref _editableStyleKey, value, "EditableStyleKey");
+		}
+	}
+
+	public IReadOnlyList<string> AvailableStylePresets
+	{
+		get => _availableStylePresets;
+		private set => SetProperty(ref _availableStylePresets, value, nameof(AvailableStylePresets));
 	}
 
 	public string SelectionDetails
@@ -98,6 +121,8 @@ public sealed class InspectorViewModel : ViewModelBase
 		IsMapLabelSelected = selectedObject is MapLabel;
 		EditableName = selectedObject?.Name ?? string.Empty;
 		EditableLabelText = ((selectedObject is MapLabel mapLabel) ? mapLabel.Text : string.Empty);
+		EditableStyleKey = selectedObject?.StyleKey ?? string.Empty;
+		AvailableStylePresets = selectedObject != null ? LivingAtlas.Editor.Creation.MapObjectStylePresets.GetPresetsForType(selectedObject.ObjectType) : Array.Empty<string>();
 		SelectionDetails = ((selectedObject == null) ? "No selection" : FormatSelectionDetails(selectedObject));
 	}
 

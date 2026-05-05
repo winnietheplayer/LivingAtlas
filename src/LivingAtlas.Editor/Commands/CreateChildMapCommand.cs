@@ -23,6 +23,9 @@ public sealed class CreateChildMapCommand : IEditorCommand
         CampaignMapProject project,
         MapDocument parentMap,
         DistrictShape district,
+        string? customName = null,
+        SizeD? customSize = null,
+        MapScaleType? scaleType = null,
         Guid? childMapId = null)
     {
         ArgumentNullException.ThrowIfNull(project, nameof(project));
@@ -51,16 +54,19 @@ public sealed class CreateChildMapCommand : IEditorCommand
         _district = district;
 
         RectD boundingBox = GetBoundingBox(district.PolygonPoints);
+        SizeD size = customSize ?? boundingBox.Size;
+        string name = string.IsNullOrWhiteSpace(customName) ? district.Name : customName.Trim();
+        MapScaleType st = scaleType ?? MapScaleType.District;
 
         _childMap = new MapDocument(
             id,
-            district.Name,
-            MapScaleType.District,
-            boundingBox.Size,
+            name,
+            st,
+            size,
             parentMap.Id,
             parentMap.GridSettings);
 
-        AddStarterContent(_childMap, district, boundingBox);
+        AddStarterContent(_childMap, district, boundingBox, size);
     }
 
     public void Execute()
@@ -101,18 +107,22 @@ public sealed class CreateChildMapCommand : IEditorCommand
     private static void AddStarterContent(
         MapDocument childMap,
         DistrictShape district,
-        RectD parentBounds)
+        RectD parentBounds,
+        SizeD childMapSize)
     {
         MapLayer boundaryLayer = new MapLayer(
             Guid.NewGuid(),
             "Boundaries",
             MapLayerType.Districts);
 
+        double scaleX = parentBounds.Size.Width > 0 ? childMapSize.Width / parentBounds.Size.Width : 1.0;
+        double scaleY = parentBounds.Size.Height > 0 ? childMapSize.Height / parentBounds.Size.Height : 1.0;
+
         DistrictShape boundary = new DistrictShape(
             Guid.NewGuid(),
             district.Name + " Boundary",
             boundaryLayer.Id,
-            district.PolygonPoints.Select(point => ToChildPoint(point, parentBounds)),
+            district.PolygonPoints.Select(point => ToChildPoint(point, parentBounds, scaleX, scaleY)),
             new[] { "boundary" },
             "district.boundary");
 
@@ -139,11 +149,11 @@ public sealed class CreateChildMapCommand : IEditorCommand
         childMap.AddLayer(labelLayer);
     }
 
-    private static PointD ToChildPoint(PointD parentPoint, RectD parentBounds)
+    private static PointD ToChildPoint(PointD parentPoint, RectD parentBounds, double scaleX, double scaleY)
     {
         return new PointD(
-            parentPoint.X - parentBounds.Left,
-            parentPoint.Y - parentBounds.Top);
+            (parentPoint.X - parentBounds.Left) * scaleX,
+            (parentPoint.Y - parentBounds.Top) * scaleY);
     }
 
     private static RectD GetBoundingBox(IReadOnlyList<PointD> points)

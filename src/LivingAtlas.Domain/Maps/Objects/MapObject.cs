@@ -18,7 +18,7 @@ public abstract class MapObject
 
 	public IReadOnlyList<string> Tags => _tags;
 
-	public string StyleKey { get; }
+	public string StyleKey { get; private set; }
 
 	protected MapObject(Guid id, string name, MapObjectType objectType, Guid layerId, IEnumerable<string>? tags = null, string? styleKey = null)
 	{
@@ -49,6 +49,11 @@ public abstract class MapObject
 			throw new ArgumentException("Map object name cannot be empty.", "name");
 		}
 		Name = name.Trim();
+	}
+
+	public void SetStyleKey(string? styleKey)
+	{
+		StyleKey = styleKey?.Trim() ?? string.Empty;
 	}
 
 	private static IReadOnlyList<string> NormalizeTags(IEnumerable<string>? tags)

@@ -188,16 +188,35 @@ public partial class MainWindow : Window
         }
     }
 
-    private void CreateChildMapFromSelection_Click(object? sender, RoutedEventArgs e)
+    private async void CreateChildMapFromSelection_Click(object? sender, RoutedEventArgs e)
     {
         if (DataContext is not MainWindowViewModel viewModel)
         {
             return;
         }
 
-        if (viewModel.CreateChildMapFromSelection())
+        if (viewModel.MapViewport.SelectedObject is not LivingAtlas.Domain.Maps.Objects.DistrictShape district)
         {
-            RefreshProjectVisuals();
+            viewModel.StatusBar.SetMessage("Select a district to create a child map");
+            return;
+        }
+
+        if (district.ChildMapId.HasValue)
+        {
+            viewModel.StatusBar.SetMessage($"District '{district.Name}' already has a child map");
+            return;
+        }
+
+        var createViewModel = new CreateChildMapViewModel(district);
+        var dialog = new CreateChildMapDialog(createViewModel);
+        
+        var result = await dialog.ShowDialog<bool>(this);
+        if (result)
+        {
+            if (viewModel.CreateChildMapFromSelection(createViewModel))
+            {
+                RefreshProjectVisuals();
+            }
         }
     }
 
@@ -253,6 +272,19 @@ public partial class MainWindow : Window
         }
     }
 
+    private void Duplicate_Click(object? sender, RoutedEventArgs e)
+    {
+        if (DataContext is not MainWindowViewModel viewModel)
+        {
+            return;
+        }
+
+        if (viewModel.DuplicateSelectedObject())
+        {
+            RefreshProjectVisuals();
+        }
+    }
+
     private void Breadcrumb_Click(object? sender, RoutedEventArgs e)
     {
         if (DataContext is not MainWindowViewModel viewModel
@@ -263,6 +295,22 @@ public partial class MainWindow : Window
 
         if (viewModel.OpenMap(mapId))
         {
+            RefreshProjectVisuals();
+        }
+    }
+
+    private async void EditMapSettings_Click(object? sender, RoutedEventArgs e)
+    {
+        if (DataContext is not MainWindowViewModel viewModel) return;
+
+        var map = viewModel.MapViewport.Map;
+        var editViewModel = new EditMapSettingsViewModel(map);
+        var dialog = new EditMapSettingsDialog(editViewModel);
+        
+        var result = await dialog.ShowDialog<bool>(this);
+        if (result)
+        {
+            viewModel.UpdateMapSettings(map.Id, editViewModel);
             RefreshProjectVisuals();
         }
     }
@@ -470,6 +518,18 @@ public partial class MainWindow : Window
             return false;
         }
 
+        if (IsBackToParentHotkey(e))
+        {
+            if (viewModel.OpenParentMap())
+            {
+                RefreshProjectVisuals();
+                viewModel.SetStatusMessage("Back to parent map");
+            }
+
+            e.Handled = true;
+            return true;
+        }
+
         if (e.KeyModifiers == KeyModifiers.None
             && e.Key == Key.Enter
             && viewModel.MapViewport.ActiveTool == EditorToolType.Road)
@@ -510,16 +570,45 @@ public partial class MainWindow : Window
             return true;
         }
 
+        if (e.KeyModifiers == KeyModifiers.None && e.Key == Key.Enter)
+        {
+            // Don't intercept if drawing road/district
+            if (viewModel.MapViewport.ActiveTool == EditorToolType.Road || 
+                viewModel.MapViewport.ActiveTool == EditorToolType.District)
+            {
+                return false;
+            }
+
+            if (viewModel.OpenSelectedChildMap())
+            {
+                RefreshProjectVisuals();
+                e.Handled = true;
+                return true;
+            }
+        }
+
         if (e.KeyModifiers == KeyModifiers.None
             && (e.Key == Key.Delete || e.Key == Key.Back))
         {
             if (viewModel.MapViewport.DeleteSelectedObject())
             {
                 MapViewport.InvalidateVisual();
+                e.Handled = true;
+                return true;
+            }
+            
+            // If Backspace and nothing deleted, try zoom out
+            if (e.Key == Key.Back)
+            {
+                if (viewModel.OpenParentMap())
+                {
+                    RefreshProjectVisuals();
+                    e.Handled = true;
+                    return true;
+                }
             }
 
-            e.Handled = true;
-            return true;
+            // If we are here, it was Delete or Backspace but nothing happened
         }
 
         if (e.KeyModifiers == KeyModifiers.None && e.Key == Key.G)
@@ -543,6 +632,17 @@ public partial class MainWindow : Window
         if (e.KeyModifiers.HasFlag(KeyModifiers.Control) && e.Key == Key.Y)
         {
             if (viewModel.MapViewport.Redo())
+            {
+                MapViewport.InvalidateVisual();
+            }
+
+            e.Handled = true;
+            return true;
+        }
+
+        if (e.KeyModifiers.HasFlag(KeyModifiers.Control) && e.Key == Key.D)
+        {
+            if (viewModel.DuplicateSelectedObject())
             {
                 MapViewport.InvalidateVisual();
             }
@@ -575,6 +675,12 @@ public partial class MainWindow : Window
         SetActiveTool(tool.Value);
         e.Handled = true;
         return true;
+    }
+
+    private static bool IsBackToParentHotkey(KeyEventArgs e)
+    {
+        return (e.KeyModifiers == KeyModifiers.Alt && e.Key == Key.Left)
+            || ((e.KeyModifiers == KeyModifiers.None || e.KeyModifiers == KeyModifiers.Alt) && e.Key == Key.BrowserBack);
     }
 
     private void SetActiveTool(EditorToolType tool)

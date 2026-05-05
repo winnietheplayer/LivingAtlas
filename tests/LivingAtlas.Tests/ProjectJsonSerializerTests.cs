@@ -233,7 +233,7 @@ public sealed class ProjectJsonSerializerTests
         rootMap.AddLayer(labelsLayer);
 
         Guid childMapId = Guid.NewGuid();
-        new CreateChildMapCommand(project, rootMap, district, childMapId).Execute();
+        new CreateChildMapCommand(project, rootMap, district, childMapId: childMapId).Execute();
 
         return (project, rootMap, childMapId);
     }

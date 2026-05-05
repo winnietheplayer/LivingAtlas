@@ -19,9 +19,13 @@ public sealed class UpdateMapObjectPropertiesCommand : IEditorCommand
 
 	private readonly string? _newLabelText;
 
+	private readonly string _oldStyleKey;
+
+	private readonly string _newStyleKey;
+
 	public string Description => (_oldLabelText == null) ? ("Rename " + _oldName) : ("Update " + _oldName);
 
-	public UpdateMapObjectPropertiesCommand(MapDocument map, Guid objectId, string newName, string? newLabelText = null)
+	public UpdateMapObjectPropertiesCommand(MapDocument map, Guid objectId, string newName, string? newLabelText = null, string? newStyleKey = null)
 	{
 		ArgumentNullException.ThrowIfNull(map, "map");
 		if (objectId == Guid.Empty)
@@ -37,6 +41,8 @@ public sealed class UpdateMapObjectPropertiesCommand : IEditorCommand
 		MapObject mapObject = ResolveObject();
 		_oldName = mapObject.Name;
 		_newName = newName.Trim();
+		_oldStyleKey = mapObject.StyleKey;
+		_newStyleKey = (newStyleKey ?? mapObject.StyleKey).Trim();
 		if (newLabelText != null)
 		{
 			if (!(mapObject is MapLabel mapLabel))
@@ -54,18 +60,19 @@ public sealed class UpdateMapObjectPropertiesCommand : IEditorCommand
 
 	public void Execute()
 	{
-		Apply(_newName, _newLabelText);
+		Apply(_newName, _newLabelText, _newStyleKey);
 	}
 
 	public void Undo()
 	{
-		Apply(_oldName, _oldLabelText);
+		Apply(_oldName, _oldLabelText, _oldStyleKey);
 	}
 
-	private void Apply(string name, string? labelText)
+	private void Apply(string name, string? labelText, string styleKey)
 	{
 		MapObject mapObject = ResolveObject();
 		mapObject.Rename(name);
+		mapObject.SetStyleKey(styleKey);
 		if (labelText != null)
 		{
 			((MapLabel)mapObject).SetText(labelText);

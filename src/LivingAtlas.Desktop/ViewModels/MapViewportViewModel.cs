@@ -282,6 +282,30 @@ public sealed class MapViewportViewModel : ViewModelBase
 		return true;
 	}
 
+	public bool DuplicateSelectedObject()
+	{
+		if (SelectedObject == null)
+		{
+			StatusText = "No object selected";
+			return false;
+		}
+
+		try
+		{
+			DuplicateMapObjectCommand command = new DuplicateMapObjectCommand(Map, SelectedObject);
+			History.Execute(command);
+			SelectedObject = command.Duplicate;
+			StatusText = "Duplicated: " + command.Duplicate.Name;
+			NotifyProjectMutated();
+			return true;
+		}
+		catch (Exception ex)
+		{
+			StatusText = ex.Message;
+			return false;
+		}
+	}
+
 	public void ExecuteCommand(IEditorCommand command, string statusText)
 	{
 		ArgumentNullException.ThrowIfNull(command, "command");
@@ -343,6 +367,13 @@ public sealed class MapViewportViewModel : ViewModelBase
 		
 		RefreshStatus();
 		OnPropertyChanged("SelectedObject");
+		NotifyProjectMutated();
+	}
+
+	public void NotifyMapPropertiesChanged()
+	{
+		OnPropertyChanged(nameof(Map));
+		NotifyProjectMutated();
 	}
 
 	public void EndMoveSelectedObject()

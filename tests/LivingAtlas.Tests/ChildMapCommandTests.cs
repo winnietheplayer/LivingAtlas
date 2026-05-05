@@ -12,7 +12,7 @@ public sealed class ChildMapCommandTests
     {
         (CampaignMapProject project, MapDocument parentMap, DistrictShape district) = CreateProjectWithDistrict();
         Guid childMapId = Guid.NewGuid();
-        CreateChildMapCommand command = new CreateChildMapCommand(project, parentMap, district, childMapId);
+        CreateChildMapCommand command = new CreateChildMapCommand(project, parentMap, district, childMapId: childMapId);
 
         command.Execute();
 
@@ -30,7 +30,7 @@ public sealed class ChildMapCommandTests
     {
         (CampaignMapProject project, MapDocument parentMap, DistrictShape district) = CreateProjectWithDistrict();
         Guid childMapId = Guid.NewGuid();
-        CreateChildMapCommand command = new CreateChildMapCommand(project, parentMap, district, childMapId);
+        CreateChildMapCommand command = new CreateChildMapCommand(project, parentMap, district, childMapId: childMapId);
 
         command.Execute();
         command.Undo();

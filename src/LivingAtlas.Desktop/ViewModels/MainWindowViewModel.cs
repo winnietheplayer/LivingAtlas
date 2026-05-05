@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using LivingAtlas.Desktop.Services;
+using LivingAtlas.Domain.Geometry;
 using LivingAtlas.Domain.Maps;
 using LivingAtlas.Domain.Maps.Objects;
 using LivingAtlas.Domain.Projects;
@@ -248,7 +249,7 @@ public class MainWindowViewModel : ViewModelBase
 		return CreateChildMapFromSelection();
 	}
 
-	public bool CreateChildMapFromSelection()
+	public bool CreateChildMapFromSelection(CreateChildMapViewModel? settings = null)
 	{
 		if (!(MapViewport.SelectedObject is DistrictShape { ChildMapId: var childMapId } districtShape))
 		{
@@ -262,11 +263,23 @@ public class MainWindowViewModel : ViewModelBase
 		}
 		try
 		{
-			CreateChildMapCommand createChildMapCommand = new CreateChildMapCommand(Project, MapViewport.Map, districtShape);
-			MapViewport.ExecuteCommand(createChildMapCommand, "Created child map: " + createChildMapCommand.ChildMap.Name);
-			ProjectTree = new ProjectTreeViewModel(Project, MapViewport.Map.Id);
+			SizeD? customSize = (settings != null && settings.UseCustomSize) ? new SizeD(settings.Width, settings.Height) : null;
+			string? name = settings?.Name;
+			MapScaleType? scaleType = settings?.ScaleType;
+
+			CreateChildMapCommand command = new CreateChildMapCommand(Project, MapViewport.Map, districtShape, name, customSize, scaleType);
+			MapViewport.ExecuteCommand(command, "Created child map: " + command.ChildMap.Name);
+			
+			MarkDirty();
+			ProjectTree = new ProjectTreeViewModel(Project, MapViewport.Map.Id, GetActiveTargetLayer(MapViewport.Map.Id));
 			RefreshBreadcrumbs();
 			NotifyChildMapNavigationStateChanged();
+
+			if (settings?.OpenAfterCreation == true)
+			{
+				OpenMap(command.ChildMap.Id);
+			}
+
 			return true;
 		}
 		catch (Exception ex)
@@ -327,15 +340,20 @@ public class MainWindowViewModel : ViewModelBase
 		{
 			string text = Inspector.EditableName.Trim();
 			string? text2 = ((selectedObject is MapLabel) ? Inspector.EditableLabelText.Trim() : null);
+			string styleKey = Inspector.EditableStyleKey.Trim();
+
 			bool flag = !string.Equals(text, selectedObject.Name, StringComparison.Ordinal);
 			bool flag2 = selectedObject is MapLabel mapLabel && !string.Equals(text2, mapLabel.Text, StringComparison.Ordinal);
-			if (!flag && !flag2)
+			bool flag3 = !string.Equals(styleKey, selectedObject.StyleKey, StringComparison.Ordinal);
+
+			if (!flag && !flag2 && !flag3)
 			{
 				StatusBar.SetMessage("No inspector changes");
 				return false;
 			}
-			UpdateMapObjectPropertiesCommand command = new UpdateMapObjectPropertiesCommand(MapViewport.Map, selectedObject.Id, text, flag2 ? text2 : null);
+			UpdateMapObjectPropertiesCommand command = new UpdateMapObjectPropertiesCommand(MapViewport.Map, selectedObject.Id, text, flag2 ? text2 : null, flag3 ? styleKey : null);
 			MapViewport.ExecuteCommand(command, "Updated: " + text);
+			MapViewport.RequestViewportRedraw();
 			Inspector.SetSelection(MapViewport.SelectedObject);
 			return true;
 		}
@@ -344,6 +362,12 @@ public class MainWindowViewModel : ViewModelBase
 			StatusBar.SetMessage("Inspector apply failed: " + ex.Message);
 			return false;
 		}
+	}
+
+	public bool DuplicateSelectedObject()
+	{
+		if (MapViewport == null) return false;
+		return MapViewport.DuplicateSelectedObject();
 	}
 
 	public bool OpenMap(Guid mapId)
@@ -428,7 +452,13 @@ public class MainWindowViewModel : ViewModelBase
 		RefreshBreadcrumbs();
 		StatusBar.SetMessage(statusMessage ?? MapViewport.StatusText);
 		NotifyChildMapNavigationStateChanged();
+		UpdateStatusBarMapInfo();
 		OnPropertyChanged(nameof(IsSnapToGridEnabled));
+	}
+
+	private void UpdateStatusBarMapInfo()
+	{
+		StatusBar.SetMessage($"Map: {MapViewport.Map.Name} [{MapViewport.Map.ScaleType}]");
 	}
 
 	private void SaveCameraStateForCurrentMap()
@@ -514,6 +544,32 @@ public class MainWindowViewModel : ViewModelBase
 		ProjectTree = new ProjectTreeViewModel(Project, MapViewport.Map.Id, GetActiveTargetLayer(MapViewport.Map.Id));
 		StatusBar.SetMessage($"Layer renamed: {trimmedName}");
 		return true;
+	}
+
+	public void UpdateMapSettings(Guid mapId, EditMapSettingsViewModel settings)
+	{
+		var map = Project.FindMap(mapId);
+		if (map == null) return;
+
+		map.Rename(settings.Name);
+		map.SetScaleType(settings.ScaleType);
+		map.SetRealSize(new LivingAtlas.Domain.Geometry.SizeD(settings.Width, settings.Height));
+		map.SetGridSettings(new GridSettings(settings.GridEnabled, settings.GridCellSize, true, settings.SnapToGrid));
+
+		MarkDirty();
+		ProjectTree = new ProjectTreeViewModel(Project, MapViewport.Map.Id, GetActiveTargetLayer(MapViewport.Map.Id));
+		RefreshBreadcrumbs();
+		
+		if (map.Id == MapViewport.Map.Id)
+		{
+			MapViewport.NotifyMapPropertiesChanged();
+			OnPropertyChanged(nameof(WindowTitle));
+			UpdateStatusBarMapInfo();
+		}
+		else
+		{
+			StatusBar.SetMessage($"Map settings updated: {map.Name}");
+		}
 	}
 
 	public bool MoveLayerUp(Guid mapId, Guid layerId)

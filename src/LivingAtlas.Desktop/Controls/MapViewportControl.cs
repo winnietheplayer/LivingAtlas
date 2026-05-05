@@ -78,6 +78,14 @@ public sealed class MapViewportControl : Control
 
 	private static readonly Pen ChildPreviewPoiPen = new Pen(new SolidColorBrush(Color.FromArgb(190, 44, 50, 58)));
 
+	private readonly record struct DistrictVisualStyle(IBrush Fill, Pen Stroke);
+
+	private readonly record struct RoadVisualStyle(Pen Stroke);
+
+	private readonly record struct PoiVisualStyle(IBrush Fill, Pen Stroke, double Radius);
+
+	private readonly record struct LabelVisualStyle(IBrush Brush, double FontSize, FontWeight FontWeight);
+
 	private bool _isPointerDown;
 
 	private bool _isMovingObject;
@@ -429,6 +437,7 @@ public sealed class MapViewportControl : Control
 
 	private static void DrawDistrictShape(DrawingContext context, Camera2D camera, DistrictShape district, bool isSelected)
 	{
+		DistrictVisualStyle style = GetDistrictStyle(district.StyleKey);
 		StreamGeometry streamGeometry = new StreamGeometry();
 		using (StreamGeometryContext streamGeometryContext = streamGeometry.Open())
 		{
@@ -439,16 +448,24 @@ public sealed class MapViewportControl : Control
 			}
 			streamGeometryContext.EndFigure(isClosed: true);
 		}
-		context.DrawGeometry(DistrictFillBrush, isSelected ? SelectedDistrictPen : DistrictPen, streamGeometry);
+		context.DrawGeometry(style.Fill, style.Stroke, streamGeometry);
+		if (isSelected)
+		{
+			context.DrawGeometry(null, SelectedDistrictPen, streamGeometry);
+		}
 	}
 
 	private static void DrawRoadLine(DrawingContext context, Camera2D camera, RoadLine road, bool isSelected)
 	{
-		Pen pen = (isSelected ? SelectedRoadPen : RoadPen);
+		Pen pen = GetRoadStyle(road.StyleKey).Stroke;
 		for (int i = 1; i < road.Points.Count; i++)
 		{
 			Point p = ToAvaloniaPoint(camera.WorldToScreen(road.Points[i - 1]));
 			Point p2 = ToAvaloniaPoint(camera.WorldToScreen(road.Points[i]));
+			if (isSelected)
+			{
+				context.DrawLine(SelectedRoadPen, p, p2);
+			}
 			context.DrawLine(pen, p, p2);
 		}
 	}
@@ -649,24 +666,75 @@ public sealed class MapViewportControl : Control
 
 	private static void DrawPointOfInterest(DrawingContext context, Camera2D camera, PointOfInterest poi, bool isSelected)
 	{
+		PoiVisualStyle style = GetPoiStyle(poi.StyleKey);
 		Point center = ToAvaloniaPoint(camera.WorldToScreen(poi.Position));
 		if (isSelected)
 		{
-			context.DrawEllipse(null, SelectedPoiRingPen, center, 12.0, 12.0);
+			double selectedRadius = style.Radius + 5.0;
+			context.DrawEllipse(null, SelectedPoiRingPen, center, selectedRadius, selectedRadius);
 		}
-		context.DrawEllipse(PoiFillBrush, PoiPen, center, 7.0, 7.0);
+		context.DrawEllipse(style.Fill, style.Stroke, center, style.Radius, style.Radius);
 		DrawText(context, poi.Name, new Point(center.X + 12.0, center.Y - 8.0), 12.0, TextBrush);
 	}
 
 	private static void DrawMapLabel(DrawingContext context, Camera2D camera, MapLabel label, bool isSelected)
 	{
+		LabelVisualStyle style = GetLabelStyle(label.StyleKey);
 		Point origin = ToAvaloniaPoint(camera.WorldToScreen(label.Position));
 		if (isSelected)
 		{
-			int num = label.Text.Length * 10 + 8;
-			context.DrawRectangle(null, SelectedLabelPen, new Rect(origin.X - 4.0, origin.Y - 2.0, num, 26.0));
+			double width = label.Text.Length * style.FontSize * 0.62 + 8.0;
+			context.DrawRectangle(null, SelectedLabelPen, new Rect(origin.X - 4.0, origin.Y - 2.0, width, style.FontSize + 8.0));
 		}
-		DrawText(context, label.Text, origin, 18.0, LabelTextBrush, FontWeight.DemiBold);
+		DrawText(context, label.Text, origin, style.FontSize, style.Brush, style.FontWeight);
+	}
+
+	private static DistrictVisualStyle GetDistrictStyle(string styleKey)
+	{
+		return styleKey switch
+		{
+			"" or "district.default" => new DistrictVisualStyle(DistrictFillBrush, DistrictPen),
+			"district.old" => new DistrictVisualStyle(new SolidColorBrush(Color.FromArgb(64, 91, 124, 156)), new Pen(new SolidColorBrush(Color.FromRgb(116, 151, 184)), 2.0)),
+			"district.boundary" => new DistrictVisualStyle(new SolidColorBrush(Color.FromArgb(28, 166, 245, 213)), new Pen(new SolidColorBrush(Color.FromRgb(166, 245, 213)), 3.0)),
+			"district.industrial" => new DistrictVisualStyle(new SolidColorBrush(Color.FromArgb(78, 107, 117, 126)), new Pen(new SolidColorBrush(Color.FromRgb(168, 177, 184)), 2.0)),
+			"district.slums" => new DistrictVisualStyle(new SolidColorBrush(Color.FromArgb(72, 157, 119, 73)), new Pen(new SolidColorBrush(Color.FromRgb(207, 157, 88)), 2.0)),
+			_ => new DistrictVisualStyle(DistrictFillBrush, DistrictPen)
+		};
+	}
+
+	private static RoadVisualStyle GetRoadStyle(string styleKey)
+	{
+		return styleKey switch
+		{
+			"" or "road.primary" => new RoadVisualStyle(RoadPen),
+			"road.secondary" => new RoadVisualStyle(new Pen(new SolidColorBrush(Color.FromRgb(198, 185, 154)), 3.0)),
+			"road.alley" => new RoadVisualStyle(new Pen(new SolidColorBrush(Color.FromArgb(190, 168, 161, 142)), 1.5)),
+			_ => new RoadVisualStyle(RoadPen)
+		};
+	}
+
+	private static PoiVisualStyle GetPoiStyle(string styleKey)
+	{
+		return styleKey switch
+		{
+			"" or "poi.default" => new PoiVisualStyle(PoiFillBrush, PoiPen, 7.0),
+			"poi.gate" => new PoiVisualStyle(new SolidColorBrush(Color.FromRgb(111, 176, 225)), new Pen(new SolidColorBrush(Color.FromRgb(34, 48, 61)), 2.0), 8.0),
+			"poi.landmark" => new PoiVisualStyle(new SolidColorBrush(Color.FromRgb(136, 211, 154)), new Pen(new SolidColorBrush(Color.FromRgb(31, 58, 43)), 2.0), 9.0),
+			"poi.danger" => new PoiVisualStyle(new SolidColorBrush(Color.FromRgb(226, 101, 91)), new Pen(new SolidColorBrush(Color.FromRgb(66, 34, 34)), 2.0), 8.0),
+			_ => new PoiVisualStyle(PoiFillBrush, PoiPen, 7.0)
+		};
+	}
+
+	private static LabelVisualStyle GetLabelStyle(string styleKey)
+	{
+		return styleKey switch
+		{
+			"label.city" => new LabelVisualStyle(new SolidColorBrush(Color.FromRgb(248, 236, 197)), 26.0, FontWeight.Bold),
+			"" or "label.district" => new LabelVisualStyle(LabelTextBrush, 18.0, FontWeight.DemiBold),
+			"label.map-title" => new LabelVisualStyle(new SolidColorBrush(Color.FromRgb(245, 247, 250)), 30.0, FontWeight.Bold),
+			"label.note" => new LabelVisualStyle(new SolidColorBrush(Color.FromArgb(205, 209, 212, 218)), 14.0, FontWeight.Normal),
+			_ => new LabelVisualStyle(LabelTextBrush, 18.0, FontWeight.DemiBold)
+		};
 	}
 
 	private static Rect ToScreenRect(Camera2D camera, SizeD mapSizeMeters)
