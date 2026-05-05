@@ -1,0 +1,65 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:LivingAtlas.Desktop.ViewModels"
+        x:Class="LivingAtlas.Desktop.Views.ExportPngDialog"
+        x:DataType="vm:ExportPngViewModel"
+        Title="Export PNG"
+        Width="560"
+        Height="520"
+        MinWidth="560"
+        MinHeight="520"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False">
+
+    <Grid Margin="20" RowDefinitions="*,Auto">
+        <ScrollViewer Grid.Row="0">
+            <StackPanel Spacing="10">
+                <TextBlock Text="Output Path" FontWeight="SemiBold"/>
+                <Grid ColumnDefinitions="*,8,Auto">
+                    <TextBox Grid.Column="0"
+                             Text="{Binding OutputPath, Mode=TwoWay}"/>
+                    <Button Grid.Column="2"
+                            Content="Save As..."
+                            Click="Browse_Click"/>
+                </Grid>
+
+                <TextBlock Text="Resolution Scale" FontWeight="SemiBold"/>
+                <ComboBox ItemsSource="{Binding ResolutionScales}"
+                          SelectedItem="{Binding ResolutionScale, Mode=TwoWay}"
+                          HorizontalAlignment="Stretch"/>
+
+                <Separator Margin="0,8"/>
+
+                <CheckBox Content="Include Grid"
+                          IsChecked="{Binding IncludeGrid}"/>
+                <CheckBox Content="Include Labels"
+                          IsChecked="{Binding IncludeLabels}"/>
+                <CheckBox Content="Include POI"
+                          IsChecked="{Binding IncludePointsOfInterest}"/>
+                <CheckBox Content="Include Child Map Previews"
+                          IsChecked="{Binding IncludeChildMapPreviews}"/>
+                <CheckBox Content="Transparent Background"
+                          IsChecked="{Binding TransparentBackground}"/>
+
+                <TextBlock Text="{Binding ValidationMessage}"
+                           Foreground="Tomato"
+                           TextWrapping="Wrap"/>
+            </StackPanel>
+        </ScrollViewer>
+
+        <StackPanel Grid.Row="1"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Right"
+                    Spacing="10"
+                    Margin="0,16,0,0">
+            <Button Content="Cancel"
+                    IsCancel="True"
+                    Click="Cancel_Click"/>
+            <Button Content="Export"
+                    Classes="accent"
+                    IsDefault="True"
+                    IsEnabled="{Binding CanExport}"
+                    Click="Export_Click"/>
+        </StackPanel>
+    </Grid>
+</Window>
