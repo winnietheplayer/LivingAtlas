@@ -7,12 +7,16 @@ namespace LivingAtlas.Domain.Maps.Objects;
 
 public sealed class RoadLine : MapObject
 {
+	public const string DefaultRoadKind = "secondary";
+
 	private readonly List<PointD> _points;
 
 	public IReadOnlyList<PointD> Points => _points;
 
-	public RoadLine(Guid id, string name, Guid layerId, IEnumerable<PointD> points, IEnumerable<string>? tags = null, string? styleKey = null)
-		: base(id, name, MapObjectType.RoadLine, layerId, tags, styleKey)
+	public string RoadKind { get; private set; }
+
+	public RoadLine(Guid id, string name, Guid layerId, IEnumerable<PointD> points, IEnumerable<string>? tags = null, string? styleKey = null, string? description = null, string? roadKind = null)
+		: base(id, name, MapObjectType.RoadLine, layerId, tags, styleKey, description)
 	{
 		ArgumentNullException.ThrowIfNull(points, "points");
 		List<PointD> list = points.ToList();
@@ -21,6 +25,7 @@ public sealed class RoadLine : MapObject
 			throw new ArgumentException("Road line must contain at least two points.", "points");
 		}
 		_points = list;
+		RoadKind = NormalizeRoadKind(roadKind);
 	}
 
 	public void MoveBy(PointD delta)
@@ -57,11 +62,21 @@ public sealed class RoadLine : MapObject
 		_points.RemoveAt(index);
 	}
 
+	public void SetRoadKind(string? roadKind)
+	{
+		RoadKind = NormalizeRoadKind(roadKind);
+	}
+
 	private void ValidatePointIndex(int index)
 	{
 		if (index < 0 || index >= _points.Count)
 		{
 			throw new ArgumentOutOfRangeException("index", index, "Point index is outside the road point bounds.");
 		}
+	}
+
+	private static string NormalizeRoadKind(string? roadKind)
+	{
+		return string.IsNullOrWhiteSpace(roadKind) ? DefaultRoadKind : roadKind.Trim();
 	}
 }

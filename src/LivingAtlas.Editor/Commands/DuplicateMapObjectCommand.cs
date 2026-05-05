@@ -67,26 +67,26 @@ public sealed class DuplicateMapObjectCommand : IEditorCommand
         if (original is PointOfInterest poi)
         {
             PointD shiftedPos = new PointD(poi.Position.X + offset.X, poi.Position.Y + offset.Y);
-            return new PointOfInterest(newId, newName, poi.LayerId, shiftedPos, poi.IconKey, poi.Tags, poi.StyleKey);
+            return new PointOfInterest(newId, newName, poi.LayerId, shiftedPos, poi.IconKey, poi.Tags, poi.StyleKey, poi.Description, poi.Category);
         }
         
         if (original is MapLabel label)
         {
             PointD shiftedPos = new PointD(label.Position.X + offset.X, label.Position.Y + offset.Y);
-            return new MapLabel(newId, newName, label.LayerId, shiftedPos, label.Text, label.Tags, label.StyleKey);
+            return new MapLabel(newId, newName, label.LayerId, shiftedPos, label.Text, label.Tags, label.StyleKey, label.Description, label.LabelKind);
         }
         
         if (original is RoadLine road)
         {
             IEnumerable<PointD> shiftedPoints = road.Points.Select(p => new PointD(p.X + offset.X, p.Y + offset.Y)).ToList();
-            return new RoadLine(newId, newName, road.LayerId, shiftedPoints, road.Tags, road.StyleKey);
+            return new RoadLine(newId, newName, road.LayerId, shiftedPoints, road.Tags, road.StyleKey, road.Description, road.RoadKind);
         }
         
         if (original is DistrictShape district)
         {
             IEnumerable<PointD> shiftedPoints = district.PolygonPoints.Select(p => new PointD(p.X + offset.X, p.Y + offset.Y)).ToList();
             // ChildMapId MUST NOT be copied
-            return new DistrictShape(newId, newName, district.LayerId, shiftedPoints, district.Tags, district.StyleKey, null);
+            return new DistrictShape(newId, newName, district.LayerId, shiftedPoints, district.Tags, district.StyleKey, null, district.Description, district.DistrictKind);
         }
 
         throw new NotSupportedException($"Duplication is not supported for object type '{original.GetType().Name}'.");

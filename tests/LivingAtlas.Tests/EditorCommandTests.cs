@@ -105,4 +105,138 @@ public sealed class EditorCommandTests
         Assert.Equal("Updated Label", label.Name);
         Assert.Equal("Updated text", label.Text);
     }
+
+    [Fact]
+    public void UpdateMapObjectPropertiesCommand_UpdatesDescriptionWithUndoRedo()
+    {
+        MapDocument map = TestData.CreateCityMap();
+        MapLayer layer = TestData.CreateLayer();
+        PointOfInterest poi = TestData.CreatePointOfInterest(layer.Id);
+        HistoryService history = new HistoryService();
+
+        map.AddLayer(layer);
+        layer.AddObject(poi);
+        poi.SetDescription("Old notes");
+
+        history.Execute(new UpdateMapObjectPropertiesCommand(
+            map,
+            poi.Id,
+            poi.Name,
+            newDescription: "Line one\r\nLine two  "));
+
+        Assert.Equal("Line one\r\nLine two  ", poi.Description);
+
+        history.Undo();
+
+        Assert.Equal("Old notes", poi.Description);
+
+        history.Redo();
+
+        Assert.Equal("Line one\r\nLine two  ", poi.Description);
+    }
+
+    [Fact]
+    public void UpdateMapObjectPropertiesCommand_UpdatesPointOfInterestCategoryWithUndoRedo()
+    {
+        MapDocument map = TestData.CreateCityMap();
+        MapLayer layer = TestData.CreateLayer();
+        PointOfInterest poi = TestData.CreatePointOfInterest(layer.Id);
+        HistoryService history = new HistoryService();
+
+        map.AddLayer(layer);
+        layer.AddObject(poi);
+        poi.SetCategory("gate");
+
+        history.Execute(new UpdateMapObjectPropertiesCommand(
+            map,
+            poi.Id,
+            poi.Name,
+            newCategory: "landmark"));
+
+        Assert.Equal("landmark", poi.Category);
+
+        history.Undo();
+        Assert.Equal("gate", poi.Category);
+
+        history.Redo();
+        Assert.Equal("landmark", poi.Category);
+    }
+
+    [Fact]
+    public void UpdateMapObjectPropertiesCommand_UpdatesRoadKindWithUndoRedo()
+    {
+        MapDocument map = TestData.CreateCityMap();
+        MapLayer layer = TestData.CreateLayer(layerType: MapLayerType.Streets);
+        RoadLine road = TestData.CreateRoad(layer.Id);
+        HistoryService history = new HistoryService();
+
+        map.AddLayer(layer);
+        layer.AddObject(road);
+
+        history.Execute(new UpdateMapObjectPropertiesCommand(
+            map,
+            road.Id,
+            road.Name,
+            newRoadKind: "primary"));
+
+        Assert.Equal("primary", road.RoadKind);
+
+        history.Undo();
+        Assert.Equal(RoadLine.DefaultRoadKind, road.RoadKind);
+
+        history.Redo();
+        Assert.Equal("primary", road.RoadKind);
+    }
+
+    [Fact]
+    public void UpdateMapObjectPropertiesCommand_UpdatesDistrictKindWithUndoRedo()
+    {
+        MapDocument map = TestData.CreateCityMap();
+        MapLayer layer = TestData.CreateLayer(layerType: MapLayerType.Districts);
+        DistrictShape district = TestData.CreateDistrict(layer.Id);
+        HistoryService history = new HistoryService();
+
+        map.AddLayer(layer);
+        layer.AddObject(district);
+
+        history.Execute(new UpdateMapObjectPropertiesCommand(
+            map,
+            district.Id,
+            district.Name,
+            newDistrictKind: "market"));
+
+        Assert.Equal("market", district.DistrictKind);
+
+        history.Undo();
+        Assert.Equal(DistrictShape.DefaultDistrictKind, district.DistrictKind);
+
+        history.Redo();
+        Assert.Equal("market", district.DistrictKind);
+    }
+
+    [Fact]
+    public void UpdateMapObjectPropertiesCommand_UpdatesLabelKindWithUndoRedo()
+    {
+        MapDocument map = TestData.CreateCityMap();
+        MapLayer layer = TestData.CreateLayer(layerType: MapLayerType.Labels);
+        MapLabel label = TestData.CreateLabel(layer.Id);
+        HistoryService history = new HistoryService();
+
+        map.AddLayer(layer);
+        layer.AddObject(label);
+
+        history.Execute(new UpdateMapObjectPropertiesCommand(
+            map,
+            label.Id,
+            label.Name,
+            newLabelKind: "city"));
+
+        Assert.Equal("city", label.LabelKind);
+
+        history.Undo();
+        Assert.Equal(MapLabel.DefaultLabelKind, label.LabelKind);
+
+        history.Redo();
+        Assert.Equal("city", label.LabelKind);
+    }
 }

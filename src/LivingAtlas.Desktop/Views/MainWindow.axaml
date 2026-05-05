@@ -212,36 +212,85 @@
                     <TextBlock DockPanel.Dock="Top"
                                Text="Inspector"
                                FontWeight="SemiBold"/>
-                    <StackPanel Margin="0,12,0,0"
-                                Spacing="10">
-                        <TextBlock Text="Name"
-                                   FontWeight="SemiBold"/>
-                        <TextBox Text="{Binding Inspector.EditableName, Mode=TwoWay}"
-                                 IsEnabled="{Binding Inspector.HasSelection}"/>
-                        <TextBlock Text="Text"
-                                   FontWeight="SemiBold"
-                                   IsVisible="{Binding Inspector.IsMapLabelSelected}"/>
-                        <TextBox Text="{Binding Inspector.EditableLabelText, Mode=TwoWay}"
-                                 IsEnabled="{Binding Inspector.IsMapLabelSelected}"
-                                 IsVisible="{Binding Inspector.IsMapLabelSelected}"/>
-                        <TextBlock Text="Style Preset"
-                                   FontWeight="SemiBold"/>
-                        <ComboBox ItemsSource="{Binding Inspector.AvailableStylePresets}"
-                                  SelectedItem="{Binding Inspector.EditableStyleKey, Mode=TwoWay}"
-                                  IsEnabled="{Binding Inspector.HasSelection}"
-                                  HorizontalAlignment="Stretch"/>
-                        <Button Content="Apply"
-                                IsEnabled="{Binding Inspector.HasSelection}"
-                                Click="ApplyInspector_Click"/>
-                        <TextBlock Text="{Binding Inspector.SelectionDetails}"
-                                   TextWrapping="Wrap"/>
-                        <Button Content="{Binding SelectionChildMapActionText}"
-                                IsEnabled="{Binding CanUseSelectionChildMapAction}"
-                                Click="SelectionChildMapAction_Click"/>
-                        <Button Content="Back to Parent"
-                                IsEnabled="{Binding CanOpenParentMap}"
-                                Click="BackToParentMap_Click"/>
-                    </StackPanel>
+                    <ScrollViewer Margin="0,12,0,0">
+                        <StackPanel Spacing="10">
+                            <TextBlock Text="Basic"
+                                       FontWeight="SemiBold"/>
+                            <TextBlock Text="{Binding Inspector.ObjectTypeText}"
+                                       TextWrapping="Wrap"/>
+                            <TextBlock Text="{Binding Inspector.LayerText}"
+                                       TextWrapping="Wrap"/>
+                            <TextBlock Text="{Binding Inspector.TagsText}"
+                                       TextWrapping="Wrap"/>
+                            <TextBlock Text="Name"
+                                       FontWeight="SemiBold"/>
+                            <TextBox Text="{Binding Inspector.EditableName, Mode=TwoWay}"
+                                     IsEnabled="{Binding Inspector.HasSelection}"/>
+
+                            <TextBlock Text="Type"
+                                       FontWeight="SemiBold"/>
+                            <TextBlock Text="Text"
+                                       FontWeight="SemiBold"
+                                       IsVisible="{Binding Inspector.IsMapLabelSelected}"/>
+                            <TextBox Text="{Binding Inspector.EditableLabelText, Mode=TwoWay}"
+                                     IsEnabled="{Binding Inspector.IsMapLabelSelected}"
+                                     IsVisible="{Binding Inspector.IsMapLabelSelected}"/>
+                            <TextBlock Text="Category"
+                                       FontWeight="SemiBold"
+                                       IsVisible="{Binding Inspector.IsPointOfInterestSelected}"/>
+                            <TextBox Text="{Binding Inspector.EditableCategory, Mode=TwoWay}"
+                                     IsEnabled="{Binding Inspector.IsPointOfInterestSelected}"
+                                     IsVisible="{Binding Inspector.IsPointOfInterestSelected}"/>
+                            <TextBlock Text="Road Kind"
+                                       FontWeight="SemiBold"
+                                       IsVisible="{Binding Inspector.IsRoadLineSelected}"/>
+                            <TextBox Text="{Binding Inspector.EditableRoadKind, Mode=TwoWay}"
+                                     IsEnabled="{Binding Inspector.IsRoadLineSelected}"
+                                     IsVisible="{Binding Inspector.IsRoadLineSelected}"/>
+                            <TextBlock Text="District Kind"
+                                       FontWeight="SemiBold"
+                                       IsVisible="{Binding Inspector.IsDistrictShapeSelected}"/>
+                            <TextBox Text="{Binding Inspector.EditableDistrictKind, Mode=TwoWay}"
+                                     IsEnabled="{Binding Inspector.IsDistrictShapeSelected}"
+                                     IsVisible="{Binding Inspector.IsDistrictShapeSelected}"/>
+                            <TextBlock Text="Label Kind"
+                                       FontWeight="SemiBold"
+                                       IsVisible="{Binding Inspector.IsMapLabelSelected}"/>
+                            <TextBox Text="{Binding Inspector.EditableLabelKind, Mode=TwoWay}"
+                                     IsEnabled="{Binding Inspector.IsMapLabelSelected}"
+                                     IsVisible="{Binding Inspector.IsMapLabelSelected}"/>
+
+                            <TextBlock Text="Style"
+                                       FontWeight="SemiBold"/>
+                            <ComboBox ItemsSource="{Binding Inspector.AvailableStylePresets}"
+                                      SelectedItem="{Binding Inspector.EditableStyleKey, Mode=TwoWay}"
+                                      IsEnabled="{Binding Inspector.HasSelection}"
+                                      HorizontalAlignment="Stretch"/>
+
+                            <TextBlock Text="Notes"
+                                       FontWeight="SemiBold"/>
+                            <TextBox Text="{Binding Inspector.EditableDescription, Mode=TwoWay}"
+                                     IsEnabled="{Binding Inspector.HasSelection}"
+                                     AcceptsReturn="True"
+                                     TextWrapping="Wrap"
+                                     MinHeight="96"/>
+
+                            <Button Content="Apply"
+                                    IsEnabled="{Binding Inspector.HasSelection}"
+                                    Click="ApplyInspector_Click"/>
+
+                            <TextBlock Text="Geometry"
+                                       FontWeight="SemiBold"/>
+                            <TextBlock Text="{Binding Inspector.SelectionDetails}"
+                                       TextWrapping="Wrap"/>
+                            <Button Content="{Binding SelectionChildMapActionText}"
+                                    IsEnabled="{Binding CanUseSelectionChildMapAction}"
+                                    Click="SelectionChildMapAction_Click"/>
+                            <Button Content="Back to Parent"
+                                    IsEnabled="{Binding CanOpenParentMap}"
+                                    Click="BackToParentMap_Click"/>
+                        </StackPanel>
+                    </ScrollViewer>
                 </DockPanel>
             </Border>
         </Grid>

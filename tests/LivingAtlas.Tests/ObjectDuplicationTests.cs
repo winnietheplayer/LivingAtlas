@@ -25,6 +25,8 @@ public class ObjectDuplicationTests
     public void DuplicatePointOfInterest_CreatesNewObjectWithShiftedPosition()
     {
         var original = new PointOfInterest(Guid.NewGuid(), "Original POI", _layer.Id, new PointD(100, 100), "icon");
+        original.SetDescription("POI notes");
+        original.SetCategory("landmark");
         _layer.AddObject(original);
 
         var command = new DuplicateMapObjectCommand(_map, original);
@@ -35,12 +37,16 @@ public class ObjectDuplicationTests
         Assert.Equal("Original POI Copy", duplicate.Name);
         Assert.Equal(original.LayerId, duplicate.LayerId);
         Assert.Equal(new PointD(120, 120), duplicate.Position); // Default offset is 20, 20
+        Assert.Equal("POI notes", duplicate.Description);
+        Assert.Equal("landmark", duplicate.Category);
     }
 
     [Fact]
     public void DuplicateMapLabel_CopiesTextAndShiftsPosition()
     {
         var original = new MapLabel(Guid.NewGuid(), "Original Label", _layer.Id, new PointD(100, 100), "Hello");
+        original.SetDescription("Label notes");
+        original.SetLabelKind("city");
         _layer.AddObject(original);
 
         var command = new DuplicateMapObjectCommand(_map, original);
@@ -49,6 +55,8 @@ public class ObjectDuplicationTests
         var duplicate = (MapLabel)command.Duplicate;
         Assert.Equal("Hello", duplicate.Text);
         Assert.Equal(new PointD(120, 120), duplicate.Position);
+        Assert.Equal("Label notes", duplicate.Description);
+        Assert.Equal("city", duplicate.LabelKind);
     }
 
     [Fact]
@@ -56,6 +64,8 @@ public class ObjectDuplicationTests
     {
         var originalPoints = new[] { new PointD(10, 10), new PointD(20, 20) };
         var original = new RoadLine(Guid.NewGuid(), "Original Road", _layer.Id, originalPoints);
+        original.SetDescription("Road notes");
+        original.SetRoadKind("alley");
         _layer.AddObject(original);
 
         var command = new DuplicateMapObjectCommand(_map, original);
@@ -65,6 +75,8 @@ public class ObjectDuplicationTests
         Assert.Equal(2, duplicate.Points.Count);
         Assert.Equal(new PointD(30, 30), duplicate.Points[0]);
         Assert.Equal(new PointD(40, 40), duplicate.Points[1]);
+        Assert.Equal("Road notes", duplicate.Description);
+        Assert.Equal("alley", duplicate.RoadKind);
     }
 
     [Fact]
@@ -72,6 +84,8 @@ public class ObjectDuplicationTests
     {
         var originalPoints = new[] { new PointD(0, 0), new PointD(10, 0), new PointD(0, 10) };
         var original = new DistrictShape(Guid.NewGuid(), "Original District", _layer.Id, originalPoints, childMapId: Guid.NewGuid());
+        original.SetDescription("District notes");
+        original.SetDistrictKind("industrial");
         _layer.AddObject(original);
 
         var command = new DuplicateMapObjectCommand(_map, original);
@@ -80,6 +94,8 @@ public class ObjectDuplicationTests
         var duplicate = (DistrictShape)command.Duplicate;
         Assert.Null(duplicate.ChildMapId);
         Assert.Equal(new PointD(20, 20), duplicate.PolygonPoints[0]);
+        Assert.Equal("District notes", duplicate.Description);
+        Assert.Equal("industrial", duplicate.DistrictKind);
     }
 
     [Fact]

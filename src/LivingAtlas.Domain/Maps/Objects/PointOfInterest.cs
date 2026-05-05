@@ -10,8 +10,10 @@ public sealed class PointOfInterest : MapObject
 
 	public string IconKey { get; }
 
-	public PointOfInterest(Guid id, string name, Guid layerId, PointD position, string iconKey, IEnumerable<string>? tags = null, string? styleKey = null)
-		: base(id, name, MapObjectType.PointOfInterest, layerId, tags, styleKey)
+	public string Category { get; private set; }
+
+	public PointOfInterest(Guid id, string name, Guid layerId, PointD position, string iconKey, IEnumerable<string>? tags = null, string? styleKey = null, string? description = null, string? category = null)
+		: base(id, name, MapObjectType.PointOfInterest, layerId, tags, styleKey, description)
 	{
 		if (string.IsNullOrWhiteSpace(iconKey))
 		{
@@ -19,10 +21,16 @@ public sealed class PointOfInterest : MapObject
 		}
 		Position = position;
 		IconKey = iconKey;
+		Category = category ?? string.Empty;
 	}
 
 	public void MoveBy(PointD delta)
 	{
 		Position = new PointD(Position.X + delta.X, Position.Y + delta.Y);
+	}
+
+	public void SetCategory(string? category)
+	{
+		Category = category ?? string.Empty;
 	}
 }

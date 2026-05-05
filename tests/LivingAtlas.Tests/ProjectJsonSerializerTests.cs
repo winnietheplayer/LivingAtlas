@@ -64,6 +64,172 @@ public sealed class ProjectJsonSerializerTests
     }
 
 	[Fact]
+	public async Task SaveAndLoadAsync_RoundTripsObjectDescription()
+	{
+		string tempFileName = Path.GetTempFileName();
+		try
+		{
+			MapDocument rootMap = TestData.CreateCityMap();
+			MapLayer layer = TestData.CreateLayer(layerType: MapLayerType.PointsOfInterest);
+			PointOfInterest poi = TestData.CreatePointOfInterest(layer.Id);
+			poi.SetDescription("First line\r\nSecond line  ");
+			layer.AddObject(poi);
+			rootMap.AddLayer(layer);
+			CampaignMapProject project = TestData.CreateProject(rootMap);
+
+			await ProjectJsonSerializer.SaveAsync(project, tempFileName);
+
+			CampaignMapProject loaded = await ProjectJsonSerializer.LoadAsync(tempFileName);
+			PointOfInterest loadedPoi = Assert.IsType<PointOfInterest>(
+				loaded.RootMap.Layers.Single(l => l.Id == layer.Id).Objects.Single());
+			Assert.Equal("First line\r\nSecond line  ", loadedPoi.Description);
+		}
+		finally
+		{
+			if (File.Exists(tempFileName))
+			{
+				File.Delete(tempFileName);
+			}
+		}
+	}
+
+	[Fact]
+	public async Task SaveAndLoadAsync_RoundTripsTypeSpecificObjectProperties()
+	{
+		string tempFileName = Path.GetTempFileName();
+		try
+		{
+			MapDocument rootMap = TestData.CreateCityMap();
+			MapLayer districtsLayer = TestData.CreateLayer(layerType: MapLayerType.Districts);
+			MapLayer roadsLayer = TestData.CreateLayer(layerType: MapLayerType.Streets);
+			MapLayer poiLayer = TestData.CreateLayer(layerType: MapLayerType.PointsOfInterest);
+			MapLayer labelsLayer = TestData.CreateLayer(layerType: MapLayerType.Labels);
+			DistrictShape district = TestData.CreateDistrict(districtsLayer.Id);
+			RoadLine road = TestData.CreateRoad(roadsLayer.Id);
+			PointOfInterest poi = TestData.CreatePointOfInterest(poiLayer.Id);
+			MapLabel label = TestData.CreateLabel(labelsLayer.Id);
+
+			district.SetDistrictKind("market");
+			road.SetRoadKind("primary");
+			poi.SetCategory("landmark");
+			label.SetLabelKind("map-title");
+			districtsLayer.AddObject(district);
+			roadsLayer.AddObject(road);
+			poiLayer.AddObject(poi);
+			labelsLayer.AddObject(label);
+			rootMap.AddLayer(districtsLayer);
+			rootMap.AddLayer(roadsLayer);
+			rootMap.AddLayer(poiLayer);
+			rootMap.AddLayer(labelsLayer);
+			CampaignMapProject project = TestData.CreateProject(rootMap);
+
+			await ProjectJsonSerializer.SaveAsync(project, tempFileName);
+
+			CampaignMapProject loaded = await ProjectJsonSerializer.LoadAsync(tempFileName);
+			DistrictShape loadedDistrict = Assert.IsType<DistrictShape>(
+				loaded.RootMap.Layers.Single(l => l.Id == districtsLayer.Id).Objects.Single());
+			RoadLine loadedRoad = Assert.IsType<RoadLine>(
+				loaded.RootMap.Layers.Single(l => l.Id == roadsLayer.Id).Objects.Single());
+			PointOfInterest loadedPoi = Assert.IsType<PointOfInterest>(
+				loaded.RootMap.Layers.Single(l => l.Id == poiLayer.Id).Objects.Single());
+			MapLabel loadedLabel = Assert.IsType<MapLabel>(
+				loaded.RootMap.Layers.Single(l => l.Id == labelsLayer.Id).Objects.Single());
+
+			Assert.Equal("market", loadedDistrict.DistrictKind);
+			Assert.Equal("primary", loadedRoad.RoadKind);
+			Assert.Equal("landmark", loadedPoi.Category);
+			Assert.Equal("map-title", loadedLabel.LabelKind);
+		}
+		finally
+		{
+			if (File.Exists(tempFileName))
+			{
+				File.Delete(tempFileName);
+			}
+		}
+	}
+
+	[Fact]
+	public async Task LoadAsync_OldJsonWithoutDescription_LoadsEmptyDescription()
+	{
+		string tempFileName = Path.GetTempFileName();
+		Guid projectId = Guid.NewGuid();
+		Guid mapId = Guid.NewGuid();
+		Guid layerId = Guid.NewGuid();
+		Guid objectId = Guid.NewGuid();
+		try
+		{
+			string json = $$"""
+			{
+			  "id": "{{projectId}}",
+			  "name": "Old Project",
+			  "rootMapId": "{{mapId}}",
+			  "maps": [
+			    {
+			      "id": "{{mapId}}",
+			      "name": "Old Map",
+			      "scaleType": "City",
+			      "realSizeMeters": {
+			        "width": 2600.0,
+			        "height": 1800.0
+			      },
+			      "parentMapId": null,
+			      "gridSettings": {
+			        "isEnabled": true,
+			        "cellSizeMeters": 10.0,
+			        "showGrid": true,
+			        "snapToGrid": false
+			      },
+			      "layers": [
+			        {
+			          "id": "{{layerId}}",
+			          "name": "POI",
+			          "layerType": "PointsOfInterest",
+			          "isVisible": true,
+			          "isLocked": false,
+			          "objects": [
+			            {
+			              "id": "{{objectId}}",
+			              "name": "Gate",
+			              "objectType": "PointOfInterest",
+			              "layerId": "{{layerId}}",
+			              "tags": [],
+			              "styleKey": "poi.gate",
+			              "points": [],
+			              "position": {
+			                "x": 100.0,
+			                "y": 200.0
+			              },
+			              "iconKey": "gate",
+			              "childMapId": null
+			            }
+			          ]
+			        }
+			      ],
+			      "childrenMapIds": []
+			    }
+			  ]
+			}
+			""";
+
+			await File.WriteAllTextAsync(tempFileName, json);
+
+			CampaignMapProject loaded = await ProjectJsonSerializer.LoadAsync(tempFileName);
+			PointOfInterest loadedPoi = Assert.IsType<PointOfInterest>(
+				loaded.RootMap.Layers.Single().Objects.Single());
+			Assert.Equal(string.Empty, loadedPoi.Description);
+			Assert.Equal(string.Empty, loadedPoi.Category);
+		}
+		finally
+		{
+			if (File.Exists(tempFileName))
+			{
+				File.Delete(tempFileName);
+			}
+		}
+	}
+
+	[Fact]
 	public async Task SaveAndLoadAsync_RoundTripsGridSettings()
 	{
 		string tempFileName = Path.GetTempFileName();

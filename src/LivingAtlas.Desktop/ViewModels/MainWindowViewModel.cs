@@ -341,18 +341,59 @@ public class MainWindowViewModel : ViewModelBase
 			string text = Inspector.EditableName.Trim();
 			string? text2 = ((selectedObject is MapLabel) ? Inspector.EditableLabelText.Trim() : null);
 			string styleKey = Inspector.EditableStyleKey.Trim();
+			string description = Inspector.EditableDescription;
 
 			bool flag = !string.Equals(text, selectedObject.Name, StringComparison.Ordinal);
 			bool flag2 = selectedObject is MapLabel mapLabel && !string.Equals(text2, mapLabel.Text, StringComparison.Ordinal);
 			bool flag3 = !string.Equals(styleKey, selectedObject.StyleKey, StringComparison.Ordinal);
+			bool flag4 = !string.Equals(description, selectedObject.Description, StringComparison.Ordinal);
+			string? category = null;
+			string? roadKind = null;
+			string? districtKind = null;
+			string? labelKind = null;
+			bool flag5 = false;
+			bool flag6 = false;
+			bool flag7 = false;
+			bool flag8 = false;
 
-			if (!flag && !flag2 && !flag3)
+			if (selectedObject is PointOfInterest pointOfInterest)
+			{
+				category = Inspector.EditableCategory;
+				flag5 = !string.Equals(category, pointOfInterest.Category, StringComparison.Ordinal);
+			}
+			else if (selectedObject is RoadLine roadLine)
+			{
+				roadKind = NormalizeRoadKind(Inspector.EditableRoadKind);
+				flag6 = !string.Equals(roadKind, roadLine.RoadKind, StringComparison.Ordinal);
+			}
+			else if (selectedObject is DistrictShape districtShape)
+			{
+				districtKind = NormalizeDistrictKind(Inspector.EditableDistrictKind);
+				flag7 = !string.Equals(districtKind, districtShape.DistrictKind, StringComparison.Ordinal);
+			}
+			else if (selectedObject is MapLabel label)
+			{
+				labelKind = NormalizeLabelKind(Inspector.EditableLabelKind);
+				flag8 = !string.Equals(labelKind, label.LabelKind, StringComparison.Ordinal);
+			}
+
+			if (!flag && !flag2 && !flag3 && !flag4 && !flag5 && !flag6 && !flag7 && !flag8)
 			{
 				StatusBar.SetMessage("No inspector changes");
 				return false;
 			}
-			UpdateMapObjectPropertiesCommand command = new UpdateMapObjectPropertiesCommand(MapViewport.Map, selectedObject.Id, text, flag2 ? text2 : null, flag3 ? styleKey : null);
-			MapViewport.ExecuteCommand(command, "Updated: " + text);
+			UpdateMapObjectPropertiesCommand command = new UpdateMapObjectPropertiesCommand(
+				MapViewport.Map,
+				selectedObject.Id,
+				text,
+				flag2 ? text2 : null,
+				flag3 ? styleKey : null,
+				flag4 ? description : null,
+				newCategory: flag5 ? category : null,
+				newRoadKind: flag6 ? roadKind : null,
+				newDistrictKind: flag7 ? districtKind : null,
+				newLabelKind: flag8 ? labelKind : null);
+			MapViewport.ExecuteCommand(command, "Object updated: " + text);
 			MapViewport.RequestViewportRedraw();
 			Inspector.SetSelection(MapViewport.SelectedObject);
 			return true;
@@ -362,6 +403,21 @@ public class MainWindowViewModel : ViewModelBase
 			StatusBar.SetMessage("Inspector apply failed: " + ex.Message);
 			return false;
 		}
+	}
+
+	private static string NormalizeRoadKind(string? roadKind)
+	{
+		return string.IsNullOrWhiteSpace(roadKind) ? RoadLine.DefaultRoadKind : roadKind.Trim();
+	}
+
+	private static string NormalizeDistrictKind(string? districtKind)
+	{
+		return string.IsNullOrWhiteSpace(districtKind) ? DistrictShape.DefaultDistrictKind : districtKind.Trim();
+	}
+
+	private static string NormalizeLabelKind(string? labelKind)
+	{
+		return string.IsNullOrWhiteSpace(labelKind) ? MapLabel.DefaultLabelKind : labelKind.Trim();
 	}
 
 	public bool DuplicateSelectedObject()

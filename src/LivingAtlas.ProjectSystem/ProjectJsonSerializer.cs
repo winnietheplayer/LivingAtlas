@@ -190,6 +190,16 @@ public static class ProjectJsonSerializer
 
 		public string StyleKey { get; init; } = string.Empty;
 
+		public string? Description { get; init; }
+
+		public string? Category { get; init; }
+
+		public string? RoadKind { get; init; }
+
+		public string? DistrictKind { get; init; }
+
+		public string? LabelKind { get; init; }
+
 		public List<PointDto> Points { get; init; } = new List<PointDto>();
 
 		public PointDto? Position { get; init; }
@@ -207,21 +217,25 @@ public static class ProjectJsonSerializer
 				DistrictShape districtShape => CreateBase(mapObject)with
 				{
 					Points = districtShape.PolygonPoints.Select(PointDto.FromPoint).ToList(),
-					ChildMapId = districtShape.ChildMapId
+					ChildMapId = districtShape.ChildMapId,
+					DistrictKind = districtShape.DistrictKind
 				},
 				RoadLine roadLine => CreateBase(mapObject)with
 				{
-					Points = roadLine.Points.Select(PointDto.FromPoint).ToList()
+					Points = roadLine.Points.Select(PointDto.FromPoint).ToList(),
+					RoadKind = roadLine.RoadKind
 				},
 				MapLabel mapLabel => CreateBase(mapObject)with
 				{
 					Position = PointDto.FromPoint(mapLabel.Position),
-					Text = mapLabel.Text
+					Text = mapLabel.Text,
+					LabelKind = mapLabel.LabelKind
 				},
 				PointOfInterest pointOfInterest => CreateBase(mapObject)with
 				{
 					Position = PointDto.FromPoint(pointOfInterest.Position),
-					IconKey = pointOfInterest.IconKey
+					IconKey = pointOfInterest.IconKey,
+					Category = pointOfInterest.Category
 				},
 				_ => throw new NotSupportedException("Unsupported map object type '" + mapObject.GetType().Name + "'.")
 			};
@@ -235,7 +249,8 @@ public static class ProjectJsonSerializer
 					ObjectType = mapObject2.ObjectType,
 					LayerId = mapObject2.LayerId,
 					Tags = mapObject2.Tags.ToList(),
-					StyleKey = mapObject2.StyleKey
+					StyleKey = mapObject2.StyleKey,
+					Description = mapObject2.Description
 				};
 			}
 		}
@@ -244,10 +259,10 @@ public static class ProjectJsonSerializer
 		{
 			return ObjectType switch
 			{
-				MapObjectType.DistrictShape => new DistrictShape(Id, Name, LayerId, Points.Select((PointDto point) => point.ToPointD()), Tags, StyleKey, ChildMapId), 
-				MapObjectType.RoadLine => new RoadLine(Id, Name, LayerId, Points.Select((PointDto point) => point.ToPointD()), Tags, StyleKey), 
-				MapObjectType.MapLabel => new MapLabel(Id, Name, LayerId, RequirePosition().ToPointD(), RequireText(), Tags, StyleKey), 
-				MapObjectType.PointOfInterest => new PointOfInterest(Id, Name, LayerId, RequirePosition().ToPointD(), RequireIconKey(), Tags, StyleKey), 
+				MapObjectType.DistrictShape => new DistrictShape(Id, Name, LayerId, Points.Select((PointDto point) => point.ToPointD()), Tags, StyleKey, ChildMapId, Description, DistrictKind), 
+				MapObjectType.RoadLine => new RoadLine(Id, Name, LayerId, Points.Select((PointDto point) => point.ToPointD()), Tags, StyleKey, Description, RoadKind), 
+				MapObjectType.MapLabel => new MapLabel(Id, Name, LayerId, RequirePosition().ToPointD(), RequireText(), Tags, StyleKey, Description, LabelKind), 
+				MapObjectType.PointOfInterest => new PointOfInterest(Id, Name, LayerId, RequirePosition().ToPointD(), RequireIconKey(), Tags, StyleKey, Description, Category), 
 				_ => throw new NotSupportedException($"Unsupported map object type '{ObjectType}'."), 
 			};
 		}

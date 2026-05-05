@@ -7,14 +7,18 @@ namespace LivingAtlas.Domain.Maps.Objects;
 
 public sealed class DistrictShape : MapObject
 {
+	public const string DefaultDistrictKind = "generic";
+
 	private readonly List<PointD> _polygonPoints;
 
 	public IReadOnlyList<PointD> PolygonPoints => _polygonPoints;
 
 	public Guid? ChildMapId { get; private set; }
 
-	public DistrictShape(Guid id, string name, Guid layerId, IEnumerable<PointD> polygonPoints, IEnumerable<string>? tags = null, string? styleKey = null, Guid? childMapId = null)
-		: base(id, name, MapObjectType.DistrictShape, layerId, tags, styleKey)
+	public string DistrictKind { get; private set; }
+
+	public DistrictShape(Guid id, string name, Guid layerId, IEnumerable<PointD> polygonPoints, IEnumerable<string>? tags = null, string? styleKey = null, Guid? childMapId = null, string? description = null, string? districtKind = null)
+		: base(id, name, MapObjectType.DistrictShape, layerId, tags, styleKey, description)
 	{
 		ArgumentNullException.ThrowIfNull(polygonPoints, "polygonPoints");
 		if (childMapId == Guid.Empty)
@@ -28,6 +32,7 @@ public sealed class DistrictShape : MapObject
 		}
 		_polygonPoints = list;
 		ChildMapId = childMapId;
+		DistrictKind = NormalizeDistrictKind(districtKind);
 	}
 
 	public void SetChildMapId(Guid? childMapId)
@@ -73,11 +78,21 @@ public sealed class DistrictShape : MapObject
 		_polygonPoints.RemoveAt(index);
 	}
 
+	public void SetDistrictKind(string? districtKind)
+	{
+		DistrictKind = NormalizeDistrictKind(districtKind);
+	}
+
 	private void ValidatePointIndex(int index)
 	{
 		if (index < 0 || index >= _polygonPoints.Count)
 		{
 			throw new ArgumentOutOfRangeException("index", index, "Point index is outside the district polygon point bounds.");
 		}
+	}
+
+	private static string NormalizeDistrictKind(string? districtKind)
+	{
+		return string.IsNullOrWhiteSpace(districtKind) ? DefaultDistrictKind : districtKind.Trim();
 	}
 }

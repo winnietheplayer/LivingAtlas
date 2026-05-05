@@ -20,7 +20,9 @@ public abstract class MapObject
 
 	public string StyleKey { get; private set; }
 
-	protected MapObject(Guid id, string name, MapObjectType objectType, Guid layerId, IEnumerable<string>? tags = null, string? styleKey = null)
+	public string Description { get; private set; }
+
+	protected MapObject(Guid id, string name, MapObjectType objectType, Guid layerId, IEnumerable<string>? tags = null, string? styleKey = null, string? description = null)
 	{
 		if (id == Guid.Empty)
 		{
@@ -39,6 +41,7 @@ public abstract class MapObject
 		ObjectType = objectType;
 		LayerId = layerId;
 		StyleKey = styleKey?.Trim() ?? string.Empty;
+		Description = description ?? string.Empty;
 		_tags = NormalizeTags(tags);
 	}
 
@@ -54,6 +57,11 @@ public abstract class MapObject
 	public void SetStyleKey(string? styleKey)
 	{
 		StyleKey = styleKey?.Trim() ?? string.Empty;
+	}
+
+	public void SetDescription(string? description)
+	{
+		Description = description ?? string.Empty;
 	}
 
 	private static IReadOnlyList<string> NormalizeTags(IEnumerable<string>? tags)
