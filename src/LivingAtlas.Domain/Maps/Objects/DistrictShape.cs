@@ -47,4 +47,37 @@ public sealed class DistrictShape : MapObject
 			_polygonPoints[i] = new PointD(pointD.X + delta.X, pointD.Y + delta.Y);
 		}
 	}
+
+	public void SetPoint(int index, PointD point)
+	{
+		ValidatePointIndex(index);
+		_polygonPoints[index] = point;
+	}
+
+	public void InsertPoint(int index, PointD point)
+	{
+		if (index < 0 || index > _polygonPoints.Count)
+		{
+			throw new ArgumentOutOfRangeException("index", index, "Point index is outside the district polygon point insertion bounds.");
+		}
+		_polygonPoints.Insert(index, point);
+	}
+
+	public void RemovePoint(int index)
+	{
+		ValidatePointIndex(index);
+		if (_polygonPoints.Count <= 3)
+		{
+			throw new InvalidOperationException("District polygon must contain at least three points.");
+		}
+		_polygonPoints.RemoveAt(index);
+	}
+
+	private void ValidatePointIndex(int index)
+	{
+		if (index < 0 || index >= _polygonPoints.Count)
+		{
+			throw new ArgumentOutOfRangeException("index", index, "Point index is outside the district polygon point bounds.");
+		}
+	}
 }

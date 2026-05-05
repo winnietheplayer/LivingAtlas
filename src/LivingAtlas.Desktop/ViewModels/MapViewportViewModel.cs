@@ -22,6 +22,20 @@ public sealed class MapViewportViewModel : ViewModelBase
 	private PointD? _dragStartAnchor;
 	private PointD _dragAccumulatedRawDelta;
 
+	private bool _isMovingSelectedVertex;
+
+	private Guid? _movingVertexObjectId;
+
+	private int? _movingVertexIndex;
+
+	private PointD _movingVertexOldPoint;
+
+	private PointD _movingVertexPreviewPoint;
+
+	private int? _selectedVertexIndex;
+
+	private int? _hoveredVertexIndex;
+
 	private readonly DistrictDrawingSession _districtDrawingSession = new DistrictDrawingSession();
 
 	private readonly RoadDrawingSession _roadDrawingSession = new RoadDrawingSession();
@@ -87,6 +101,34 @@ public sealed class MapViewportViewModel : ViewModelBase
 
 	public Guid? SelectedObjectId => SelectedObject?.Id;
 
+	public int? SelectedVertexIndex
+	{
+		get
+		{
+			return _selectedVertexIndex;
+		}
+		private set
+		{
+			SetProperty(ref _selectedVertexIndex, value, "SelectedVertexIndex");
+		}
+	}
+
+	public int? HoveredVertexIndex
+	{
+		get
+		{
+			return _hoveredVertexIndex;
+		}
+		private set
+		{
+			SetProperty(ref _hoveredVertexIndex, value, "HoveredVertexIndex");
+		}
+	}
+
+	public bool IsMovingSelectedVertex => _isMovingSelectedVertex;
+
+	public bool IsSelectedGeometryEditable => ActiveTool == EditorToolType.SelectMove && SelectedObject is RoadLine or DistrictShape && IsLayerEditable(SelectedObject.LayerId);
+
 	public string StatusText
 	{
 		get
@@ -128,11 +170,17 @@ public sealed class MapViewportViewModel : ViewModelBase
 				CancelDistrictDrawingCore();
 			}
 			Tools.SetActiveTool(activeTool);
+			if (activeTool != EditorToolType.SelectMove)
+			{
+				ClearSelectedVertex();
+				HoveredVertexIndex = null;
+			}
 			OnPropertyChanged("ActiveTool");
 			OnPropertyChanged("ActiveToolText");
 			OnPropertyChanged("IsSelectMoveToolActive");
 			OnPropertyChanged("IsPanToolActive");
 			OnPropertyChanged("IsDrawingToolActive");
+			OnPropertyChanged("IsSelectedGeometryEditable");
 			RefreshStatus();
 		}
 	}
@@ -163,6 +211,9 @@ public sealed class MapViewportViewModel : ViewModelBase
 		PointD worldPoint = Camera.ScreenToWorld(screenPoint);
 		double worldTolerance = screenTolerancePixels / Camera.Zoom;
 		SelectedObject = MapObjectHitTester.HitTest(Map, worldPoint, worldTolerance);
+		ClearSelectedVertex();
+		HoveredVertexIndex = null;
+		OnPropertyChanged("IsSelectedGeometryEditable");
 		RefreshStatus();
 		return SelectedObject;
 	}
@@ -174,6 +225,8 @@ public sealed class MapViewportViewModel : ViewModelBase
 		AddMapObjectCommand addMapObjectCommand = MapObjectCreationService.CreatePointOfInterestCommand(Map, position, ActiveTargetLayerId);
 		History.Execute(addMapObjectCommand);
 		PointOfInterest pointOfInterest = (PointOfInterest)(SelectedObject = (PointOfInterest)addMapObjectCommand.MapObject);
+		ClearSelectedVertex();
+		HoveredVertexIndex = null;
 		StatusText = "Created: " + pointOfInterest.Name;
 		NotifyProjectMutated();
 		return pointOfInterest;
@@ -186,6 +239,8 @@ public sealed class MapViewportViewModel : ViewModelBase
 		AddMapObjectCommand addMapObjectCommand = MapObjectCreationService.CreateLabelCommand(Map, position, ActiveTargetLayerId);
 		History.Execute(addMapObjectCommand);
 		MapLabel mapLabel = (MapLabel)(SelectedObject = (MapLabel)addMapObjectCommand.MapObject);
+		ClearSelectedVertex();
+		HoveredVertexIndex = null;
 		StatusText = "Created: " + mapLabel.Name;
 		NotifyProjectMutated();
 		return mapLabel;
@@ -208,6 +263,8 @@ public sealed class MapViewportViewModel : ViewModelBase
 		AddMapObjectCommand addMapObjectCommand = _roadDrawingSession.Finish(Map, ActiveTargetLayerId);
 		History.Execute(addMapObjectCommand);
 		RoadLine roadLine = (RoadLine)(SelectedObject = (RoadLine)addMapObjectCommand.MapObject);
+		ClearSelectedVertex();
+		HoveredVertexIndex = null;
 		NotifyRoadPreviewChanged();
 		StatusText = "Created: " + roadLine.Name;
 		NotifyProjectMutated();
@@ -246,6 +303,8 @@ public sealed class MapViewportViewModel : ViewModelBase
 		AddMapObjectCommand addMapObjectCommand = _districtDrawingSession.Finish(Map, ActiveTargetLayerId);
 		History.Execute(addMapObjectCommand);
 		DistrictShape districtShape = (DistrictShape)(SelectedObject = (DistrictShape)addMapObjectCommand.MapObject);
+		ClearSelectedVertex();
+		HoveredVertexIndex = null;
 		NotifyDistrictPreviewChanged();
 		StatusText = "Created: " + districtShape.Name;
 		NotifyProjectMutated();
@@ -255,6 +314,9 @@ public sealed class MapViewportViewModel : ViewModelBase
 	public void ClearSelection()
 	{
 		SelectedObject = null;
+		ClearSelectedVertex();
+		HoveredVertexIndex = null;
+		OnPropertyChanged("IsSelectedGeometryEditable");
 	}
 
 	public bool CancelDistrictDrawing()
@@ -277,6 +339,8 @@ public sealed class MapViewportViewModel : ViewModelBase
 		DeleteMapObjectCommand command = new DeleteMapObjectCommand(Map, SelectedObject.Id);
 		History.Execute(command);
 		SelectedObject = null;
+		ClearSelectedVertex();
+		HoveredVertexIndex = null;
 		StatusText = "Deleted: " + name;
 		NotifyProjectMutated();
 		return true;
@@ -295,6 +359,8 @@ public sealed class MapViewportViewModel : ViewModelBase
 			DuplicateMapObjectCommand command = new DuplicateMapObjectCommand(Map, SelectedObject);
 			History.Execute(command);
 			SelectedObject = command.Duplicate;
+			ClearSelectedVertex();
+			HoveredVertexIndex = null;
 			StatusText = "Duplicated: " + command.Duplicate.Name;
 			NotifyProjectMutated();
 			return true;
@@ -311,9 +377,191 @@ public sealed class MapViewportViewModel : ViewModelBase
 		ArgumentNullException.ThrowIfNull(command, "command");
 		History.Execute(command);
 		RefreshSelectedObjectReference();
+		ValidateSelectedVertexIndex();
 		StatusText = statusText;
 		OnPropertyChanged("SelectedObject");
+		OnPropertyChanged("IsSelectedGeometryEditable");
 		NotifyProjectMutated();
+	}
+
+	public bool BeginMoveSelectedVertex(int vertexIndex, PointD screenPoint)
+	{
+		_lastScreenPoint = screenPoint;
+		if (!IsSelectedGeometryEditable || SelectedObject == null || !TryGetVertexPoint(SelectedObject, vertexIndex, out PointD point))
+		{
+			RefreshStatus();
+			return false;
+		}
+		_isMovingSelectedVertex = true;
+		_movingVertexObjectId = SelectedObject.Id;
+		_movingVertexIndex = vertexIndex;
+		_movingVertexOldPoint = point;
+		_movingVertexPreviewPoint = point;
+		SelectedVertexIndex = vertexIndex;
+		OnPropertyChanged("IsMovingSelectedVertex");
+		StatusText = "Moving vertex " + (vertexIndex + 1);
+		return true;
+	}
+
+	public void MoveSelectedVertexToScreenPoint(PointD screenPoint)
+	{
+		_lastScreenPoint = screenPoint;
+		if (!_isMovingSelectedVertex || SelectedObject == null || !_movingVertexIndex.HasValue)
+		{
+			RefreshStatus();
+			return;
+		}
+		PointD point = GridSnapper.Snap(Camera.ScreenToWorld(screenPoint), Map.GridSettings);
+		if (!AreSamePoint(point, _movingVertexPreviewPoint))
+		{
+			SetVertexPoint(SelectedObject, _movingVertexIndex.Value, point);
+			_movingVertexPreviewPoint = point;
+			OnPropertyChanged("SelectedObject");
+			RequestViewportRedraw();
+		}
+		StatusText = "Moving vertex " + (_movingVertexIndex.Value + 1);
+	}
+
+	public bool EndMoveSelectedVertex()
+	{
+		if (!_isMovingSelectedVertex || SelectedObject == null || !_movingVertexIndex.HasValue || !_movingVertexObjectId.HasValue)
+		{
+			ResetVertexMoveState();
+			return false;
+		}
+		Guid objectId = _movingVertexObjectId.Value;
+		int vertexIndex = _movingVertexIndex.Value;
+		PointD oldPoint = _movingVertexOldPoint;
+		PointD newPoint = _movingVertexPreviewPoint;
+		SetVertexPoint(SelectedObject, vertexIndex, oldPoint);
+		ResetVertexMoveState();
+		if (AreSamePoint(oldPoint, newPoint))
+		{
+			RefreshStatus();
+			OnPropertyChanged("SelectedObject");
+			RequestViewportRedraw();
+			return false;
+		}
+		History.Execute(new MoveMapObjectVertexCommand(Map, objectId, vertexIndex, oldPoint, newPoint));
+		RefreshSelectedObjectReference();
+		SelectedVertexIndex = vertexIndex;
+		ValidateSelectedVertexIndex();
+		StatusText = "Moved vertex " + (vertexIndex + 1);
+		OnPropertyChanged("SelectedObject");
+		OnPropertyChanged("IsSelectedGeometryEditable");
+		NotifyProjectMutated();
+		RequestViewportRedraw();
+		return true;
+	}
+
+	public bool CancelMoveSelectedVertex()
+	{
+		if (!_isMovingSelectedVertex || SelectedObject == null || !_movingVertexIndex.HasValue)
+		{
+			return false;
+		}
+		SetVertexPoint(SelectedObject, _movingVertexIndex.Value, _movingVertexOldPoint);
+		ResetVertexMoveState();
+		RefreshStatus();
+		OnPropertyChanged("SelectedObject");
+		RequestViewportRedraw();
+		return true;
+	}
+
+	public bool SelectVertex(int vertexIndex)
+	{
+		if (!IsSelectedGeometryEditable || SelectedObject == null || vertexIndex < 0 || vertexIndex >= GetVertexCount(SelectedObject))
+		{
+			ClearSelectedVertex();
+			RefreshStatus();
+			return false;
+		}
+		SelectedVertexIndex = vertexIndex;
+		StatusText = FormatSelectedVertexStatus(vertexIndex, GetVertexCount(SelectedObject));
+		RequestViewportRedraw();
+		return true;
+	}
+
+	public bool ClearSelectedVertexSelection()
+	{
+		if (!SelectedVertexIndex.HasValue)
+		{
+			return false;
+		}
+		ClearSelectedVertex();
+		RefreshStatus();
+		RequestViewportRedraw();
+		return true;
+	}
+
+	public void SetHoveredVertex(int? vertexIndex)
+	{
+		int? normalizedIndex = null;
+		if (vertexIndex.HasValue && IsSelectedGeometryEditable && SelectedObject != null && vertexIndex.Value >= 0 && vertexIndex.Value < GetVertexCount(SelectedObject))
+		{
+			normalizedIndex = vertexIndex.Value;
+		}
+		if (HoveredVertexIndex != normalizedIndex)
+		{
+			HoveredVertexIndex = normalizedIndex;
+			RefreshStatus();
+			RequestViewportRedraw();
+		}
+	}
+
+	public bool AddVertexAtScreenPoint(int segmentStartIndex, PointD screenPoint)
+	{
+		_lastScreenPoint = screenPoint;
+		if (!IsSelectedGeometryEditable || SelectedObject == null || !TryGetInsertIndex(SelectedObject, segmentStartIndex, out int insertIndex))
+		{
+			RefreshStatus();
+			return false;
+		}
+		PointD point = GridSnapper.Snap(Camera.ScreenToWorld(screenPoint), Map.GridSettings);
+		History.Execute(new AddMapObjectVertexCommand(Map, SelectedObject.Id, insertIndex, point));
+		RefreshSelectedObjectReference();
+		SelectedVertexIndex = insertIndex;
+		ValidateSelectedVertexIndex();
+		StatusText = "Added vertex";
+		OnPropertyChanged("SelectedObject");
+		OnPropertyChanged("IsSelectedGeometryEditable");
+		NotifyProjectMutated();
+		RequestViewportRedraw();
+		return true;
+	}
+
+	public bool RemoveSelectedVertex()
+	{
+		if (!IsSelectedGeometryEditable || SelectedObject == null || !SelectedVertexIndex.HasValue)
+		{
+			return false;
+		}
+		int vertexIndex = SelectedVertexIndex.Value;
+		int count = GetVertexCount(SelectedObject);
+		if (SelectedObject is RoadLine && count <= 2)
+		{
+			StatusText = "Road must have at least 2 points.";
+			return false;
+		}
+		if (SelectedObject is DistrictShape && count <= 3)
+		{
+			StatusText = "District must have at least 3 points.";
+			return false;
+		}
+		History.Execute(new RemoveMapObjectVertexCommand(Map, SelectedObject.Id, vertexIndex));
+		RefreshSelectedObjectReference();
+		if (SelectedObject != null)
+		{
+			int newCount = GetVertexCount(SelectedObject);
+			SelectedVertexIndex = vertexIndex < newCount ? vertexIndex : newCount - 1;
+		}
+		ValidateSelectedVertexIndex();
+		StatusText = "Removed vertex";
+		OnPropertyChanged("SelectedObject");
+		OnPropertyChanged("IsSelectedGeometryEditable");
+		NotifyProjectMutated();
+		RequestViewportRedraw();
+		return true;
 	}
 
 	public void BeginMoveSelectedObject(PointD screenPoint)
@@ -336,6 +584,107 @@ public sealed class MapViewportViewModel : ViewModelBase
 			DistrictShape district => district.PolygonPoints.FirstOrDefault(),
 			_ => default
 		};
+	}
+
+	private bool IsLayerEditable(Guid layerId)
+	{
+		MapLayer? layer = Map.Layers.FirstOrDefault(candidate => candidate.Id == layerId);
+		return layer is { IsVisible: true, IsLocked: false };
+	}
+
+	private void ClearSelectedVertex()
+	{
+		SelectedVertexIndex = null;
+	}
+
+	private void ResetVertexMoveState()
+	{
+		_isMovingSelectedVertex = false;
+		_movingVertexObjectId = null;
+		_movingVertexIndex = null;
+		_movingVertexOldPoint = default;
+		_movingVertexPreviewPoint = default;
+		OnPropertyChanged("IsMovingSelectedVertex");
+	}
+
+	private void ValidateSelectedVertexIndex()
+	{
+		if (SelectedObject == null || !SelectedVertexIndex.HasValue)
+		{
+			return;
+		}
+		int count = GetVertexCount(SelectedObject);
+		if (SelectedVertexIndex.Value < 0 || SelectedVertexIndex.Value >= count)
+		{
+			ClearSelectedVertex();
+		}
+	}
+
+	private static int GetVertexCount(MapObject mapObject)
+	{
+		return mapObject switch
+		{
+			RoadLine road => road.Points.Count,
+			DistrictShape district => district.PolygonPoints.Count,
+			_ => 0
+		};
+	}
+
+	private static bool TryGetVertexPoint(MapObject mapObject, int vertexIndex, out PointD point)
+	{
+		if (mapObject is RoadLine road && vertexIndex >= 0 && vertexIndex < road.Points.Count)
+		{
+			point = road.Points[vertexIndex];
+			return true;
+		}
+		if (mapObject is DistrictShape district && vertexIndex >= 0 && vertexIndex < district.PolygonPoints.Count)
+		{
+			point = district.PolygonPoints[vertexIndex];
+			return true;
+		}
+		point = default;
+		return false;
+	}
+
+	private static bool TryGetInsertIndex(MapObject mapObject, int segmentStartIndex, out int insertIndex)
+	{
+		if (mapObject is RoadLine road && segmentStartIndex >= 0 && segmentStartIndex < road.Points.Count - 1)
+		{
+			insertIndex = segmentStartIndex + 1;
+			return true;
+		}
+		if (mapObject is DistrictShape district && segmentStartIndex >= 0 && segmentStartIndex < district.PolygonPoints.Count)
+		{
+			insertIndex = segmentStartIndex == district.PolygonPoints.Count - 1 ? district.PolygonPoints.Count : segmentStartIndex + 1;
+			return true;
+		}
+		insertIndex = -1;
+		return false;
+	}
+
+	private static void SetVertexPoint(MapObject mapObject, int vertexIndex, PointD point)
+	{
+		if (mapObject is RoadLine road)
+		{
+			road.SetPoint(vertexIndex, point);
+			return;
+		}
+		if (mapObject is DistrictShape district)
+		{
+			district.SetPoint(vertexIndex, point);
+			return;
+		}
+		throw new NotSupportedException("Vertex editing is not supported for object type '" + mapObject.GetType().Name + "'.");
+	}
+
+	private static bool AreSamePoint(PointD first, PointD second)
+	{
+		return Math.Abs(first.X - second.X) < 1E-06 && Math.Abs(first.Y - second.Y) < 1E-06;
+	}
+
+	private static string FormatSelectedVertexStatus(int vertexIndex, int vertexCount)
+	{
+		return "Selected vertex " + (vertexIndex + 1) + "/" + vertexCount;
 	}
 
 	public void MoveSelectedObjectByScreenDelta(PointD currentScreenPoint, double screenDeltaX, double screenDeltaY)
@@ -415,9 +764,12 @@ public sealed class MapViewportViewModel : ViewModelBase
 		{
 			RefreshSelectedObjectReference();
 		}
+		ValidateSelectedVertexIndex();
 		StatusText = "Undo: " + editorCommand.Description;
 		OnPropertyChanged("SelectedObject");
+		OnPropertyChanged("IsSelectedGeometryEditable");
 		NotifyProjectMutated();
+		RequestViewportRedraw();
 		return true;
 	}
 
@@ -440,9 +792,12 @@ public sealed class MapViewportViewModel : ViewModelBase
 		{
 			RefreshSelectedObjectReference();
 		}
+		ValidateSelectedVertexIndex();
 		StatusText = "Redo: " + editorCommand.Description;
 		OnPropertyChanged("SelectedObject");
+		OnPropertyChanged("IsSelectedGeometryEditable");
 		NotifyProjectMutated();
+		RequestViewportRedraw();
 		return true;
 	}
 
@@ -488,6 +843,18 @@ public sealed class MapViewportViewModel : ViewModelBase
 	{
 		string coordinates = FormatCoordinates(worldPoint, zoom);
 		string toolText = $"Tool: {ActiveToolText}";
+		if (_isMovingSelectedVertex && SelectedObject != null && SelectedVertexIndex.HasValue)
+		{
+			return $"{coordinates} | {toolText} | Moving vertex {SelectedVertexIndex.Value + 1}";
+		}
+		if (SelectedObject != null && SelectedVertexIndex.HasValue)
+		{
+			return $"{coordinates} | {toolText} | {FormatSelectedVertexStatus(SelectedVertexIndex.Value, GetVertexCount(SelectedObject))}";
+		}
+		if (SelectedObject != null && HoveredVertexIndex.HasValue)
+		{
+			return $"{coordinates} | {toolText} | Vertex {HoveredVertexIndex.Value + 1}";
+		}
 		if (_isMovingSelectedObject && SelectedObject != null)
 		{
 			return $"{coordinates} | {toolText} | Moving: {SelectedObject.Name}";
@@ -561,6 +928,9 @@ public sealed class MapViewportViewModel : ViewModelBase
 	{
 		if (SelectedObject == null)
 		{
+			ClearSelectedVertex();
+			HoveredVertexIndex = null;
+			OnPropertyChanged("IsSelectedGeometryEditable");
 			return;
 		}
 		foreach (MapLayer layer in Map.Layers)
@@ -569,10 +939,15 @@ public sealed class MapViewportViewModel : ViewModelBase
 			if (mapObject != null)
 			{
 				SelectedObject = mapObject;
+				ValidateSelectedVertexIndex();
+				OnPropertyChanged("IsSelectedGeometryEditable");
 				return;
 			}
 		}
 		SelectedObject = null;
+		ClearSelectedVertex();
+		HoveredVertexIndex = null;
+		OnPropertyChanged("IsSelectedGeometryEditable");
 	}
 
 	private bool CancelRoadDrawingCore()

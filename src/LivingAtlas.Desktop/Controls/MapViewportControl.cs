@@ -22,6 +22,10 @@ public sealed class MapViewportControl : Control
 
 	private const double HitTestScreenTolerancePixels = 10.0;
 
+	private const double VertexHandleRadiusPixels = 5.5;
+
+	private const double VertexHandleHitTolerancePixels = 9.0;
+
 	private const double ScaleBarMeters = 100.0;
 
 	private static readonly IBrush BackgroundBrush = new SolidColorBrush(Color.FromRgb(31, 34, 39));
@@ -78,6 +82,14 @@ public sealed class MapViewportControl : Control
 
 	private static readonly Pen ChildPreviewPoiPen = new Pen(new SolidColorBrush(Color.FromArgb(190, 44, 50, 58)));
 
+	private static readonly IBrush VertexHandleFillBrush = new SolidColorBrush(Color.FromRgb(245, 247, 250));
+
+	private static readonly IBrush SelectedVertexHandleFillBrush = new SolidColorBrush(Color.FromRgb(byte.MaxValue, 241, 179));
+
+	private static readonly IBrush HoveredVertexHandleFillBrush = new SolidColorBrush(Color.FromRgb(166, 245, 213));
+
+	private static readonly Pen VertexHandlePen = new Pen(new SolidColorBrush(Color.FromRgb(44, 50, 58)), 2.0);
+
 	private readonly record struct DistrictVisualStyle(IBrush Fill, Pen Stroke);
 
 	private readonly record struct RoadVisualStyle(Pen Stroke);
@@ -89,6 +101,8 @@ public sealed class MapViewportControl : Control
 	private bool _isPointerDown;
 
 	private bool _isMovingObject;
+
+	private bool _isMovingVertex;
 
 	private bool _isObjectDragCandidate;
 
@@ -142,6 +156,7 @@ public sealed class MapViewportControl : Control
 			DrawMapArea(context, mapViewportViewModel.Camera, mapViewportViewModel.Map.RealSizeMeters);
 			DrawGrid(context, bounds, mapViewportViewModel.Camera, mapViewportViewModel.GridStepMeters);
 			DrawMapObjects(context, mapViewportViewModel.Camera, mapViewportViewModel.Map, mapViewportViewModel.Project, mapViewportViewModel.SelectedObjectId);
+			DrawVertexHandles(context, mapViewportViewModel);
 			DrawDistrictPreview(context, mapViewportViewModel.Camera, mapViewportViewModel.DistrictPreviewPoints, mapViewportViewModel.DistrictPreviewPoint);
 			DrawRoadPreview(context, mapViewportViewModel.Camera, mapViewportViewModel.RoadPreviewPoints, mapViewportViewModel.RoadPreviewPoint);
 			DrawMapBounds(context, mapViewportViewModel.Camera, mapViewportViewModel.Map.RealSizeMeters);
@@ -189,10 +204,41 @@ public sealed class MapViewportControl : Control
 				e.Handled = true;
 				return;
 			}
+			if (mapViewportViewModel != null
+				&& mapViewportViewModel.IsSelectedGeometryEditable
+				&& TryHitSelectedVertexHandle(mapViewportViewModel, currentPoint.Position, out int vertexIndex)
+				&& mapViewportViewModel.BeginMoveSelectedVertex(vertexIndex, ToPointD(currentPoint.Position)))
+			{
+				Focus();
+				_isPointerDown = true;
+				_isMovingObject = false;
+				_isMovingVertex = true;
+				_isObjectDragCandidate = false;
+				_isPanning = false;
+				_hasDragged = false;
+				_panStartPoint = currentPoint.Position;
+				_lastPanPoint = currentPoint.Position;
+				e.Pointer.Capture(this);
+				InvalidateVisual();
+				e.Handled = true;
+				return;
+			}
+			if (mapViewportViewModel != null
+				&& e.ClickCount == 2
+				&& mapViewportViewModel.IsSelectedGeometryEditable
+				&& TryHitSelectedSegment(mapViewportViewModel, currentPoint.Position, out int segmentStartIndex)
+				&& mapViewportViewModel.AddVertexAtScreenPoint(segmentStartIndex, ToPointD(currentPoint.Position)))
+			{
+				Focus();
+				InvalidateVisual();
+				e.Handled = true;
+				return;
+			}
 			MapObject? mapObject = ((mapViewportViewModel != null && mapViewportViewModel.Tools.AllowsSelectionChanges) ? mapViewportViewModel.SelectAtScreenPoint(ToPointD(currentPoint.Position), 10.0) : null);
 			Focus();
 			_isPointerDown = true;
 			_isMovingObject = false;
+			_isMovingVertex = false;
 			_isObjectDragCandidate = mapViewportViewModel != null && mapViewportViewModel.Tools.AllowsObjectMove && mapObject != null;
 			_isPanning = false;
 			_hasDragged = false;
@@ -214,7 +260,11 @@ public sealed class MapViewportControl : Control
 		Point position = e.GetPosition(this);
 		if (_isPointerDown)
 		{
-			if (!_hasDragged && Distance(_panStartPoint, position) > 4.0)
+			if (_isMovingVertex)
+			{
+				mapViewportViewModel.MoveSelectedVertexToScreenPoint(ToPointD(position));
+			}
+			else if (!_hasDragged && Distance(_panStartPoint, position) > 4.0)
 			{
 				_hasDragged = true;
 				if (_isObjectDragCandidate)
@@ -238,6 +288,14 @@ public sealed class MapViewportControl : Control
 			_lastPanPoint = position;
 			InvalidateVisual();
 		}
+		else if (mapViewportViewModel.IsSelectedGeometryEditable && TryHitSelectedVertexHandle(mapViewportViewModel, position, out int hoveredVertexIndex))
+		{
+			mapViewportViewModel.SetHoveredVertex(hoveredVertexIndex);
+		}
+		else
+		{
+			mapViewportViewModel.SetHoveredVertex(null);
+		}
 		mapViewportViewModel.UpdatePointerPosition(ToPointD(position));
 		if (mapViewportViewModel.IsDrawingRoad || mapViewportViewModel.IsDrawingDistrict)
 		{
@@ -256,8 +314,14 @@ public sealed class MapViewportControl : Control
 				mapViewportViewModel.EndMoveSelectedObject();
 				InvalidateVisual();
 			}
+			if (_isMovingVertex && base.DataContext is MapViewportViewModel vertexViewModel)
+			{
+				vertexViewModel.EndMoveSelectedVertex();
+				InvalidateVisual();
+			}
 			_isPointerDown = false;
 			_isMovingObject = false;
+			_isMovingVertex = false;
 			_isObjectDragCandidate = false;
 			_isPanning = false;
 			e.Pointer.Capture(null);
@@ -272,8 +336,13 @@ public sealed class MapViewportControl : Control
 		{
 			mapViewportViewModel.EndMoveSelectedObject();
 		}
+		if (_isMovingVertex && base.DataContext is MapViewportViewModel vertexViewModel)
+		{
+			vertexViewModel.CancelMoveSelectedVertex();
+		}
 		_isPointerDown = false;
 		_isMovingObject = false;
+		_isMovingVertex = false;
 		_isObjectDragCandidate = false;
 		_isPanning = false;
 	}
@@ -326,7 +395,31 @@ public sealed class MapViewportControl : Control
 			InvalidateVisual();
 			e.Handled = true;
 		}
-		else if (e.KeyModifiers == KeyModifiers.None && (e.Key == Key.Delete || e.Key == Key.Back))
+		else if (e.KeyModifiers == KeyModifiers.None && e.Key == Key.Escape && mapViewportViewModel.CancelMoveSelectedVertex())
+		{
+			_isMovingVertex = false;
+			InvalidateVisual();
+			e.Handled = true;
+		}
+		else if (e.KeyModifiers == KeyModifiers.None && e.Key == Key.Escape && mapViewportViewModel.ClearSelectedVertexSelection())
+		{
+			InvalidateVisual();
+			e.Handled = true;
+		}
+		else if (e.KeyModifiers == KeyModifiers.None && e.Key == Key.Delete)
+		{
+			if (mapViewportViewModel.SelectedVertexIndex.HasValue)
+			{
+				mapViewportViewModel.RemoveSelectedVertex();
+				InvalidateVisual();
+			}
+			else if (mapViewportViewModel.DeleteSelectedObject())
+			{
+				InvalidateVisual();
+			}
+			e.Handled = true;
+		}
+		else if (e.KeyModifiers == KeyModifiers.None && e.Key == Key.Back)
 		{
 			if (mapViewportViewModel.DeleteSelectedObject())
 			{
@@ -433,6 +526,79 @@ public sealed class MapViewportControl : Control
 				}
 			}
 		}
+	}
+
+	private static void DrawVertexHandles(DrawingContext context, MapViewportViewModel viewModel)
+	{
+		if (!viewModel.IsSelectedGeometryEditable || viewModel.SelectedObject == null)
+		{
+			return;
+		}
+		IReadOnlyList<PointD> points = GetVertexPoints(viewModel.SelectedObject);
+		for (int i = 0; i < points.Count; i++)
+		{
+			Point center = ToAvaloniaPoint(viewModel.Camera.WorldToScreen(points[i]));
+			IBrush fill = viewModel.SelectedVertexIndex == i
+				? SelectedVertexHandleFillBrush
+				: viewModel.HoveredVertexIndex == i ? HoveredVertexHandleFillBrush : VertexHandleFillBrush;
+			context.DrawEllipse(fill, VertexHandlePen, center, VertexHandleRadiusPixels, VertexHandleRadiusPixels);
+		}
+	}
+
+	private static bool TryHitSelectedVertexHandle(MapViewportViewModel viewModel, Point screenPoint, out int vertexIndex)
+	{
+		vertexIndex = -1;
+		if (!viewModel.IsSelectedGeometryEditable || viewModel.SelectedObject == null)
+		{
+			return false;
+		}
+		IReadOnlyList<PointD> points = GetVertexPoints(viewModel.SelectedObject);
+		double bestDistance = double.PositiveInfinity;
+		for (int i = 0; i < points.Count; i++)
+		{
+			Point center = ToAvaloniaPoint(viewModel.Camera.WorldToScreen(points[i]));
+			double distance = Distance(screenPoint, center);
+			if (distance <= VertexHandleHitTolerancePixels && distance < bestDistance)
+			{
+				bestDistance = distance;
+				vertexIndex = i;
+			}
+		}
+		return vertexIndex >= 0;
+	}
+
+	private static bool TryHitSelectedSegment(MapViewportViewModel viewModel, Point screenPoint, out int segmentStartIndex)
+	{
+		segmentStartIndex = -1;
+		if (!viewModel.IsSelectedGeometryEditable || viewModel.SelectedObject == null)
+		{
+			return false;
+		}
+		IReadOnlyList<PointD> points = GetVertexPoints(viewModel.SelectedObject);
+		int segmentCount = viewModel.SelectedObject is DistrictShape ? points.Count : Math.Max(0, points.Count - 1);
+		double bestDistance = double.PositiveInfinity;
+		for (int i = 0; i < segmentCount; i++)
+		{
+			Point start = ToAvaloniaPoint(viewModel.Camera.WorldToScreen(points[i]));
+			Point end = ToAvaloniaPoint(viewModel.Camera.WorldToScreen(points[(i + 1) % points.Count]));
+			double distance = DistanceToSegment(screenPoint, start, end);
+			if (distance <= HitTestScreenTolerancePixels && distance < bestDistance)
+			{
+				bestDistance = distance;
+				segmentStartIndex = i;
+			}
+		}
+		return segmentStartIndex >= 0;
+	}
+
+	private static IReadOnlyList<PointD> GetVertexPoints(MapObject mapObject)
+	{
+		return mapObject switch
+		{
+			RoadLine road => road.Points,
+			DistrictShape district => district.PolygonPoints,
+			_ => Array.Empty<PointD>()
+		};
 	}
 
 	private static void DrawDistrictShape(DrawingContext context, Camera2D camera, DistrictShape district, bool isSelected)
@@ -818,6 +984,20 @@ public sealed class MapViewportControl : Control
 		double num = first.X - second.X;
 		double num2 = first.Y - second.Y;
 		return Math.Sqrt(num * num + num2 * num2);
+	}
+
+	private static double DistanceToSegment(Point point, Point segmentStart, Point segmentEnd)
+	{
+		double x = segmentEnd.X - segmentStart.X;
+		double y = segmentEnd.Y - segmentStart.Y;
+		double lengthSquared = x * x + y * y;
+		if (lengthSquared == 0.0)
+		{
+			return Distance(point, segmentStart);
+		}
+		double value = ((point.X - segmentStart.X) * x + (point.Y - segmentStart.Y) * y) / lengthSquared;
+		double clamped = Math.Clamp(value, 0.0, 1.0);
+		return Distance(point, new Point(segmentStart.X + clamped * x, segmentStart.Y + clamped * y));
 	}
 
 	private static bool TrySetToolFromKey(MapViewportViewModel viewModel, Key key)

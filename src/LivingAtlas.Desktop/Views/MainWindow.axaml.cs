@@ -570,6 +570,24 @@ public partial class MainWindow : Window
             return true;
         }
 
+        if (e.KeyModifiers == KeyModifiers.None
+            && e.Key == Key.Escape
+            && viewModel.MapViewport.CancelMoveSelectedVertex())
+        {
+            MapViewport.InvalidateVisual();
+            e.Handled = true;
+            return true;
+        }
+
+        if (e.KeyModifiers == KeyModifiers.None
+            && e.Key == Key.Escape
+            && viewModel.MapViewport.ClearSelectedVertexSelection())
+        {
+            MapViewport.InvalidateVisual();
+            e.Handled = true;
+            return true;
+        }
+
         if (e.KeyModifiers == KeyModifiers.None && e.Key == Key.Enter)
         {
             // Don't intercept if drawing road/district
@@ -590,6 +608,14 @@ public partial class MainWindow : Window
         if (e.KeyModifiers == KeyModifiers.None
             && (e.Key == Key.Delete || e.Key == Key.Back))
         {
+            if (e.Key == Key.Delete && viewModel.MapViewport.SelectedVertexIndex.HasValue)
+            {
+                viewModel.MapViewport.RemoveSelectedVertex();
+                MapViewport.InvalidateVisual();
+                e.Handled = true;
+                return true;
+            }
+
             if (viewModel.MapViewport.DeleteSelectedObject())
             {
                 MapViewport.InvalidateVisual();
