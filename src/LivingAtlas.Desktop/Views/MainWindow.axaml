@@ -31,6 +31,9 @@
                           Click="SaveProject_Click"/>
                 <MenuItem Header="Save Project _As"
                           Click="SaveProjectAs_Click"/>
+                <Separator/>
+                <MenuItem Header="_Export PNG..."
+                          Click="ExportPng_Click"/>
             </MenuItem>
             <MenuItem Header="_Edit">
                 <MenuItem Header="_Undo" IsEnabled="False"/>

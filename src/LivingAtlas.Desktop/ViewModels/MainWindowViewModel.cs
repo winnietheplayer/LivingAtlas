@@ -12,6 +12,7 @@ using LivingAtlas.Domain.Projects;
 using LivingAtlas.Editor.Commands;
 using LivingAtlas.Editor.Viewport;
 using LivingAtlas.Editor.Navigation;
+using LivingAtlas.Export;
 using LivingAtlas.ProjectSystem;
 
 namespace LivingAtlas.Desktop.ViewModels;
@@ -222,6 +223,22 @@ public class MainWindowViewModel : ViewModelBase
 		{
 			Exception exception = ex;
 			StatusBar.SetMessage("Save failed: " + exception.Message);
+			return false;
+		}
+	}
+
+	public async Task<bool> ExportActiveMapToPngAsync(PngExportOptions options)
+	{
+		try
+		{
+			var exporter = new PngMapExporter();
+			await exporter.ExportAsync(Project, MapViewport.Map, options).ConfigureAwait(continueOnCapturedContext: true);
+			StatusBar.SetMessage("Exported PNG: " + options.OutputPath);
+			return true;
+		}
+		catch (Exception ex)
+		{
+			StatusBar.SetMessage("Export PNG failed: " + ex.Message);
 			return false;
 		}
 	}

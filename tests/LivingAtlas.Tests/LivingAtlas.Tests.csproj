@@ -22,7 +22,9 @@
     <ProjectReference Include="..\..\src\LivingAtlas.Domain\LivingAtlas.Domain.csproj" />
     <ProjectReference Include="..\..\src\LivingAtlas.Desktop\LivingAtlas.Desktop.csproj" />
     <ProjectReference Include="..\..\src\LivingAtlas.Editor\LivingAtlas.Editor.csproj" />
+    <ProjectReference Include="..\..\src\LivingAtlas.Export\LivingAtlas.Export.csproj" />
     <ProjectReference Include="..\..\src\LivingAtlas.ProjectSystem\LivingAtlas.ProjectSystem.csproj" />
+    <ProjectReference Include="..\..\src\LivingAtlas.Rendering\LivingAtlas.Rendering.csproj" />
   </ItemGroup>
 
 </Project>

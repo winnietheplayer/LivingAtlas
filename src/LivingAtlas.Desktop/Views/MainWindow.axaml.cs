@@ -167,6 +167,31 @@ public partial class MainWindow : Window
         }
     }
 
+    private async void ExportPng_Click(object? sender, RoutedEventArgs e)
+    {
+        if (DataContext is not MainWindowViewModel viewModel)
+        {
+            return;
+        }
+
+        try
+        {
+            var exportViewModel = new ExportPngViewModel(GetSuggestedPngPath(viewModel), viewModel.MapViewport.Map.GridSettings.ShowGrid);
+            var dialog = new ExportPngDialog(exportViewModel);
+            bool result = await dialog.ShowDialog<bool>(this);
+            if (!result)
+            {
+                return;
+            }
+
+            await viewModel.ExportActiveMapToPngAsync(exportViewModel.ToOptions());
+        }
+        catch (Exception exception)
+        {
+            viewModel.SetStatusMessage($"Export PNG failed: {exception.Message}");
+        }
+    }
+
     private void ToggleSnapToGrid_Click(object? sender, RoutedEventArgs e)
     {
         if (DataContext is MainWindowViewModel viewModel)
@@ -766,5 +791,44 @@ public partial class MainWindow : Window
         return string.IsNullOrWhiteSpace(fileName)
             ? "LivingAtlasProject.json"
             : $"{fileName}.json";
+    }
+
+    private static string GetSuggestedPngFileName(MainWindowViewModel viewModel)
+    {
+        var fileName = viewModel.MapViewport.Map.Name.Trim();
+        foreach (var invalidCharacter in Path.GetInvalidFileNameChars())
+        {
+            fileName = fileName.Replace(invalidCharacter, '_');
+        }
+
+        return string.IsNullOrWhiteSpace(fileName)
+            ? "LivingAtlasMap.png"
+            : $"{fileName}.png";
+    }
+
+    private static string GetSuggestedPngPath(MainWindowViewModel viewModel)
+    {
+        string? directory = null;
+        if (!string.IsNullOrWhiteSpace(viewModel.CurrentProjectPath))
+        {
+            directory = Path.GetDirectoryName(viewModel.CurrentProjectPath);
+        }
+
+        if (string.IsNullOrWhiteSpace(directory))
+        {
+            directory = Environment.GetFolderPath(Environment.SpecialFolder.MyPictures);
+        }
+
+        if (string.IsNullOrWhiteSpace(directory))
+        {
+            directory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+        }
+
+        if (string.IsNullOrWhiteSpace(directory))
+        {
+            directory = Environment.CurrentDirectory;
+        }
+
+        return Path.Combine(directory, GetSuggestedPngFileName(viewModel));
     }
 }

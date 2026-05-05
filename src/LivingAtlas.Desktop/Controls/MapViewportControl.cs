@@ -13,6 +13,7 @@ using LivingAtlas.Domain.Projects;
 using LivingAtlas.Editor.Hierarchy;
 using LivingAtlas.Editor.Tools;
 using LivingAtlas.Editor.Viewport;
+using LivingAtlas.Rendering;
 
 namespace LivingAtlas.Desktop.Controls;
 
@@ -36,13 +37,9 @@ public sealed class MapViewportControl : Control
 
 	private static readonly IBrush MutedTextBrush = new SolidColorBrush(Color.FromRgb(178, 187, 198));
 
-	private static readonly IBrush DistrictFillBrush = new SolidColorBrush(Color.FromArgb(72, 87, 155, 137));
-
 	private static readonly IBrush DistrictPreviewFillBrush = new SolidColorBrush(Color.FromArgb(42, 166, 245, 213));
 
 	private static readonly IBrush PoiFillBrush = new SolidColorBrush(Color.FromRgb(238, 200, 96));
-
-	private static readonly IBrush LabelTextBrush = new SolidColorBrush(Color.FromRgb(245, 240, 224));
 
 	private static readonly IBrush ChildPreviewDistrictFillBrush = new SolidColorBrush(Color.FromArgb(36, 143, 170, 208));
 
@@ -58,17 +55,11 @@ public sealed class MapViewportControl : Control
 
 	private static readonly Pen ScaleBarPen = new Pen(new SolidColorBrush(Color.FromRgb(230, 234, 240)), 2.0);
 
-	private static readonly Pen DistrictPen = new Pen(new SolidColorBrush(Color.FromRgb(94, 181, 154)), 2.0);
-
 	private static readonly Pen DistrictPreviewPen = new Pen(new SolidColorBrush(Color.FromArgb(210, 166, 245, 213)), 2.0);
-
-	private static readonly Pen RoadPen = new Pen(new SolidColorBrush(Color.FromRgb(224, 186, 118)), 4.0);
-
-	private static readonly Pen PoiPen = new Pen(new SolidColorBrush(Color.FromRgb(42, 45, 50)), 2.0);
 
 	private static readonly Pen RoadPreviewPen = new Pen(new SolidColorBrush(Color.FromArgb(190, byte.MaxValue, 241, 179)), 2.0);
 
-	private static readonly Pen SelectedDistrictPen = new Pen(new SolidColorBrush(Color.FromRgb(166, 245, 213)), 4.0);
+	private static readonly Pen SelectedDistrictPen = new Pen(new SolidColorBrush(Color.FromArgb(150, 255, 241, 179)), 3.0);
 
 	private static readonly Pen SelectedRoadPen = new Pen(new SolidColorBrush(Color.FromRgb(byte.MaxValue, 225, 144)), 7.0);
 
@@ -614,11 +605,11 @@ public sealed class MapViewportControl : Control
 			}
 			streamGeometryContext.EndFigure(isClosed: true);
 		}
-		context.DrawGeometry(style.Fill, style.Stroke, streamGeometry);
 		if (isSelected)
 		{
 			context.DrawGeometry(null, SelectedDistrictPen, streamGeometry);
 		}
+		context.DrawGeometry(style.Fill, style.Stroke, streamGeometry);
 	}
 
 	private static void DrawRoadLine(DrawingContext context, Camera2D camera, RoadLine road, bool isSelected)
@@ -857,49 +848,50 @@ public sealed class MapViewportControl : Control
 
 	private static DistrictVisualStyle GetDistrictStyle(string styleKey)
 	{
-		return styleKey switch
-		{
-			"" or "district.default" => new DistrictVisualStyle(DistrictFillBrush, DistrictPen),
-			"district.old" => new DistrictVisualStyle(new SolidColorBrush(Color.FromArgb(64, 91, 124, 156)), new Pen(new SolidColorBrush(Color.FromRgb(116, 151, 184)), 2.0)),
-			"district.boundary" => new DistrictVisualStyle(new SolidColorBrush(Color.FromArgb(28, 166, 245, 213)), new Pen(new SolidColorBrush(Color.FromRgb(166, 245, 213)), 3.0)),
-			"district.industrial" => new DistrictVisualStyle(new SolidColorBrush(Color.FromArgb(78, 107, 117, 126)), new Pen(new SolidColorBrush(Color.FromRgb(168, 177, 184)), 2.0)),
-			"district.slums" => new DistrictVisualStyle(new SolidColorBrush(Color.FromArgb(72, 157, 119, 73)), new Pen(new SolidColorBrush(Color.FromRgb(207, 157, 88)), 2.0)),
-			_ => new DistrictVisualStyle(DistrictFillBrush, DistrictPen)
-		};
+		DistrictRenderStyle style = MapObjectStyleResolver.GetDistrictStyle(styleKey);
+		return new DistrictVisualStyle(ToBrush(style.Fill), ToPen(style.Stroke, style.StrokeWidth));
 	}
 
 	private static RoadVisualStyle GetRoadStyle(string styleKey)
 	{
-		return styleKey switch
-		{
-			"" or "road.primary" => new RoadVisualStyle(RoadPen),
-			"road.secondary" => new RoadVisualStyle(new Pen(new SolidColorBrush(Color.FromRgb(198, 185, 154)), 3.0)),
-			"road.alley" => new RoadVisualStyle(new Pen(new SolidColorBrush(Color.FromArgb(190, 168, 161, 142)), 1.5)),
-			_ => new RoadVisualStyle(RoadPen)
-		};
+		RoadRenderStyle style = MapObjectStyleResolver.GetRoadStyle(styleKey);
+		return new RoadVisualStyle(ToPen(style.Stroke, style.StrokeWidth));
 	}
 
 	private static PoiVisualStyle GetPoiStyle(string styleKey)
 	{
-		return styleKey switch
-		{
-			"" or "poi.default" => new PoiVisualStyle(PoiFillBrush, PoiPen, 7.0),
-			"poi.gate" => new PoiVisualStyle(new SolidColorBrush(Color.FromRgb(111, 176, 225)), new Pen(new SolidColorBrush(Color.FromRgb(34, 48, 61)), 2.0), 8.0),
-			"poi.landmark" => new PoiVisualStyle(new SolidColorBrush(Color.FromRgb(136, 211, 154)), new Pen(new SolidColorBrush(Color.FromRgb(31, 58, 43)), 2.0), 9.0),
-			"poi.danger" => new PoiVisualStyle(new SolidColorBrush(Color.FromRgb(226, 101, 91)), new Pen(new SolidColorBrush(Color.FromRgb(66, 34, 34)), 2.0), 8.0),
-			_ => new PoiVisualStyle(PoiFillBrush, PoiPen, 7.0)
-		};
+		PoiRenderStyle style = MapObjectStyleResolver.GetPoiStyle(styleKey);
+		return new PoiVisualStyle(ToBrush(style.Fill), ToPen(style.Stroke, style.StrokeWidth), style.Radius);
 	}
 
 	private static LabelVisualStyle GetLabelStyle(string styleKey)
 	{
-		return styleKey switch
+		LabelRenderStyle style = MapObjectStyleResolver.GetLabelStyle(styleKey);
+		return new LabelVisualStyle(ToBrush(style.Color), style.FontSize, ToAvaloniaFontWeight(style.FontWeight));
+	}
+
+	private static IBrush ToBrush(RenderColor color)
+	{
+		return new SolidColorBrush(ToAvaloniaColor(color));
+	}
+
+	private static Pen ToPen(RenderColor color, double thickness)
+	{
+		return new Pen(ToBrush(color), thickness);
+	}
+
+	private static Color ToAvaloniaColor(RenderColor color)
+	{
+		return Color.FromArgb(color.A, color.R, color.G, color.B);
+	}
+
+	private static FontWeight ToAvaloniaFontWeight(RenderTextWeight weight)
+	{
+		return weight switch
 		{
-			"label.city" => new LabelVisualStyle(new SolidColorBrush(Color.FromRgb(248, 236, 197)), 26.0, FontWeight.Bold),
-			"" or "label.district" => new LabelVisualStyle(LabelTextBrush, 18.0, FontWeight.DemiBold),
-			"label.map-title" => new LabelVisualStyle(new SolidColorBrush(Color.FromRgb(245, 247, 250)), 30.0, FontWeight.Bold),
-			"label.note" => new LabelVisualStyle(new SolidColorBrush(Color.FromArgb(205, 209, 212, 218)), 14.0, FontWeight.Normal),
-			_ => new LabelVisualStyle(LabelTextBrush, 18.0, FontWeight.DemiBold)
+			RenderTextWeight.Bold => FontWeight.Bold,
+			RenderTextWeight.DemiBold => FontWeight.DemiBold,
+			_ => FontWeight.Normal
 		};
 	}
 
