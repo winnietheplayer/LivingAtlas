@@ -28,10 +28,18 @@ public static class MapObjectCreationService
 
 	private const string RoadLayerName = "Roads";
 
-	public static AddMapObjectCommand CreatePointOfInterestCommand(MapDocument map, PointD position)
+	public static AddMapObjectCommand CreatePointOfInterestCommand(MapDocument map, PointD position, Guid? activeTargetLayerId = null)
 	{
 		ArgumentNullException.ThrowIfNull(map, "map");
-		MapLayer? mapLayer = map.Layers.FirstOrDefault((MapLayer candidate) => candidate.LayerType == MapLayerType.PointsOfInterest && !candidate.IsLocked);
+		MapLayer? mapLayer = null;
+		if (activeTargetLayerId.HasValue)
+		{
+			mapLayer = map.Layers.FirstOrDefault(l => l.Id == activeTargetLayerId.Value && l.LayerType == MapLayerType.PointsOfInterest && !l.IsLocked && l.IsVisible);
+		}
+		if (mapLayer == null)
+		{
+			mapLayer = map.Layers.FirstOrDefault((MapLayer candidate) => candidate.LayerType == MapLayerType.PointsOfInterest && !candidate.IsLocked && candidate.IsVisible);
+		}
 		bool createsLayer = mapLayer == null;
 		if (mapLayer == null)
 		{
@@ -41,10 +49,18 @@ public static class MapObjectCreationService
 		return new AddMapObjectCommand(map, mapLayer, mapObject, createsLayer);
 	}
 
-	public static AddMapObjectCommand CreateLabelCommand(MapDocument map, PointD position)
+	public static AddMapObjectCommand CreateLabelCommand(MapDocument map, PointD position, Guid? activeTargetLayerId = null)
 	{
 		ArgumentNullException.ThrowIfNull(map, "map");
-		MapLayer? mapLayer = map.Layers.FirstOrDefault((MapLayer candidate) => candidate.LayerType == MapLayerType.Labels && !candidate.IsLocked);
+		MapLayer? mapLayer = null;
+		if (activeTargetLayerId.HasValue)
+		{
+			mapLayer = map.Layers.FirstOrDefault(l => l.Id == activeTargetLayerId.Value && l.LayerType == MapLayerType.Labels && !l.IsLocked && l.IsVisible);
+		}
+		if (mapLayer == null)
+		{
+			mapLayer = map.Layers.FirstOrDefault((MapLayer candidate) => candidate.LayerType == MapLayerType.Labels && !candidate.IsLocked && candidate.IsVisible);
+		}
 		bool createsLayer = mapLayer == null;
 		if (mapLayer == null)
 		{
@@ -55,11 +71,19 @@ public static class MapObjectCreationService
 		return new AddMapObjectCommand(map, mapLayer, mapObject, createsLayer);
 	}
 
-	public static AddMapObjectCommand CreateRoadLineCommand(MapDocument map, IEnumerable<PointD> points)
+	public static AddMapObjectCommand CreateRoadLineCommand(MapDocument map, IEnumerable<PointD> points, Guid? activeTargetLayerId = null)
 	{
 		ArgumentNullException.ThrowIfNull(map, "map");
 		ArgumentNullException.ThrowIfNull(points, "points");
-		MapLayer? mapLayer = map.Layers.FirstOrDefault((MapLayer candidate) => candidate.LayerType == MapLayerType.Streets && !candidate.IsLocked);
+		MapLayer? mapLayer = null;
+		if (activeTargetLayerId.HasValue)
+		{
+			mapLayer = map.Layers.FirstOrDefault(l => l.Id == activeTargetLayerId.Value && l.LayerType == MapLayerType.Streets && !l.IsLocked && l.IsVisible);
+		}
+		if (mapLayer == null)
+		{
+			mapLayer = map.Layers.FirstOrDefault((MapLayer candidate) => candidate.LayerType == MapLayerType.Streets && !candidate.IsLocked && candidate.IsVisible);
+		}
 		bool createsLayer = mapLayer == null;
 		if (mapLayer == null)
 		{
@@ -69,11 +93,19 @@ public static class MapObjectCreationService
 		return new AddMapObjectCommand(map, mapLayer, mapObject, createsLayer);
 	}
 
-	public static AddMapObjectCommand CreateDistrictShapeCommand(MapDocument map, IEnumerable<PointD> polygonPoints)
+	public static AddMapObjectCommand CreateDistrictShapeCommand(MapDocument map, IEnumerable<PointD> polygonPoints, Guid? activeTargetLayerId = null)
 	{
 		ArgumentNullException.ThrowIfNull(map, "map");
 		ArgumentNullException.ThrowIfNull(polygonPoints, "polygonPoints");
-		MapLayer? mapLayer = map.Layers.FirstOrDefault((MapLayer candidate) => candidate.LayerType == MapLayerType.Districts && !candidate.IsLocked);
+		MapLayer? mapLayer = null;
+		if (activeTargetLayerId.HasValue)
+		{
+			mapLayer = map.Layers.FirstOrDefault(l => l.Id == activeTargetLayerId.Value && l.LayerType == MapLayerType.Districts && !l.IsLocked && l.IsVisible);
+		}
+		if (mapLayer == null)
+		{
+			mapLayer = map.Layers.FirstOrDefault((MapLayer candidate) => candidate.LayerType == MapLayerType.Districts && !candidate.IsLocked && candidate.IsVisible);
+		}
 		bool createsLayer = mapLayer == null;
 		if (mapLayer == null)
 		{

@@ -33,6 +33,8 @@ public class MainWindowViewModel : ViewModelBase
 
 	private readonly Dictionary<Guid, MapViewportViewModel> _mapViewportsByMapId = new Dictionary<Guid, MapViewportViewModel>();
 
+	private readonly Dictionary<Guid, Guid> _activeTargetLayers = new Dictionary<Guid, Guid>();
+
 	private readonly CameraStateCache _cameraStateCache = new CameraStateCache();
 
 	public CampaignMapProject Project
@@ -373,10 +375,11 @@ public class MainWindowViewModel : ViewModelBase
 	{
 		DetachMapViewportEvents();
 		_mapViewportsByMapId.Clear();
+		_activeTargetLayers.Clear();
 		_cameraStateCache.Clear();
 		Project = project;
 		CurrentProjectPath = currentProjectPath;
-		ProjectTree = new ProjectTreeViewModel(project, project.RootMapId);
+		ProjectTree = new ProjectTreeViewModel(project, project.RootMapId, GetActiveTargetLayer(project.RootMapId));
 		SetActiveMap(project.RootMap, null);
 		IsDirty = false;
 		OnPropertyChanged("WindowTitle");
@@ -387,7 +390,7 @@ public class MainWindowViewModel : ViewModelBase
 	private void OnMapViewportProjectMutated(object? sender, EventArgs e)
 	{
 		RemoveStaleMapViewports();
-		ProjectTree = new ProjectTreeViewModel(Project, MapViewport.Map.Id);
+		ProjectTree = new ProjectTreeViewModel(Project, MapViewport.Map.Id, GetActiveTargetLayer(MapViewport.Map.Id));
 		RefreshBreadcrumbs();
 		NotifyChildMapNavigationStateChanged();
 		MarkDirty();
@@ -418,9 +421,10 @@ public class MainWindowViewModel : ViewModelBase
 		}
 		Inspector = new InspectorViewModel();
 		Inspector.SetSelection(MapViewport.SelectedObject);
+		MapViewport.ActiveTargetLayerId = GetActiveTargetLayer(map.Id);
 		MapViewport.PropertyChanged += OnMapViewportPropertyChanged;
 		MapViewport.ProjectMutated += OnMapViewportProjectMutated;
-		ProjectTree = new ProjectTreeViewModel(Project, map.Id);
+		ProjectTree = new ProjectTreeViewModel(Project, map.Id, GetActiveTargetLayer(map.Id));
 		RefreshBreadcrumbs();
 		StatusBar.SetMessage(statusMessage ?? MapViewport.StatusText);
 		NotifyChildMapNavigationStateChanged();
@@ -507,7 +511,7 @@ public class MainWindowViewModel : ViewModelBase
 
 		layer.Rename(trimmedName);
 		MarkDirty();
-		ProjectTree = new ProjectTreeViewModel(Project, MapViewport.Map.Id);
+		ProjectTree = new ProjectTreeViewModel(Project, MapViewport.Map.Id, GetActiveTargetLayer(MapViewport.Map.Id));
 		StatusBar.SetMessage($"Layer renamed: {trimmedName}");
 		return true;
 	}
@@ -521,7 +525,7 @@ public class MainWindowViewModel : ViewModelBase
 		}
 
 		MarkDirty();
-		ProjectTree = new ProjectTreeViewModel(Project, MapViewport.Map.Id);
+		ProjectTree = new ProjectTreeViewModel(Project, MapViewport.Map.Id, GetActiveTargetLayer(MapViewport.Map.Id));
 		MapViewport.RequestViewportRedraw();
 		StatusBar.SetMessage("Layer moved up");
 		return true;
@@ -536,9 +540,102 @@ public class MainWindowViewModel : ViewModelBase
 		}
 
 		MarkDirty();
-		ProjectTree = new ProjectTreeViewModel(Project, MapViewport.Map.Id);
+		ProjectTree = new ProjectTreeViewModel(Project, MapViewport.Map.Id, GetActiveTargetLayer(MapViewport.Map.Id));
 		MapViewport.RequestViewportRedraw();
 		StatusBar.SetMessage("Layer moved down");
+		return true;
+	}
+
+	public void SetActiveTargetLayer(Guid mapId, Guid layerId)
+	{
+		_activeTargetLayers[mapId] = layerId;
+		if (MapViewport != null)
+		{
+			if (MapViewport.Map.Id == mapId)
+			{
+				MapViewport.ActiveTargetLayerId = layerId;
+			}
+			ProjectTree = new ProjectTreeViewModel(Project, MapViewport.Map.Id, GetActiveTargetLayer(MapViewport.Map.Id));
+		}
+		
+		var map = Project.FindMap(mapId);
+		var layer = map?.Layers.FirstOrDefault(l => l.Id == layerId);
+		if (layer != null)
+		{
+			StatusBar.SetMessage($"Active layer: {layer.Name}");
+		}
+	}
+
+	public Guid? GetActiveTargetLayer(Guid mapId)
+	{
+		if (_activeTargetLayers.TryGetValue(mapId, out var layerId))
+		{
+			return layerId;
+		}
+		return null;
+	}
+
+	public void AddLayer(Guid mapId, string name, MapLayerType type)
+	{
+		var map = Project.FindMap(mapId);
+		if (map == null) return;
+
+		var layer = new MapLayer(Guid.NewGuid(), name, type);
+		map.AddLayer(layer);
+		
+		MarkDirty();
+		ProjectTree = new ProjectTreeViewModel(Project, MapViewport.Map.Id, GetActiveTargetLayer(MapViewport.Map.Id));
+		MapViewport.RequestViewportRedraw();
+		StatusBar.SetMessage($"Layer added: {name}");
+	}
+
+	public bool DeleteLayer(Guid mapId, Guid layerId)
+	{
+		var map = Project.FindMap(mapId);
+		if (map == null) return false;
+
+		var layer = map.Layers.FirstOrDefault(l => l.Id == layerId);
+		if (layer == null) return false;
+
+		if (map.Layers.Count <= 1)
+		{
+			StatusBar.SetMessage("Cannot delete the last layer.");
+			return false;
+		}
+
+		if (layer.IsLocked)
+		{
+			StatusBar.SetMessage("Unlock layer before deleting it.");
+			return false;
+		}
+
+		map.RemoveLayer(layerId);
+		
+		if (GetActiveTargetLayer(mapId) == layerId)
+		{
+			_activeTargetLayers.Remove(mapId);
+			if (MapViewport != null && MapViewport.Map.Id == mapId)
+			{
+				MapViewport.ActiveTargetLayerId = null;
+			}
+		}
+
+		if (MapViewport != null)
+		{
+			if (MapViewport.Map.Id == mapId && MapViewport.SelectedObject?.LayerId == layerId)
+			{
+				MapViewport.ClearSelection();
+			}
+			ProjectTree = new ProjectTreeViewModel(Project, MapViewport.Map.Id, GetActiveTargetLayer(MapViewport.Map.Id));
+			MapViewport.RequestViewportRedraw();
+		}
+
+		MarkDirty();
+		
+		StatusBar.SetMessage(layer.Objects.Count > 0 
+			? $"Deleted layer: {layer.Name} with {layer.Objects.Count} objects."
+			: $"Deleted layer: {layer.Name}");
+			
 		return true;
 	}
 

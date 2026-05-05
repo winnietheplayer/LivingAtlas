@@ -16,7 +16,7 @@ public sealed class ProjectTreeViewModel : ViewModelBase
 
     public event EventHandler<(Guid MapId, Guid LayerId, bool IsLocked)>? LayerLockChanged;
 
-    public ProjectTreeViewModel(CampaignMapProject project, Guid? activeMapId = null)
+    public ProjectTreeViewModel(CampaignMapProject project, Guid? activeMapId = null, Guid? activeTargetLayerId = null)
     {
         ArgumentNullException.ThrowIfNull(project, nameof(project));
 
@@ -30,7 +30,7 @@ public sealed class ProjectTreeViewModel : ViewModelBase
                 isActive: false,
                 children: new[]
                 {
-                    BuildMapItem(project, project.RootMap, activeMapId, OnLayerVisibilityChanged, OnLayerLockChanged)
+                    BuildMapItem(project, project.RootMap, activeMapId, activeTargetLayerId, OnLayerVisibilityChanged, OnLayerLockChanged)
                 })
         };
     }
@@ -49,6 +49,7 @@ public sealed class ProjectTreeViewModel : ViewModelBase
         CampaignMapProject project,
         MapDocument map,
         Guid? activeMapId,
+        Guid? activeTargetLayerId,
         Action<Guid, Guid, bool> onLayerVisibilityChanged,
         Action<Guid, Guid, bool> onLayerLockChanged)
     {
@@ -62,7 +63,8 @@ public sealed class ProjectTreeViewModel : ViewModelBase
                 mapId: map.Id,
                 layerId: layer.Id,
                 isVisible: layer.IsVisible,
-                isLocked: layer.IsLocked);
+                isLocked: layer.IsLocked,
+                isActiveTarget: layer.Id == activeTargetLayerId);
 
             layerItem.VisibilityChanged += (s, e) => 
                 onLayerVisibilityChanged(map.Id, layer.Id, layerItem.IsVisible);
@@ -77,7 +79,7 @@ public sealed class ProjectTreeViewModel : ViewModelBase
         children.AddRange(map.ChildrenMapIds
             .Select(project.FindMap)
             .Where(childMap => childMap != null)
-            .Select(childMap => BuildMapItem(project, childMap!, activeMapId, onLayerVisibilityChanged, onLayerLockChanged)));
+            .Select(childMap => BuildMapItem(project, childMap!, activeMapId, activeTargetLayerId, onLayerVisibilityChanged, onLayerLockChanged)));
 
         return new ProjectTreeItemViewModel(
             map.Name,

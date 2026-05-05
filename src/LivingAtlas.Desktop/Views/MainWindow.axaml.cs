@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Input;
@@ -269,17 +270,28 @@ public partial class MainWindow : Window
     private void ProjectTree_SelectionChanged(object? sender, SelectionChangedEventArgs e)
     {
         if (DataContext is not MainWindowViewModel viewModel
-            || sender is not TreeView { SelectedItem: ProjectTreeItemViewModel item }
-            || item.MapId == null
-            || item.IsLayer) // Skip map switching if a layer is selected to avoid UI refresh during double-clicks
+            || sender is not TreeView treeView
+            || treeView.SelectedItem is not ProjectTreeItemViewModel item
+            || item.MapId == null)
         {
             return;
         }
 
-        if (viewModel.OpenMap(item.MapId.Value))
+        if (item.IsLayer)
         {
-            RefreshProjectVisuals();
+            // Set as active target layer without switching map view
+            viewModel.SetActiveTargetLayer(item.MapId.Value, item.LayerId!.Value);
         }
+        else if (item.MapId.Value != viewModel.MapViewport.Map.Id)
+        {
+            if (viewModel.OpenMap(item.MapId.Value))
+            {
+                RefreshProjectVisuals();
+            }
+        }
+
+        // Clear selection to allow re-selection
+        treeView.SelectedItem = null;
     }
 
     private async void RenameLayer_Click(object? sender, RoutedEventArgs e)
@@ -350,6 +362,60 @@ public partial class MainWindow : Window
         }
 
         viewModel.MoveLayerDown(mapId, layerId);
+    }
+
+    private async void AddLayer_Click(object? sender, RoutedEventArgs e)
+    {
+        if (DataContext is not MainWindowViewModel viewModel) return;
+        
+        var dialog = new AddLayerDialog();
+        var result = await dialog.ShowDialog<(string Name, LivingAtlas.Domain.Maps.MapLayerType Type)?>(this);
+        
+        if (result.HasValue)
+        {
+            viewModel.AddLayer(viewModel.MapViewport.Map.Id, result.Value.Name, result.Value.Type);
+        }
+    }
+
+    private async void DeleteLayer_Click(object? sender, RoutedEventArgs e)
+    {
+        if (DataContext is not MainWindowViewModel viewModel
+            || sender is not Button { DataContext: ProjectTreeItemViewModel item }
+            || !item.IsLayer
+            || item.MapId == null
+            || item.LayerId == null)
+        {
+            return;
+        }
+
+        var map = viewModel.Project.FindMap(item.MapId.Value);
+        var layer = map?.Layers.FirstOrDefault(l => l.Id == item.LayerId.Value);
+
+        if (layer == null) return;
+
+        if (map!.Layers.Count <= 1)
+        {
+            viewModel.SetStatusMessage("Cannot delete the last layer.");
+            return;
+        }
+
+        if (layer.IsLocked)
+        {
+            viewModel.SetStatusMessage("Unlock layer before deleting it.");
+            return;
+        }
+
+        string message = layer.Objects.Count > 0 
+            ? $"Layer '{layer.Name}' contains {layer.Objects.Count} objects. Delete layer and all objects?"
+            : $"Delete layer '{layer.Name}'?";
+
+        var dialog = new ConfirmationDialog(message);
+        var confirmed = await dialog.ShowDialog<bool>(this);
+        
+        if (confirmed)
+        {
+            viewModel.DeleteLayer(item.MapId.Value, item.LayerId.Value);
+        }
     }
 
     protected override void OnKeyDown(KeyEventArgs e)

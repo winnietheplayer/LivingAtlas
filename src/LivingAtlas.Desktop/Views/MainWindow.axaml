@@ -44,6 +44,9 @@
                           IsEnabled="{Binding CanOpenParentMap}"
                           Click="BackToParentMap_Click"/>
                 <Separator/>
+                <MenuItem Header="Add _Layer..."
+                          Click="AddLayer_Click"/>
+                <Separator/>
                 <MenuItem Header="_Create Child Map From Selection"
                           IsEnabled="{Binding CanCreateChildMapFromSelection}"
                           Click="CreateChildMapFromSelection_Click"/>
@@ -172,6 +175,13 @@
                                             Click="MoveLayerDown_Click"
                                             Padding="4,1"
                                             FontSize="11"
+                                            VerticalAlignment="Center"/>
+                                    <Button Content="X"
+                                            IsVisible="{Binding IsLayer}"
+                                            Click="DeleteLayer_Click"
+                                            Padding="4,1"
+                                            FontSize="11"
+                                            Foreground="Red"
                                             VerticalAlignment="Center"/>
                                 </StackPanel>
                             </TreeDataTemplate>

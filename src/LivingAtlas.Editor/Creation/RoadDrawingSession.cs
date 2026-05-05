@@ -32,13 +32,13 @@ public sealed class RoadDrawingSession
 		}
 	}
 
-	public AddMapObjectCommand Finish(MapDocument map)
+	public AddMapObjectCommand Finish(MapDocument map, Guid? activeTargetLayerId = null)
 	{
 		if (!CanFinish)
 		{
 			throw new InvalidOperationException("Road requires at least two points.");
 		}
-		AddMapObjectCommand result = MapObjectCreationService.CreateRoadLineCommand(map, _points);
+		AddMapObjectCommand result = MapObjectCreationService.CreateRoadLineCommand(map, _points, activeTargetLayerId);
 		Cancel();
 		return result;
 	}

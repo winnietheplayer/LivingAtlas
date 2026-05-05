@@ -32,13 +32,13 @@ public sealed class DistrictDrawingSession
 		}
 	}
 
-	public AddMapObjectCommand Finish(MapDocument map)
+	public AddMapObjectCommand Finish(MapDocument map, Guid? activeTargetLayerId = null)
 	{
 		if (!CanFinish)
 		{
 			throw new InvalidOperationException("District requires at least three points.");
 		}
-		AddMapObjectCommand result = MapObjectCreationService.CreateDistrictShapeCommand(map, _points);
+		AddMapObjectCommand result = MapObjectCreationService.CreateDistrictShapeCommand(map, _points, activeTargetLayerId);
 		Cancel();
 		return result;
 	}

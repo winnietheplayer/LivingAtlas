@@ -22,6 +22,8 @@ public sealed class ProjectTreeItemViewModel : ViewModelBase
 
 	public bool IsActive { get; }
 
+	public bool IsActiveTarget { get; }
+
 	public bool IsVisible
 	{
 		get => _isVisible;
@@ -59,6 +61,7 @@ public sealed class ProjectTreeItemViewModel : ViewModelBase
 		bool isActive = false, 
 		bool isVisible = true,
 		bool isLocked = false,
+		bool isActiveTarget = false,
 		IEnumerable<ProjectTreeItemViewModel>? children = null)
 	{
 		if (string.IsNullOrWhiteSpace(name))
@@ -77,9 +80,18 @@ public sealed class ProjectTreeItemViewModel : ViewModelBase
 		MapId = mapId;
 		LayerId = layerId;
 		IsActive = isActive;
+		IsActiveTarget = isActiveTarget;
 		_isVisible = isVisible;
 		_isLocked = isLocked;
 		Children = children?.ToList() ?? new List<ProjectTreeItemViewModel>();
-		DisplayName = (isActive ? (name + " (active)") : name);
+		
+		if (IsLayer)
+		{
+			DisplayName = (isActiveTarget ? (name + " (active)") : name);
+		}
+		else
+		{
+			DisplayName = (isActive ? (name + " (active)") : name);
+		}
 	}
 }

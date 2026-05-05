@@ -44,6 +44,8 @@ public sealed class MapViewportViewModel : ViewModelBase
 
 	public CampaignMapProject? Project { get; }
 
+	public Guid? ActiveTargetLayerId { get; set; }
+
 	public double GridStepMeters => Map.GridSettings.CellSizeMeters;
 
 	public EditorToolType ActiveTool => Tools.ActiveTool;
@@ -169,7 +171,7 @@ public sealed class MapViewportViewModel : ViewModelBase
 	{
 		_lastScreenPoint = screenPoint;
 		PointD position = GridSnapper.Snap(Camera.ScreenToWorld(screenPoint), Map.GridSettings);
-		AddMapObjectCommand addMapObjectCommand = MapObjectCreationService.CreatePointOfInterestCommand(Map, position);
+		AddMapObjectCommand addMapObjectCommand = MapObjectCreationService.CreatePointOfInterestCommand(Map, position, ActiveTargetLayerId);
 		History.Execute(addMapObjectCommand);
 		PointOfInterest pointOfInterest = (PointOfInterest)(SelectedObject = (PointOfInterest)addMapObjectCommand.MapObject);
 		StatusText = "Created: " + pointOfInterest.Name;
@@ -181,7 +183,7 @@ public sealed class MapViewportViewModel : ViewModelBase
 	{
 		_lastScreenPoint = screenPoint;
 		PointD position = GridSnapper.Snap(Camera.ScreenToWorld(screenPoint), Map.GridSettings);
-		AddMapObjectCommand addMapObjectCommand = MapObjectCreationService.CreateLabelCommand(Map, position);
+		AddMapObjectCommand addMapObjectCommand = MapObjectCreationService.CreateLabelCommand(Map, position, ActiveTargetLayerId);
 		History.Execute(addMapObjectCommand);
 		MapLabel mapLabel = (MapLabel)(SelectedObject = (MapLabel)addMapObjectCommand.MapObject);
 		StatusText = "Created: " + mapLabel.Name;
@@ -203,7 +205,7 @@ public sealed class MapViewportViewModel : ViewModelBase
 		{
 			return false;
 		}
-		AddMapObjectCommand addMapObjectCommand = _roadDrawingSession.Finish(Map);
+		AddMapObjectCommand addMapObjectCommand = _roadDrawingSession.Finish(Map, ActiveTargetLayerId);
 		History.Execute(addMapObjectCommand);
 		RoadLine roadLine = (RoadLine)(SelectedObject = (RoadLine)addMapObjectCommand.MapObject);
 		NotifyRoadPreviewChanged();
@@ -241,7 +243,7 @@ public sealed class MapViewportViewModel : ViewModelBase
 			StatusText = "District needs at least 3 points";
 			return false;
 		}
-		AddMapObjectCommand addMapObjectCommand = _districtDrawingSession.Finish(Map);
+		AddMapObjectCommand addMapObjectCommand = _districtDrawingSession.Finish(Map, ActiveTargetLayerId);
 		History.Execute(addMapObjectCommand);
 		DistrictShape districtShape = (DistrictShape)(SelectedObject = (DistrictShape)addMapObjectCommand.MapObject);
 		NotifyDistrictPreviewChanged();
