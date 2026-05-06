@@ -499,6 +499,40 @@
       ]
     },
     {
+      "id": "terrain.grass.dead.01",
+      "name": "Dead Grass 01",
+      "kind": "texture",
+      "category": "ground",
+      "file": "textures/ground/terrain.grass.dead.01.png",
+      "isTileable": true,
+      "alpha": false,
+      "generator": "GPT Image 2.0",
+      "resolution": {
+        "width": 1254,
+        "height": 1254
+      },
+      "processing": {
+        "upscaled": false
+      },
+      "defaultTileSizeMeters": 10.0,
+      "intendedUse": [
+        "terrain_fill",
+        "background"
+      ],
+      "tags": [
+        "terrain",
+        "ground",
+        "grass",
+        "dead",
+        "dry",
+        "withered",
+        "field",
+        "outdoor",
+        "natural",
+        "dark_fantasy"
+      ]
+    },
+    {
       "id": "water.deep.01",
       "name": "Deep Water 01",
       "kind": "texture",
