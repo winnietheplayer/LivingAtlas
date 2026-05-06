@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using LivingAtlas.Domain.Geometry;
 using LivingAtlas.Domain.Maps;
+using LivingAtlas.Domain.Maps.Objects;
 using LivingAtlas.Editor.Creation;
 using Xunit;
 
@@ -82,5 +83,83 @@ public class ActiveTargetLayerTests
 
         Assert.False(command.CreatesLayer);
         Assert.Equal(fallbackLayer.Id, command.Layer.Id);
+    }
+
+    [Fact]
+    public void CreateRoadArea_WithNoLayers_CreatesNewStreetsLayer()
+    {
+        var map = CreateEmptyMap();
+
+        var command = MapObjectCreationService.CreateRoadAreaCommand(map, RoadAreaPoints());
+
+        Assert.True(command.CreatesLayer);
+        Assert.Equal(MapLayerType.Streets, command.Layer.LayerType);
+        Assert.Equal("Roads", command.Layer.Name);
+        RoadArea roadArea = Assert.IsType<RoadArea>(command.MapObject);
+        Assert.Equal("road.area.secondary", roadArea.StyleKey);
+    }
+
+    [Fact]
+    public void CreateRoadArea_WithActiveStreetsLayer_UsesTargetLayer()
+    {
+        var map = CreateEmptyMap();
+        var targetLayer = new MapLayer(Guid.NewGuid(), "Main Streets", MapLayerType.Streets);
+        map.AddLayer(targetLayer);
+
+        var command = MapObjectCreationService.CreateRoadAreaCommand(map, RoadAreaPoints(), activeTargetLayerId: targetLayer.Id);
+
+        Assert.False(command.CreatesLayer);
+        Assert.Equal(targetLayer.Id, command.Layer.Id);
+    }
+
+    [Theory]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    public void CreateRoadArea_WithUnavailableActiveTargetLayer_IgnoresTarget(bool hidden, bool locked)
+    {
+        var map = CreateEmptyMap();
+        var targetLayer = new MapLayer(Guid.NewGuid(), "Unavailable Streets", MapLayerType.Streets);
+        if (hidden)
+        {
+            targetLayer.SetVisibility(false);
+        }
+        if (locked)
+        {
+            targetLayer.SetLocked(true);
+        }
+        var fallbackLayer = new MapLayer(Guid.NewGuid(), "Fallback Streets", MapLayerType.Streets);
+        map.AddLayer(targetLayer);
+        map.AddLayer(fallbackLayer);
+
+        var command = MapObjectCreationService.CreateRoadAreaCommand(map, RoadAreaPoints(), activeTargetLayerId: targetLayer.Id);
+
+        Assert.False(command.CreatesLayer);
+        Assert.Equal(fallbackLayer.Id, command.Layer.Id);
+    }
+
+    [Fact]
+    public void CreateRoadArea_WithWrongActiveTargetLayer_UsesVisibleUnlockedStreetsLayer()
+    {
+        var map = CreateEmptyMap();
+        var targetLayer = new MapLayer(Guid.NewGuid(), "Districts", MapLayerType.Districts);
+        var fallbackLayer = new MapLayer(Guid.NewGuid(), "Fallback Streets", MapLayerType.Streets);
+        map.AddLayer(targetLayer);
+        map.AddLayer(fallbackLayer);
+
+        var command = MapObjectCreationService.CreateRoadAreaCommand(map, RoadAreaPoints(), activeTargetLayerId: targetLayer.Id);
+
+        Assert.False(command.CreatesLayer);
+        Assert.Equal(fallbackLayer.Id, command.Layer.Id);
+    }
+
+    private static PointD[] RoadAreaPoints()
+    {
+        return new[]
+        {
+            new PointD(0.0, 0.0),
+            new PointD(100.0, 0.0),
+            new PointD(100.0, 40.0),
+            new PointD(0.0, 40.0)
+        };
     }
 }

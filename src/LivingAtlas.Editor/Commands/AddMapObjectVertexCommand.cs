@@ -46,6 +46,11 @@ public sealed class AddMapObjectVertexCommand : IEditorCommand
 			road.InsertPoint(_insertIndex, _point);
 			return;
 		}
+		if (mapObject is RoadArea roadArea)
+		{
+			roadArea.InsertPoint(_insertIndex, _point);
+			return;
+		}
 		if (mapObject is DistrictShape district)
 		{
 			district.InsertPoint(_insertIndex, _point);
@@ -60,6 +65,11 @@ public sealed class AddMapObjectVertexCommand : IEditorCommand
 		if (mapObject is RoadLine road)
 		{
 			road.RemovePoint(_insertIndex);
+			return;
+		}
+		if (mapObject is RoadArea roadArea)
+		{
+			roadArea.RemovePoint(_insertIndex);
 			return;
 		}
 		if (mapObject is DistrictShape district)

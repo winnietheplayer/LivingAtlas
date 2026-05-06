@@ -231,6 +231,13 @@ public static class ProjectJsonSerializer
 					Points = roadLine.Points.Select(PointDto.FromPoint).ToList(),
 					RoadKind = roadLine.RoadKind
 				},
+				RoadArea roadArea => CreateBase(mapObject)with
+				{
+					Points = roadArea.PolygonPoints.Select(PointDto.FromPoint).ToList(),
+					RoadKind = roadArea.RoadKind,
+					FillTextureAssetId = roadArea.FillTextureAssetId,
+					TextureTileSizeMeters = roadArea.TextureTileSizeMeters
+				},
 				MapLabel mapLabel => CreateBase(mapObject)with
 				{
 					Position = PointDto.FromPoint(mapLabel.Position),
@@ -267,6 +274,7 @@ public static class ProjectJsonSerializer
 			{
 				MapObjectType.DistrictShape => new DistrictShape(Id, Name, LayerId, Points.Select((PointDto point) => point.ToPointD()), Tags, StyleKey, ChildMapId, Description, DistrictKind, FillTextureAssetId, TextureTileSizeMeters ?? DistrictShape.DefaultTextureTileSizeMeters), 
 				MapObjectType.RoadLine => new RoadLine(Id, Name, LayerId, Points.Select((PointDto point) => point.ToPointD()), Tags, StyleKey, Description, RoadKind), 
+				MapObjectType.RoadArea => new RoadArea(Id, Name, LayerId, Points.Select((PointDto point) => point.ToPointD()), Tags, StyleKey, Description, RoadKind, FillTextureAssetId, TextureTileSizeMeters ?? RoadArea.DefaultTextureTileSizeMeters), 
 				MapObjectType.MapLabel => new MapLabel(Id, Name, LayerId, RequirePosition().ToPointD(), RequireText(), Tags, StyleKey, Description, LabelKind), 
 				MapObjectType.PointOfInterest => new PointOfInterest(Id, Name, LayerId, RequirePosition().ToPointD(), RequireIconKey(), Tags, StyleKey, Description, Category), 
 				_ => throw new NotSupportedException($"Unsupported map object type '{ObjectType}'."), 

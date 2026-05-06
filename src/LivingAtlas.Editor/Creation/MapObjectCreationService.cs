@@ -26,6 +26,8 @@ public static class MapObjectCreationService
 
 	private const string RoadBaseName = "Road";
 
+	private const string RoadAreaBaseName = "Road Area";
+
 	private const string RoadLayerName = "Roads";
 
 	public static AddMapObjectCommand CreatePointOfInterestCommand(MapDocument map, PointD position, Guid? activeTargetLayerId = null)
@@ -90,6 +92,28 @@ public static class MapObjectCreationService
 			mapLayer = new MapLayer(Guid.NewGuid(), "Roads", MapLayerType.Streets);
 		}
 		RoadLine mapObject = new RoadLine(Guid.NewGuid(), MapObjectNameService.GenerateUniqueName(map, "Road"), mapLayer.Id, points);
+		return new AddMapObjectCommand(map, mapLayer, mapObject, createsLayer);
+	}
+
+	public static AddMapObjectCommand CreateRoadAreaCommand(MapDocument map, IEnumerable<PointD> polygonPoints, Guid? activeTargetLayerId = null)
+	{
+		ArgumentNullException.ThrowIfNull(map, "map");
+		ArgumentNullException.ThrowIfNull(polygonPoints, "polygonPoints");
+		MapLayer? mapLayer = null;
+		if (activeTargetLayerId.HasValue)
+		{
+			mapLayer = map.Layers.FirstOrDefault(l => l.Id == activeTargetLayerId.Value && l.LayerType == MapLayerType.Streets && !l.IsLocked && l.IsVisible);
+		}
+		if (mapLayer == null)
+		{
+			mapLayer = map.Layers.FirstOrDefault((MapLayer candidate) => candidate.LayerType == MapLayerType.Streets && !candidate.IsLocked && candidate.IsVisible);
+		}
+		bool createsLayer = mapLayer == null;
+		if (mapLayer == null)
+		{
+			mapLayer = new MapLayer(Guid.NewGuid(), RoadLayerName, MapLayerType.Streets);
+		}
+		RoadArea mapObject = new RoadArea(Guid.NewGuid(), MapObjectNameService.GenerateUniqueName(map, RoadAreaBaseName), mapLayer.Id, polygonPoints, styleKey: "road.area.secondary");
 		return new AddMapObjectCommand(map, mapLayer, mapObject, createsLayer);
 	}
 

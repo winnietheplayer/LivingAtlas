@@ -521,6 +521,11 @@ public partial class MainWindow : Window
         SetActiveTool(EditorToolType.Road);
     }
 
+    private void RoadAreaTool_Click(object? sender, RoutedEventArgs e)
+    {
+        SetActiveTool(EditorToolType.RoadArea);
+    }
+
     private void PointOfInterestTool_Click(object? sender, RoutedEventArgs e)
     {
         SetActiveTool(EditorToolType.PointOfInterest);
@@ -576,10 +581,30 @@ public partial class MainWindow : Window
         }
 
         if (e.KeyModifiers == KeyModifiers.None
+            && e.Key == Key.Enter
+            && viewModel.MapViewport.ActiveTool == EditorToolType.RoadArea)
+        {
+            viewModel.MapViewport.TryFinishRoadAreaDrawing();
+            MapViewport.InvalidateVisual();
+            e.Handled = true;
+            return true;
+        }
+
+        if (e.KeyModifiers == KeyModifiers.None
             && e.Key == Key.Escape
             && viewModel.MapViewport.ActiveTool == EditorToolType.Road)
         {
             viewModel.MapViewport.CancelRoadDrawing();
+            MapViewport.InvalidateVisual();
+            e.Handled = true;
+            return true;
+        }
+
+        if (e.KeyModifiers == KeyModifiers.None
+            && e.Key == Key.Escape
+            && viewModel.MapViewport.ActiveTool == EditorToolType.RoadArea)
+        {
+            viewModel.MapViewport.CancelRoadAreaDrawing();
             MapViewport.InvalidateVisual();
             e.Handled = true;
             return true;
@@ -617,7 +642,8 @@ public partial class MainWindow : Window
         {
             // Don't intercept if drawing road/district
             if (viewModel.MapViewport.ActiveTool == EditorToolType.Road || 
-                viewModel.MapViewport.ActiveTool == EditorToolType.District)
+                viewModel.MapViewport.ActiveTool == EditorToolType.District ||
+                viewModel.MapViewport.ActiveTool == EditorToolType.RoadArea)
             {
                 return false;
             }
@@ -713,6 +739,7 @@ public partial class MainWindow : Window
             Key.H or Key.Space => EditorToolType.Pan,
             Key.D => EditorToolType.District,
             Key.R => EditorToolType.Road,
+            Key.A => EditorToolType.RoadArea,
             Key.P => EditorToolType.PointOfInterest,
             Key.T => EditorToolType.Label,
             _ => (EditorToolType?)null

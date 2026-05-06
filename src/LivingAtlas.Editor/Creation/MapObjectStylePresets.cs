@@ -27,6 +27,14 @@ public static class MapObjectStylePresets
             }
         },
         {
+            MapObjectType.RoadArea, new[]
+            {
+                "road.area.primary",
+                "road.area.secondary",
+                "road.area.alley"
+            }
+        },
+        {
             MapObjectType.PointOfInterest, new[]
             {
                 "poi.default",

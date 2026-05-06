@@ -33,6 +33,18 @@ public class MapObjectStyleResolverTests
 	}
 
 	[Fact]
+	public void RoadAreaStyleResolver_ReturnsDistinctKnownStyles()
+	{
+		var primaryStyle = MapObjectStyleResolver.GetRoadAreaStyle("road.area.primary");
+		var secondaryStyle = MapObjectStyleResolver.GetRoadAreaStyle("road.area.secondary");
+		var alleyStyle = MapObjectStyleResolver.GetRoadAreaStyle("road.area.alley");
+
+		Assert.NotEqual(primaryStyle.Fill, secondaryStyle.Fill);
+		Assert.NotEqual(secondaryStyle.Fill, alleyStyle.Fill);
+		Assert.True(primaryStyle.StrokeWidth > alleyStyle.StrokeWidth);
+	}
+
+	[Fact]
 	public void PoiStyleResolver_ReturnsDistinctKnownStyles()
 	{
 		var defaultStyle = MapObjectStyleResolver.GetPoiStyle("poi.default");
@@ -57,6 +69,7 @@ public class MapObjectStyleResolverTests
 	{
 		Assert.Equal(MapObjectStyleResolver.GetDistrictStyle("district.default"), MapObjectStyleResolver.GetDistrictStyle("district.unknown"));
 		Assert.Equal(MapObjectStyleResolver.GetRoadStyle("road.primary"), MapObjectStyleResolver.GetRoadStyle("road.unknown"));
+		Assert.Equal(MapObjectStyleResolver.GetRoadAreaStyle("road.area.secondary"), MapObjectStyleResolver.GetRoadAreaStyle("road.area.unknown"));
 		Assert.Equal(MapObjectStyleResolver.GetPoiStyle("poi.default"), MapObjectStyleResolver.GetPoiStyle("poi.unknown"));
 		Assert.Equal(MapObjectStyleResolver.GetLabelStyle("label.district"), MapObjectStyleResolver.GetLabelStyle("label.unknown"));
 	}

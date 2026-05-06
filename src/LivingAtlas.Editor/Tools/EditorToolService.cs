@@ -28,11 +28,11 @@ public sealed class EditorToolService
 
 	public static bool IsDrawingToolType(EditorToolType tool)
 	{
-		if ((uint)(tool - 2) <= 3u)
-		{
-			return true;
-		}
-		return false;
+		return tool is EditorToolType.District
+			or EditorToolType.Road
+			or EditorToolType.RoadArea
+			or EditorToolType.PointOfInterest
+			or EditorToolType.Label;
 	}
 
 	public static bool AllowsSelectionChangesFor(EditorToolType tool)
@@ -42,10 +42,6 @@ public sealed class EditorToolService
 
 	public static bool AllowsViewportPanFromDragFor(EditorToolType tool)
 	{
-		if ((uint)tool <= 1u)
-		{
-			return true;
-		}
-		return false;
+		return tool is EditorToolType.SelectMove or EditorToolType.Pan;
 	}
 }

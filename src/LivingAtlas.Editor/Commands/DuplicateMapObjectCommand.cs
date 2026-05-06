@@ -81,6 +81,12 @@ public sealed class DuplicateMapObjectCommand : IEditorCommand
             IEnumerable<PointD> shiftedPoints = road.Points.Select(p => new PointD(p.X + offset.X, p.Y + offset.Y)).ToList();
             return new RoadLine(newId, newName, road.LayerId, shiftedPoints, road.Tags, road.StyleKey, road.Description, road.RoadKind);
         }
+
+        if (original is RoadArea roadArea)
+        {
+            IEnumerable<PointD> shiftedPoints = roadArea.PolygonPoints.Select(p => new PointD(p.X + offset.X, p.Y + offset.Y)).ToList();
+            return new RoadArea(newId, newName, roadArea.LayerId, shiftedPoints, roadArea.Tags, roadArea.StyleKey, roadArea.Description, roadArea.RoadKind, roadArea.FillTextureAssetId, roadArea.TextureTileSizeMeters);
+        }
         
         if (original is DistrictShape district)
         {

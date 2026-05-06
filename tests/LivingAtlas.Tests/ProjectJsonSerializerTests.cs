@@ -153,6 +153,126 @@ public sealed class ProjectJsonSerializerTests
 	}
 
 	[Fact]
+	public async Task SaveAndLoadAsync_RoundTripsRoadArea()
+	{
+		string tempFileName = Path.GetTempFileName();
+		try
+		{
+			MapDocument rootMap = TestData.CreateCityMap();
+			MapLayer roadsLayer = TestData.CreateLayer(name: "Roads", layerType: MapLayerType.Streets);
+			RoadArea roadArea = TestData.CreateRoadArea(roadsLayer.Id);
+			roadArea.SetDescription("Road surface notes");
+			roadArea.SetRoadKind("primary");
+			roadArea.SetTextureFill("road.cobble.01", 8.5);
+			roadsLayer.AddObject(roadArea);
+			rootMap.AddLayer(roadsLayer);
+			CampaignMapProject project = TestData.CreateProject(rootMap);
+
+			await ProjectJsonSerializer.SaveAsync(project, tempFileName);
+
+			CampaignMapProject loaded = await ProjectJsonSerializer.LoadAsync(tempFileName);
+			RoadArea loadedRoadArea = Assert.IsType<RoadArea>(
+				loaded.RootMap.Layers.Single(l => l.Id == roadsLayer.Id).Objects.Single());
+
+			Assert.Equal(roadArea.Id, loadedRoadArea.Id);
+			Assert.Equal(MapObjectType.RoadArea, loadedRoadArea.ObjectType);
+			Assert.Equal(4, loadedRoadArea.PolygonPoints.Count);
+			Assert.Equal("Road surface notes", loadedRoadArea.Description);
+			Assert.Equal("primary", loadedRoadArea.RoadKind);
+			Assert.Equal("road.cobble.01", loadedRoadArea.FillTextureAssetId);
+			Assert.Equal(8.5, loadedRoadArea.TextureTileSizeMeters);
+			Assert.Equal("road.area.secondary", loadedRoadArea.StyleKey);
+		}
+		finally
+		{
+			if (File.Exists(tempFileName))
+			{
+				File.Delete(tempFileName);
+			}
+		}
+	}
+
+	[Fact]
+	public async Task LoadAsync_OldRoadLineJson_StillLoadsRoadLine()
+	{
+		string tempFileName = Path.GetTempFileName();
+		Guid projectId = Guid.NewGuid();
+		Guid mapId = Guid.NewGuid();
+		Guid layerId = Guid.NewGuid();
+		Guid objectId = Guid.NewGuid();
+		try
+		{
+			string json = $$"""
+			{
+			  "id": "{{projectId}}",
+			  "name": "Old Project",
+			  "rootMapId": "{{mapId}}",
+			  "maps": [
+			    {
+			      "id": "{{mapId}}",
+			      "name": "Old Map",
+			      "scaleType": "City",
+			      "realSizeMeters": {
+			        "width": 2600.0,
+			        "height": 1800.0
+			      },
+			      "parentMapId": null,
+			      "gridSettings": {
+			        "isEnabled": true,
+			        "cellSizeMeters": 10.0,
+			        "showGrid": true,
+			        "snapToGrid": false
+			      },
+			      "layers": [
+			        {
+			          "id": "{{layerId}}",
+			          "name": "Roads",
+			          "layerType": "Streets",
+			          "isVisible": true,
+			          "isLocked": false,
+			          "objects": [
+			            {
+			              "id": "{{objectId}}",
+			              "name": "Old Road",
+			              "objectType": "RoadLine",
+			              "layerId": "{{layerId}}",
+			              "tags": [],
+			              "styleKey": "road.primary",
+			              "description": "",
+			              "roadKind": "primary",
+			              "points": [
+			                { "x": 0.0, "y": 0.0 },
+			                { "x": 100.0, "y": 20.0 }
+			              ]
+			            }
+			          ]
+			        }
+			      ],
+			      "childrenMapIds": []
+			    }
+			  ]
+			}
+			""";
+
+			await File.WriteAllTextAsync(tempFileName, json);
+
+			CampaignMapProject loaded = await ProjectJsonSerializer.LoadAsync(tempFileName);
+			RoadLine loadedRoad = Assert.IsType<RoadLine>(
+				loaded.RootMap.Layers.Single().Objects.Single());
+			Assert.Equal(objectId, loadedRoad.Id);
+			Assert.Equal("primary", loadedRoad.RoadKind);
+			Assert.Equal(2, loadedRoad.Points.Count);
+		}
+		finally
+		{
+			if (File.Exists(tempFileName))
+			{
+				File.Delete(tempFileName);
+			}
+		}
+	}
+
+	[Fact]
 	public async Task LoadAsync_OldJsonWithoutTextureFill_LoadsDistrictTextureDefaults()
 	{
 		string tempFileName = Path.GetTempFileName();

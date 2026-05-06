@@ -59,6 +59,11 @@ public sealed class MoveMapObjectVertexCommand : IEditorCommand
 			road.SetPoint(_vertexIndex, point);
 			return;
 		}
+		if (mapObject is RoadArea roadArea)
+		{
+			roadArea.SetPoint(_vertexIndex, point);
+			return;
+		}
 		if (mapObject is DistrictShape district)
 		{
 			district.SetPoint(_vertexIndex, point);

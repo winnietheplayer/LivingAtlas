@@ -26,6 +26,10 @@ public class ObjectStyleTests
 
         var roadPresets = MapObjectStylePresets.GetPresetsForType(MapObjectType.RoadLine);
         Assert.Contains("road.primary", roadPresets);
+
+        var roadAreaPresets = MapObjectStylePresets.GetPresetsForType(MapObjectType.RoadArea);
+        Assert.Contains("road.area.secondary", roadAreaPresets);
+        Assert.DoesNotContain("road.primary", roadAreaPresets);
     }
 
     [Fact]

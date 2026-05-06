@@ -102,6 +102,106 @@ public sealed class MapObjectTests
     }
 
     [Fact]
+    public void RoadArea_RequiresAtLeastThreePoints()
+    {
+        Guid layerId = Guid.NewGuid();
+
+        Assert.Throws<ArgumentException>(() => new RoadArea(
+            Guid.NewGuid(),
+            "Short Road Area",
+            layerId,
+            new[]
+            {
+                new PointD(1.0, 2.0),
+                new PointD(3.0, 4.0)
+            }));
+    }
+
+    [Fact]
+    public void RoadArea_RoadKindDefaultsToSecondaryAndEmptyNormalizesToDefault()
+    {
+        RoadArea roadArea = TestData.CreateRoadArea(Guid.NewGuid());
+
+        Assert.Equal(RoadArea.DefaultRoadKind, roadArea.RoadKind);
+
+        roadArea.SetRoadKind(" primary ");
+        Assert.Equal("primary", roadArea.RoadKind);
+
+        roadArea.SetRoadKind(null);
+        Assert.Equal(RoadArea.DefaultRoadKind, roadArea.RoadKind);
+    }
+
+    [Fact]
+    public void RoadArea_TextureFillDefaultsSetAndClear()
+    {
+        RoadArea roadArea = TestData.CreateRoadArea(Guid.NewGuid());
+
+        Assert.Null(roadArea.FillTextureAssetId);
+        Assert.Equal(RoadArea.DefaultTextureTileSizeMeters, roadArea.TextureTileSizeMeters);
+
+        roadArea.SetTextureFill(" road.cobble.01 ", 6.5);
+
+        Assert.Equal("road.cobble.01", roadArea.FillTextureAssetId);
+        Assert.Equal(6.5, roadArea.TextureTileSizeMeters);
+
+        roadArea.ClearTextureFill();
+
+        Assert.Null(roadArea.FillTextureAssetId);
+        Assert.Equal(RoadArea.DefaultTextureTileSizeMeters, roadArea.TextureTileSizeMeters);
+
+        Assert.Throws<ArgumentOutOfRangeException>(() => roadArea.SetTextureFill("road.cobble.01", 0.0));
+    }
+
+    [Fact]
+    public void RoadArea_EditsPolygonPointsAndRejectsInvalidIndexes()
+    {
+        RoadArea roadArea = TestData.CreateRoadArea(Guid.NewGuid());
+
+        roadArea.SetPoint(1, new PointD(90.0, 25.0));
+        roadArea.InsertPoint(2, new PointD(90.0, 35.0));
+
+        Assert.Equal(new PointD(90.0, 25.0), roadArea.PolygonPoints[1]);
+        Assert.Equal(new PointD(90.0, 35.0), roadArea.PolygonPoints[2]);
+
+        roadArea.RemovePoint(2);
+
+        Assert.Equal(4, roadArea.PolygonPoints.Count);
+        Assert.Throws<ArgumentOutOfRangeException>(() => roadArea.SetPoint(99, new PointD(0.0, 0.0)));
+        Assert.Throws<ArgumentOutOfRangeException>(() => roadArea.InsertPoint(-1, new PointD(0.0, 0.0)));
+    }
+
+    [Fact]
+    public void RoadArea_RemovePointBelowThreeThrows()
+    {
+        Guid layerId = Guid.NewGuid();
+        RoadArea roadArea = new RoadArea(
+            Guid.NewGuid(),
+            "Triangle Road Area",
+            layerId,
+            new[]
+            {
+                new PointD(0.0, 0.0),
+                new PointD(10.0, 0.0),
+                new PointD(0.0, 10.0)
+            });
+
+        Assert.Throws<InvalidOperationException>(() => roadArea.RemovePoint(1));
+    }
+
+    [Fact]
+    public void RoadArea_MoveByMovesAllPoints()
+    {
+        RoadArea roadArea = TestData.CreateRoadArea(Guid.NewGuid());
+
+        roadArea.MoveBy(new PointD(5.0, -10.0));
+
+        Assert.Equal(new PointD(15.0, 10.0), roadArea.PolygonPoints[0]);
+        Assert.Equal(new PointD(85.0, 10.0), roadArea.PolygonPoints[1]);
+        Assert.Equal(new PointD(85.0, 40.0), roadArea.PolygonPoints[2]);
+        Assert.Equal(new PointD(15.0, 40.0), roadArea.PolygonPoints[3]);
+    }
+
+    [Fact]
     public void DistrictShape_DistrictKindDefaultsToGenericAndEmptyNormalizesToDefault()
     {
         DistrictShape district = TestData.CreateDistrict(Guid.NewGuid());

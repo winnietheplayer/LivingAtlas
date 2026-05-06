@@ -56,7 +56,13 @@ public sealed class InspectorViewModel : ViewModelBase
 
 	private bool _isRoadLineSelected;
 
+	private bool _isRoadAreaSelected;
+
+	private bool _isRoadKindSelected;
+
 	private bool _isDistrictShapeSelected;
+
+	private bool _isTextureFillSelected;
 
 	public InspectorViewModel()
 		: this(TextureAssetCatalog.Empty)
@@ -308,6 +314,30 @@ public sealed class InspectorViewModel : ViewModelBase
 		}
 	}
 
+	public bool IsRoadAreaSelected
+	{
+		get
+		{
+			return _isRoadAreaSelected;
+		}
+		private set
+		{
+			SetProperty(ref _isRoadAreaSelected, value, "IsRoadAreaSelected");
+		}
+	}
+
+	public bool IsRoadKindSelected
+	{
+		get
+		{
+			return _isRoadKindSelected;
+		}
+		private set
+		{
+			SetProperty(ref _isRoadKindSelected, value, "IsRoadKindSelected");
+		}
+	}
+
 	public bool IsDistrictShapeSelected
 	{
 		get
@@ -320,6 +350,18 @@ public sealed class InspectorViewModel : ViewModelBase
 		}
 	}
 
+	public bool IsTextureFillSelected
+	{
+		get
+		{
+			return _isTextureFillSelected;
+		}
+		private set
+		{
+			SetProperty(ref _isTextureFillSelected, value, "IsTextureFillSelected");
+		}
+	}
+
 	public void SetSelection(MapObject? selectedObject)
 	{
 		SelectedObject = selectedObject;
@@ -327,16 +369,24 @@ public sealed class InspectorViewModel : ViewModelBase
 		IsMapLabelSelected = selectedObject is MapLabel;
 		IsPointOfInterestSelected = selectedObject is PointOfInterest;
 		IsRoadLineSelected = selectedObject is RoadLine;
+		IsRoadAreaSelected = selectedObject is RoadArea;
+		IsRoadKindSelected = selectedObject is RoadLine or RoadArea;
 		IsDistrictShapeSelected = selectedObject is DistrictShape;
+		IsTextureFillSelected = selectedObject is DistrictShape or RoadArea;
 		EditableName = selectedObject?.Name ?? string.Empty;
 		EditableLabelText = ((selectedObject is MapLabel mapLabel) ? mapLabel.Text : string.Empty);
 		EditableStyleKey = selectedObject?.StyleKey ?? string.Empty;
 		EditableDescription = selectedObject?.Description ?? string.Empty;
 		EditableCategory = ((selectedObject is PointOfInterest pointOfInterest) ? pointOfInterest.Category : string.Empty);
-		EditableRoadKind = ((selectedObject is RoadLine roadLine) ? roadLine.RoadKind : string.Empty);
+		EditableRoadKind = selectedObject switch
+		{
+			RoadLine roadLine => roadLine.RoadKind,
+			RoadArea roadArea => roadArea.RoadKind,
+			_ => string.Empty
+		};
 		EditableDistrictKind = ((selectedObject is DistrictShape districtShape) ? districtShape.DistrictKind : string.Empty);
 		EditableLabelKind = ((selectedObject is MapLabel label) ? label.LabelKind : string.Empty);
-		UpdateTextureFillSelection(selectedObject as DistrictShape);
+		UpdateTextureFillSelection(selectedObject);
 		AvailableStylePresets = selectedObject != null ? LivingAtlas.Editor.Creation.MapObjectStylePresets.GetPresetsForType(selectedObject.ObjectType) : Array.Empty<string>();
 		ObjectTypeText = selectedObject == null ? "No selection" : "Object type: " + selectedObject.ObjectType;
 		LayerText = selectedObject == null ? "Layer: -" : "Layer: " + selectedObject.LayerId;
@@ -349,12 +399,34 @@ public sealed class InspectorViewModel : ViewModelBase
 		return mapObject.Tags.Count == 0 ? "-" : string.Join(", ", mapObject.Tags);
 	}
 
-	private void UpdateTextureFillSelection(DistrictShape? districtShape)
+	private void UpdateTextureFillSelection(MapObject? selectedObject)
 	{
-		List<TextureAssetOptionViewModel> options = CreateTextureOptions(districtShape?.FillTextureAssetId);
+		string? fillTextureAssetId = GetFillTextureAssetId(selectedObject);
+		double tileSizeMeters = GetTextureTileSizeMeters(selectedObject);
+		List<TextureAssetOptionViewModel> options = CreateTextureOptions(fillTextureAssetId);
 		AvailableFillTextureAssets = options;
-		SelectedFillTextureAsset = SelectTextureOption(options, districtShape?.FillTextureAssetId);
-		EditableTextureTileSizeMeters = FormatNumber(districtShape?.TextureTileSizeMeters ?? DistrictShape.DefaultTextureTileSizeMeters);
+		SelectedFillTextureAsset = SelectTextureOption(options, fillTextureAssetId);
+		EditableTextureTileSizeMeters = FormatNumber(tileSizeMeters);
+	}
+
+	private static string? GetFillTextureAssetId(MapObject? selectedObject)
+	{
+		return selectedObject switch
+		{
+			DistrictShape districtShape => districtShape.FillTextureAssetId,
+			RoadArea roadArea => roadArea.FillTextureAssetId,
+			_ => null
+		};
+	}
+
+	private static double GetTextureTileSizeMeters(MapObject? selectedObject)
+	{
+		return selectedObject switch
+		{
+			DistrictShape districtShape => districtShape.TextureTileSizeMeters,
+			RoadArea roadArea => roadArea.TextureTileSizeMeters,
+			_ => DistrictShape.DefaultTextureTileSizeMeters
+		};
 	}
 
 	private List<TextureAssetOptionViewModel> CreateTextureOptions(string? selectedAssetId)
@@ -414,6 +486,7 @@ public sealed class InspectorViewModel : ViewModelBase
 		return mapObject switch
 		{
 			RoadLine roadLine => $"Points: {roadLine.Points.Count}",
+			RoadArea roadArea => $"Polygon points: {roadArea.PolygonPoints.Count}",
 			PointOfInterest pointOfInterest => "Position: " + FormatPoint(pointOfInterest.Position),
 			MapLabel mapLabel => $"Text: {mapLabel.Text}{Environment.NewLine}Position: {FormatPoint(mapLabel.Position)}",
 			_ => string.Empty

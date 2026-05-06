@@ -48,6 +48,7 @@ public static class MapObjectHitTester
 			PointOfInterest poi => HitTestPointOfInterest(poi, worldPoint, worldTolerance, drawOrder),
 			MapLabel label => HitTestMapLabel(label, worldPoint, worldTolerance, drawOrder),
 			RoadLine road => HitTestRoadLine(road, worldPoint, worldTolerance, drawOrder),
+			RoadArea roadArea => HitTestRoadArea(roadArea, worldPoint, drawOrder),
 			DistrictShape district => HitTestDistrictShape(district, worldPoint, drawOrder),
 			_ => null
 		};
@@ -88,6 +89,11 @@ public static class MapObjectHitTester
 	private static HitCandidate? HitTestDistrictShape(DistrictShape district, PointD worldPoint, int drawOrder)
 	{
 		return IsPointInPolygon(worldPoint, district.PolygonPoints) ? new HitCandidate?(new HitCandidate(district, 0.0, IsAreaHit: true, drawOrder)) : ((HitCandidate?)null);
+	}
+
+	private static HitCandidate? HitTestRoadArea(RoadArea roadArea, PointD worldPoint, int drawOrder)
+	{
+		return IsPointInPolygon(worldPoint, roadArea.PolygonPoints) ? new HitCandidate?(new HitCandidate(roadArea, 0.0, IsAreaHit: true, drawOrder)) : ((HitCandidate?)null);
 	}
 
 	private static bool IsPointInPolygon(PointD point, IReadOnlyList<PointD> polygon)

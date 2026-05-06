@@ -93,6 +93,8 @@
                             Click="DistrictTool_Click"/>
                     <Button Content="Road"
                             Click="RoadTool_Click"/>
+                    <Button Content="Road Area"
+                            Click="RoadAreaTool_Click"/>
                     <Button Content="POI"
                             Click="PointOfInterestTool_Click"/>
                     <Button Content="Label"
@@ -246,10 +248,10 @@
                                      IsVisible="{Binding Inspector.IsPointOfInterestSelected}"/>
                             <TextBlock Text="Road Kind"
                                        FontWeight="SemiBold"
-                                       IsVisible="{Binding Inspector.IsRoadLineSelected}"/>
+                                       IsVisible="{Binding Inspector.IsRoadKindSelected}"/>
                             <TextBox Text="{Binding Inspector.EditableRoadKind, Mode=TwoWay}"
-                                     IsEnabled="{Binding Inspector.IsRoadLineSelected}"
-                                     IsVisible="{Binding Inspector.IsRoadLineSelected}"/>
+                                     IsEnabled="{Binding Inspector.IsRoadKindSelected}"
+                                     IsVisible="{Binding Inspector.IsRoadKindSelected}"/>
                             <TextBlock Text="District Kind"
                                        FontWeight="SemiBold"
                                        IsVisible="{Binding Inspector.IsDistrictShapeSelected}"/>
@@ -258,11 +260,11 @@
                                      IsVisible="{Binding Inspector.IsDistrictShapeSelected}"/>
                             <TextBlock Text="Fill Texture"
                                        FontWeight="SemiBold"
-                                       IsVisible="{Binding Inspector.IsDistrictShapeSelected}"/>
+                                       IsVisible="{Binding Inspector.IsTextureFillSelected}"/>
                             <ComboBox ItemsSource="{Binding Inspector.AvailableFillTextureAssets}"
                                       SelectedItem="{Binding Inspector.SelectedFillTextureAsset, Mode=TwoWay}"
-                                      IsEnabled="{Binding Inspector.IsDistrictShapeSelected}"
-                                      IsVisible="{Binding Inspector.IsDistrictShapeSelected}"
+                                      IsEnabled="{Binding Inspector.IsTextureFillSelected}"
+                                      IsVisible="{Binding Inspector.IsTextureFillSelected}"
                                       HorizontalAlignment="Stretch">
                                 <ComboBox.ItemTemplate>
                                     <DataTemplate DataType="{x:Type vm:TextureAssetOptionViewModel}">
@@ -272,10 +274,10 @@
                             </ComboBox>
                             <TextBlock Text="Texture Tile Size (m)"
                                        FontWeight="SemiBold"
-                                       IsVisible="{Binding Inspector.IsDistrictShapeSelected}"/>
+                                       IsVisible="{Binding Inspector.IsTextureFillSelected}"/>
                             <TextBox Text="{Binding Inspector.EditableTextureTileSizeMeters, Mode=TwoWay}"
-                                     IsEnabled="{Binding Inspector.IsDistrictShapeSelected}"
-                                     IsVisible="{Binding Inspector.IsDistrictShapeSelected}"/>
+                                     IsEnabled="{Binding Inspector.IsTextureFillSelected}"
+                                     IsVisible="{Binding Inspector.IsTextureFillSelected}"/>
                             <TextBlock Text="Label Kind"
                                        FontWeight="SemiBold"
                                        IsVisible="{Binding Inspector.IsMapLabelSelected}"/>

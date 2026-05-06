@@ -42,6 +42,8 @@ public sealed class MapViewportControl : Control
 
 	private static readonly IBrush DistrictPreviewFillBrush = new SolidColorBrush(Color.FromArgb(42, 166, 245, 213));
 
+	private static readonly IBrush RoadAreaPreviewFillBrush = new SolidColorBrush(Color.FromArgb(52, 232, 194, 128));
+
 	private static readonly IBrush PoiFillBrush = new SolidColorBrush(Color.FromRgb(238, 200, 96));
 
 	private static readonly IBrush ChildPreviewDistrictFillBrush = new SolidColorBrush(Color.FromArgb(36, 143, 170, 208));
@@ -63,6 +65,8 @@ public sealed class MapViewportControl : Control
 	private static readonly Pen RoadPreviewPen = new Pen(new SolidColorBrush(Color.FromArgb(190, byte.MaxValue, 241, 179)), 2.0);
 
 	private static readonly Pen SelectedDistrictPen = new Pen(new SolidColorBrush(Color.FromArgb(150, 255, 241, 179)), 3.0);
+
+	private static readonly Pen SelectedRoadAreaPen = new Pen(new SolidColorBrush(Color.FromArgb(165, 255, 225, 144)), 3.0);
 
 	private static readonly Pen SelectedRoadPen = new Pen(new SolidColorBrush(Color.FromRgb(byte.MaxValue, 225, 144)), 7.0);
 
@@ -87,6 +91,8 @@ public sealed class MapViewportControl : Control
 	private readonly record struct DistrictVisualStyle(IBrush Fill, Pen Stroke);
 
 	private readonly record struct RoadVisualStyle(Pen Stroke);
+
+	private readonly record struct RoadAreaVisualStyle(IBrush Fill, Pen Stroke);
 
 	private readonly record struct PoiVisualStyle(IBrush Fill, Pen Stroke, double Radius);
 
@@ -149,6 +155,13 @@ public sealed class MapViewportControl : Control
 			}
 			DrawMapArea(context, mapViewportViewModel.Camera, mapViewportViewModel.Map.RealSizeMeters);
 			DrawGrid(context, bounds, mapViewportViewModel.Camera, mapViewportViewModel.GridStepMeters);
+			DrawParentRoadOverlays(
+				context,
+				mapViewportViewModel.Camera,
+				mapViewportViewModel.Map.RealSizeMeters,
+				mapViewportViewModel.GetParentRoadOverlays(),
+				mapViewportViewModel.TextureAssetCatalog,
+				mapViewportViewModel.TextureImageCache);
 			DrawMapObjects(
 				context,
 				mapViewportViewModel.Camera,
@@ -159,6 +172,7 @@ public sealed class MapViewportControl : Control
 				mapViewportViewModel.TextureImageCache);
 			DrawVertexHandles(context, mapViewportViewModel);
 			DrawDistrictPreview(context, mapViewportViewModel.Camera, mapViewportViewModel.DistrictPreviewPoints, mapViewportViewModel.DistrictPreviewPoint);
+			DrawRoadAreaPreview(context, mapViewportViewModel.Camera, mapViewportViewModel.RoadAreaPreviewPoints, mapViewportViewModel.RoadAreaPreviewPoint);
 			DrawRoadPreview(context, mapViewportViewModel.Camera, mapViewportViewModel.RoadPreviewPoints, mapViewportViewModel.RoadPreviewPoint);
 			DrawMapBounds(context, mapViewportViewModel.Camera, mapViewportViewModel.Map.RealSizeMeters);
 			DrawTitle(context, mapViewportViewModel.Map.Name);
@@ -193,6 +207,14 @@ public sealed class MapViewportControl : Control
 			{
 				Focus();
 				mapViewportViewModel.AddRoadPointAtScreenPoint(ToPointD(currentPoint.Position));
+				InvalidateVisual();
+				e.Handled = true;
+				return;
+			}
+			if (mapViewportViewModel != null && mapViewportViewModel.ActiveTool == EditorToolType.RoadArea)
+			{
+				Focus();
+				mapViewportViewModel.AddRoadAreaPointAtScreenPoint(ToPointD(currentPoint.Position));
 				InvalidateVisual();
 				e.Handled = true;
 				return;
@@ -298,7 +320,7 @@ public sealed class MapViewportControl : Control
 			mapViewportViewModel.SetHoveredVertex(null);
 		}
 		mapViewportViewModel.UpdatePointerPosition(ToPointD(position));
-		if (mapViewportViewModel.IsDrawingRoad || mapViewportViewModel.IsDrawingDistrict)
+		if (mapViewportViewModel.IsDrawingRoad || mapViewportViewModel.IsDrawingRoadArea || mapViewportViewModel.IsDrawingDistrict)
 		{
 			InvalidateVisual();
 		}
@@ -384,6 +406,12 @@ public sealed class MapViewportControl : Control
 			InvalidateVisual();
 			e.Handled = true;
 		}
+		else if (e.KeyModifiers == KeyModifiers.None && e.Key == Key.Return && mapViewportViewModel.ActiveTool == EditorToolType.RoadArea)
+		{
+			mapViewportViewModel.TryFinishRoadAreaDrawing();
+			InvalidateVisual();
+			e.Handled = true;
+		}
 		else if (e.KeyModifiers == KeyModifiers.None && e.Key == Key.Escape && mapViewportViewModel.ActiveTool == EditorToolType.Road)
 		{
 			mapViewportViewModel.CancelRoadDrawing();
@@ -393,6 +421,12 @@ public sealed class MapViewportControl : Control
 		else if (e.KeyModifiers == KeyModifiers.None && e.Key == Key.Escape && mapViewportViewModel.ActiveTool == EditorToolType.District)
 		{
 			mapViewportViewModel.CancelDistrictDrawing();
+			InvalidateVisual();
+			e.Handled = true;
+		}
+		else if (e.KeyModifiers == KeyModifiers.None && e.Key == Key.Escape && mapViewportViewModel.ActiveTool == EditorToolType.RoadArea)
+		{
+			mapViewportViewModel.CancelRoadAreaDrawing();
 			InvalidateVisual();
 			e.Handled = true;
 		}
@@ -508,23 +542,30 @@ public sealed class MapViewportControl : Control
 				MapObject mapObject2 = mapObject;
 				if (!(mapObject2 is DistrictShape districtShape))
 				{
-					if (!(mapObject2 is RoadLine road))
+					if (!(mapObject2 is RoadArea roadArea))
 					{
-						if (!(mapObject2 is PointOfInterest poi))
+						if (!(mapObject2 is RoadLine road))
 						{
-							if (mapObject2 is MapLabel label)
+							if (!(mapObject2 is PointOfInterest poi))
 							{
-								DrawMapLabel(context, camera, label, isSelected);
+								if (mapObject2 is MapLabel label)
+								{
+									DrawMapLabel(context, camera, label, isSelected);
+								}
+							}
+							else
+							{
+								DrawPointOfInterest(context, camera, poi, isSelected);
 							}
 						}
 						else
 						{
-							DrawPointOfInterest(context, camera, poi, isSelected);
+							DrawRoadLine(context, camera, road, isSelected);
 						}
 					}
 					else
 					{
-						DrawRoadLine(context, camera, road, isSelected);
+						DrawRoadArea(context, camera, roadArea, isSelected, textureAssetCatalog, textureImageCache);
 					}
 				}
 				else
@@ -583,7 +624,7 @@ public sealed class MapViewportControl : Control
 			return false;
 		}
 		IReadOnlyList<PointD> points = GetVertexPoints(viewModel.SelectedObject);
-		int segmentCount = viewModel.SelectedObject is DistrictShape ? points.Count : Math.Max(0, points.Count - 1);
+		int segmentCount = viewModel.SelectedObject is DistrictShape or RoadArea ? points.Count : Math.Max(0, points.Count - 1);
 		double bestDistance = double.PositiveInfinity;
 		for (int i = 0; i < segmentCount; i++)
 		{
@@ -604,6 +645,7 @@ public sealed class MapViewportControl : Control
 		return mapObject switch
 		{
 			RoadLine road => road.Points,
+			RoadArea roadArea => roadArea.PolygonPoints,
 			DistrictShape district => district.PolygonPoints,
 			_ => Array.Empty<PointD>()
 		};
@@ -632,7 +674,7 @@ public sealed class MapViewportControl : Control
 		{
 			context.DrawGeometry(null, SelectedDistrictPen, streamGeometry);
 		}
-		if (!DrawDistrictTextureFill(context, camera, district, streamGeometry, textureAssetCatalog, textureImageCache))
+		if (!DrawPolygonTextureFill(context, camera, district.PolygonPoints, district.FillTextureAssetId, district.TextureTileSizeMeters, streamGeometry, textureAssetCatalog, textureImageCache))
 		{
 			context.DrawGeometry(style.Fill, style.Stroke, streamGeometry);
 		}
@@ -642,32 +684,34 @@ public sealed class MapViewportControl : Control
 		}
 	}
 
-	private static bool DrawDistrictTextureFill(
+	private static bool DrawPolygonTextureFill(
 		DrawingContext context,
 		Camera2D camera,
-		DistrictShape district,
+		IReadOnlyList<PointD> polygonPoints,
+		string? fillTextureAssetId,
+		double textureTileSizeMeters,
 		Geometry clipGeometry,
 		TextureAssetCatalog textureAssetCatalog,
 		AvaloniaTextureImageCache textureImageCache)
 	{
-		if (district.FillTextureAssetId == null || district.TextureTileSizeMeters <= 0.0)
+		if (fillTextureAssetId == null || textureTileSizeMeters <= 0.0)
 		{
 			return false;
 		}
 
-		Bitmap? bitmap = textureImageCache.Get(textureAssetCatalog, district.FillTextureAssetId);
+		Bitmap? bitmap = textureImageCache.Get(textureAssetCatalog, fillTextureAssetId);
 		if (bitmap == null)
 		{
 			return false;
 		}
 
-		RectD bounds = GetBoundingBox(district.PolygonPoints);
+		RectD bounds = GetBoundingBox(polygonPoints);
 		if (bounds.Size.Width <= 0.0 || bounds.Size.Height <= 0.0)
 		{
 			return false;
 		}
 
-		double tileSizeMeters = district.TextureTileSizeMeters;
+		double tileSizeMeters = textureTileSizeMeters;
 		double startX = Math.Floor(bounds.Left / tileSizeMeters) * tileSizeMeters;
 		double startY = Math.Floor(bounds.Top / tileSizeMeters) * tileSizeMeters;
 		Rect sourceRect = new Rect(bitmap.Size);
@@ -704,6 +748,71 @@ public sealed class MapViewportControl : Control
 				context.DrawLine(SelectedRoadPen, p, p2);
 			}
 			context.DrawLine(pen, p, p2);
+		}
+	}
+
+	private static void DrawRoadArea(
+		DrawingContext context,
+		Camera2D camera,
+		RoadArea roadArea,
+		bool isSelected,
+		TextureAssetCatalog textureAssetCatalog,
+		AvaloniaTextureImageCache textureImageCache)
+	{
+		if (roadArea.PolygonPoints.Count == 0)
+		{
+			return;
+		}
+
+		RoadAreaVisualStyle style = GetRoadAreaStyle(roadArea.StyleKey);
+		StreamGeometry streamGeometry = BuildPolygonGeometry(camera, roadArea.PolygonPoints);
+		if (isSelected)
+		{
+			context.DrawGeometry(null, SelectedRoadAreaPen, streamGeometry);
+		}
+		if (!DrawPolygonTextureFill(context, camera, roadArea.PolygonPoints, roadArea.FillTextureAssetId, roadArea.TextureTileSizeMeters, streamGeometry, textureAssetCatalog, textureImageCache))
+		{
+			context.DrawGeometry(style.Fill, style.Stroke, streamGeometry);
+		}
+		else
+		{
+			context.DrawGeometry(null, style.Stroke, streamGeometry);
+		}
+	}
+
+	private static void DrawParentRoadOverlays(
+		DrawingContext context,
+		Camera2D camera,
+		SizeD mapSizeMeters,
+		IReadOnlyList<ParentRoadOverlay> overlays,
+		TextureAssetCatalog textureAssetCatalog,
+		AvaloniaTextureImageCache textureImageCache)
+	{
+		if (overlays.Count == 0)
+		{
+			return;
+		}
+
+		using (context.PushClip(ToScreenRect(camera, mapSizeMeters)))
+		using (context.PushOpacity(0.65))
+		{
+			foreach (ParentRoadOverlay overlay in overlays)
+			{
+				if (overlay.ProjectedPolygonPoints.Count == 0)
+				{
+					continue;
+				}
+				RoadAreaVisualStyle style = GetRoadAreaStyle(overlay.StyleKey);
+				StreamGeometry geometry = BuildPolygonGeometry(camera, overlay.ProjectedPolygonPoints);
+				if (!DrawPolygonTextureFill(context, camera, overlay.ProjectedPolygonPoints, overlay.FillTextureAssetId, overlay.TextureTileSizeMeters, geometry, textureAssetCatalog, textureImageCache))
+				{
+					context.DrawGeometry(style.Fill, style.Stroke, geometry);
+				}
+				else
+				{
+					context.DrawGeometry(null, style.Stroke, geometry);
+				}
+			}
 		}
 	}
 
@@ -901,6 +1010,36 @@ public sealed class MapViewportControl : Control
 		}
 	}
 
+	private static void DrawRoadAreaPreview(DrawingContext context, Camera2D camera, IReadOnlyList<PointD> points, PointD? previewPoint)
+	{
+		if (points.Count == 0)
+		{
+			return;
+		}
+		IReadOnlyList<PointD> previewPolygon = BuildPreviewPolygon(points, previewPoint);
+		if (previewPolygon.Count >= 3)
+		{
+			context.DrawGeometry(RoadAreaPreviewFillBrush, RoadPreviewPen, BuildPolygonGeometry(camera, previewPolygon));
+		}
+		for (int i = 1; i < points.Count; i++)
+		{
+			context.DrawLine(RoadPreviewPen, ToAvaloniaPoint(camera.WorldToScreen(points[i - 1])), ToAvaloniaPoint(camera.WorldToScreen(points[i])));
+		}
+		if (previewPoint.HasValue)
+		{
+			context.DrawLine(RoadPreviewPen, ToAvaloniaPoint(camera.WorldToScreen(points[points.Count - 1])), ToAvaloniaPoint(camera.WorldToScreen(previewPoint.Value)));
+		}
+		if (points.Count >= 3)
+		{
+			PointD worldPoint = previewPoint ?? points[points.Count - 1];
+			context.DrawLine(RoadPreviewPen, ToAvaloniaPoint(camera.WorldToScreen(worldPoint)), ToAvaloniaPoint(camera.WorldToScreen(points[0])));
+		}
+		foreach (PointD point in points)
+		{
+			context.DrawEllipse(PoiFillBrush, null, ToAvaloniaPoint(camera.WorldToScreen(point)), 4.0, 4.0);
+		}
+	}
+
 	private static void DrawPointOfInterest(DrawingContext context, Camera2D camera, PointOfInterest poi, bool isSelected)
 	{
 		PoiVisualStyle style = GetPoiStyle(poi.StyleKey);
@@ -936,6 +1075,12 @@ public sealed class MapViewportControl : Control
 	{
 		RoadRenderStyle style = MapObjectStyleResolver.GetRoadStyle(styleKey);
 		return new RoadVisualStyle(ToPen(style.Stroke, style.StrokeWidth));
+	}
+
+	private static RoadAreaVisualStyle GetRoadAreaStyle(string styleKey)
+	{
+		RoadAreaRenderStyle style = MapObjectStyleResolver.GetRoadAreaStyle(styleKey);
+		return new RoadAreaVisualStyle(ToBrush(style.Fill), ToPen(style.Stroke, style.StrokeWidth));
 	}
 
 	private static PoiVisualStyle GetPoiStyle(string styleKey)
@@ -1001,6 +1146,19 @@ public sealed class MapViewportControl : Control
 			num4 = Math.Max(num4, pointD.Y);
 		}
 		return new RectD(num, num3, num2 - num, num4 - num3);
+	}
+
+	private static StreamGeometry BuildPolygonGeometry(Camera2D camera, IReadOnlyList<PointD> points)
+	{
+		StreamGeometry streamGeometry = new StreamGeometry();
+		using StreamGeometryContext streamGeometryContext = streamGeometry.Open();
+		streamGeometryContext.BeginFigure(ToAvaloniaPoint(camera.WorldToScreen(points[0])));
+		for (int i = 1; i < points.Count; i++)
+		{
+			streamGeometryContext.LineTo(ToAvaloniaPoint(camera.WorldToScreen(points[i])));
+		}
+		streamGeometryContext.EndFigure(isClosed: true);
+		return streamGeometry;
 	}
 
 	private static void DrawTitle(DrawingContext context, string mapName)
@@ -1090,6 +1248,9 @@ public sealed class MapViewportControl : Control
 			break;
 		case Key.R:
 			editorToolType = EditorToolType.Road;
+			break;
+		case Key.A:
+			editorToolType = EditorToolType.RoadArea;
 			break;
 		case Key.P:
 			editorToolType = EditorToolType.PointOfInterest;

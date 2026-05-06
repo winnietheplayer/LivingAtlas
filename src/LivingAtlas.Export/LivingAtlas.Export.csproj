@@ -3,6 +3,7 @@
   <ItemGroup>
     <ProjectReference Include="..\LivingAtlas.Assets\LivingAtlas.Assets.csproj" />
     <ProjectReference Include="..\LivingAtlas.Domain\LivingAtlas.Domain.csproj" />
+    <ProjectReference Include="..\LivingAtlas.Editor\LivingAtlas.Editor.csproj" />
     <ProjectReference Include="..\LivingAtlas.Rendering\LivingAtlas.Rendering.csproj" />
   </ItemGroup>
 

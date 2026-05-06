@@ -11,24 +11,31 @@ public static class MapObjectMover
 		ArgumentNullException.ThrowIfNull(mapObject, "mapObject");
 		if (!(mapObject is DistrictShape districtShape))
 		{
-			if (!(mapObject is RoadLine roadLine))
+			if (!(mapObject is RoadArea roadArea))
 			{
-				if (!(mapObject is PointOfInterest pointOfInterest))
+				if (!(mapObject is RoadLine roadLine))
 				{
-					if (!(mapObject is MapLabel mapLabel))
+					if (!(mapObject is PointOfInterest pointOfInterest))
 					{
-						throw new NotSupportedException("Unsupported map object type '" + mapObject.GetType().Name + "'.");
+						if (!(mapObject is MapLabel mapLabel))
+						{
+							throw new NotSupportedException("Unsupported map object type '" + mapObject.GetType().Name + "'.");
+						}
+						mapLabel.MoveBy(delta);
 					}
-					mapLabel.MoveBy(delta);
+					else
+					{
+						pointOfInterest.MoveBy(delta);
+					}
 				}
 				else
 				{
-					pointOfInterest.MoveBy(delta);
+					roadLine.MoveBy(delta);
 				}
 			}
 			else
 			{
-				roadLine.MoveBy(delta);
+				roadArea.MoveBy(delta);
 			}
 		}
 		else

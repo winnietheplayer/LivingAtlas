@@ -3,6 +3,7 @@ using LivingAtlas.Domain.Geometry;
 using LivingAtlas.Domain.Maps;
 using LivingAtlas.Domain.Maps.Objects;
 using LivingAtlas.Domain.Projects;
+using LivingAtlas.Editor.Hierarchy;
 using LivingAtlas.Rendering;
 using SkiaSharp;
 
@@ -141,6 +142,11 @@ public sealed class PngMapExporter
 			DrawGrid(canvas, map, scale, imageSize);
 		}
 
+		if (options.IncludeChildMapPreviews)
+		{
+			DrawParentRoadOverlays(canvas, project, map, scale, textureAssetCatalog, textureImageCache);
+		}
+
 		DrawMapObjects(canvas, project, map, options, scale, textureAssetCatalog, textureImageCache);
 		DrawMapBounds(canvas, imageSize, scale);
 	}
@@ -197,6 +203,9 @@ public sealed class PngMapExporter
 					case RoadLine road:
 						DrawRoad(canvas, road, scale);
 						break;
+					case RoadArea roadArea:
+						DrawRoadArea(canvas, roadArea, scale, textureAssetCatalog, textureImageCache);
+						break;
 					case PointOfInterest poi when options.IncludePointsOfInterest:
 						DrawPointOfInterest(canvas, poi, scale);
 						break;
@@ -219,29 +228,30 @@ public sealed class PngMapExporter
 		using SKPath path = BuildPolygonPath(district.PolygonPoints, scale);
 		using SKPaint fill = FillPaint(ToSkColor(style.Fill));
 		using SKPaint stroke = StrokePaint(ToSkColor(style.Stroke), (float)(style.StrokeWidth * scale));
-		using SKPaint? textureFill = CreateDistrictTextureFillPaint(district, scale, textureAssetCatalog, textureImageCache);
+		using SKPaint? textureFill = CreateTextureFillPaint(district.FillTextureAssetId, district.TextureTileSizeMeters, scale, textureAssetCatalog, textureImageCache);
 		canvas.DrawPath(path, textureFill ?? fill);
 		canvas.DrawPath(path, stroke);
 	}
 
-	private static SKPaint? CreateDistrictTextureFillPaint(DistrictShape district, float scale, TextureAssetCatalog textureAssetCatalog, SkiaTextureImageCache textureImageCache)
+	private static SKPaint? CreateTextureFillPaint(string? fillTextureAssetId, double textureTileSizeMeters, float scale, TextureAssetCatalog textureAssetCatalog, SkiaTextureImageCache textureImageCache, float opacity = 1.0f)
 	{
-		if (district.FillTextureAssetId == null || district.TextureTileSizeMeters <= 0.0)
+		if (fillTextureAssetId == null || textureTileSizeMeters <= 0.0)
 		{
 			return null;
 		}
 
-		SKBitmap? bitmap = textureImageCache.Get(textureAssetCatalog, district.FillTextureAssetId);
+		SKBitmap? bitmap = textureImageCache.Get(textureAssetCatalog, fillTextureAssetId);
 		if (bitmap == null)
 		{
 			return null;
 		}
 
-		float tilePixels = Math.Max(1.0f, (float)(district.TextureTileSizeMeters * scale));
+		float tilePixels = Math.Max(1.0f, (float)(textureTileSizeMeters * scale));
 		SKMatrix shaderMatrix = SKMatrix.CreateScale(bitmap.Width / tilePixels, bitmap.Height / tilePixels);
 		SKShader shader = SKShader.CreateBitmap(bitmap, SKShaderTileMode.Repeat, SKShaderTileMode.Repeat, shaderMatrix);
 		return new SKPaint
 		{
+			Color = new SKColor(255, 255, 255, ToAlphaByte(opacity)),
 			IsAntialias = true,
 			Style = SKPaintStyle.Fill,
 			Shader = shader
@@ -259,6 +269,42 @@ public sealed class PngMapExporter
 			SKPoint start = ToPixel(road.Points[i - 1], scale);
 			SKPoint end = ToPixel(road.Points[i], scale);
 			canvas.DrawLine(start, end, stroke);
+		}
+	}
+
+	private static void DrawRoadArea(SKCanvas canvas, RoadArea roadArea, float scale, TextureAssetCatalog textureAssetCatalog, SkiaTextureImageCache textureImageCache)
+	{
+		if (roadArea.PolygonPoints.Count == 0)
+		{
+			return;
+		}
+
+		RoadAreaRenderStyle style = MapObjectStyleResolver.GetRoadAreaStyle(roadArea.StyleKey);
+		using SKPath path = BuildPolygonPath(roadArea.PolygonPoints, scale);
+		using SKPaint fill = FillPaint(ToSkColor(style.Fill));
+		using SKPaint stroke = StrokePaint(ToSkColor(style.Stroke), (float)(style.StrokeWidth * scale));
+		using SKPaint? textureFill = CreateTextureFillPaint(roadArea.FillTextureAssetId, roadArea.TextureTileSizeMeters, scale, textureAssetCatalog, textureImageCache);
+		canvas.DrawPath(path, textureFill ?? fill);
+		canvas.DrawPath(path, stroke);
+	}
+
+	private static void DrawParentRoadOverlays(SKCanvas canvas, CampaignMapProject project, MapDocument map, float scale, TextureAssetCatalog textureAssetCatalog, SkiaTextureImageCache textureImageCache)
+	{
+		IReadOnlyList<ParentRoadOverlay> overlays = ParentRoadProjectionService.GetProjectedRoadAreas(project, map.Id);
+		foreach (ParentRoadOverlay overlay in overlays)
+		{
+			if (overlay.ProjectedPolygonPoints.Count == 0)
+			{
+				continue;
+			}
+
+			RoadAreaRenderStyle style = MapObjectStyleResolver.GetRoadAreaStyle(overlay.StyleKey);
+			using SKPath path = BuildPolygonPath(overlay.ProjectedPolygonPoints, scale);
+			using SKPaint fill = FillPaint(ToSkColor(style.Fill, 0.65f));
+			using SKPaint stroke = StrokePaint(ToSkColor(style.Stroke, 0.65f), (float)(style.StrokeWidth * scale));
+			using SKPaint? textureFill = CreateTextureFillPaint(overlay.FillTextureAssetId, overlay.TextureTileSizeMeters, scale, textureAssetCatalog, textureImageCache, 0.65f);
+			canvas.DrawPath(path, textureFill ?? fill);
+			canvas.DrawPath(path, stroke);
 		}
 	}
 
@@ -472,6 +518,16 @@ public sealed class PngMapExporter
 	private static SKColor ToSkColor(RenderColor color)
 	{
 		return new SKColor(color.R, color.G, color.B, color.A);
+	}
+
+	private static SKColor ToSkColor(RenderColor color, float opacity)
+	{
+		return new SKColor(color.R, color.G, color.B, ToAlphaByte(opacity, color.A));
+	}
+
+	private static byte ToAlphaByte(float opacity, byte baseAlpha = byte.MaxValue)
+	{
+		return (byte)Math.Clamp((int)Math.Round(baseAlpha * Math.Clamp(opacity, 0.0f, 1.0f)), 0, byte.MaxValue);
 	}
 
 	private static SKFontStyleWeight ToSkFontWeight(RenderTextWeight weight)

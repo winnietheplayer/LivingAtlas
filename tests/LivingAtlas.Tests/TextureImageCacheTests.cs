@@ -68,6 +68,52 @@ public sealed class TextureImageCacheTests
 		}
 	}
 
+	[Fact]
+	public void PngExport_WithTexturedRoadAreaCreatesValidPng()
+	{
+		string tempDirectory = CreateTempDirectory();
+		string exportPath = Path.Combine(tempDirectory, "textured-road-area.png");
+		try
+		{
+			string texturePath = CreateTestTexture(tempDirectory);
+			TextureAssetCatalog catalog = CreateCatalog(texturePath);
+			MapDocument map = CreateTexturedRoadAreaMap();
+			CampaignMapProject project = new CampaignMapProject(Guid.NewGuid(), "Textured Road Export", map.Id, new[] { map });
+
+			new PngMapExporter().Export(project, map, new PngExportOptions(exportPath), catalog);
+
+			Assert.True(File.Exists(exportPath));
+			using SKBitmap bitmap = SKBitmap.Decode(exportPath);
+			Assert.Equal(32, bitmap.Width);
+			Assert.Equal(32, bitmap.Height);
+		}
+		finally
+		{
+			DeleteDirectory(tempDirectory);
+		}
+	}
+
+	[Fact]
+	public void PngExport_WithMissingRoadAreaTextureFallsBackWithoutThrowing()
+	{
+		string tempDirectory = CreateTempDirectory();
+		string exportPath = Path.Combine(tempDirectory, "missing-road-area-texture.png");
+		try
+		{
+			TextureAssetCatalog catalog = CreateCatalog(Path.Combine(tempDirectory, "missing.png"), fileExists: false);
+			MapDocument map = CreateTexturedRoadAreaMap();
+			CampaignMapProject project = new CampaignMapProject(Guid.NewGuid(), "Missing Texture Export", map.Id, new[] { map });
+
+			new PngMapExporter().Export(project, map, new PngExportOptions(exportPath), catalog);
+
+			Assert.True(File.Exists(exportPath));
+		}
+		finally
+		{
+			DeleteDirectory(tempDirectory);
+		}
+	}
+
 	private static MapDocument CreateTexturedDistrictMap()
 	{
 		var map = new MapDocument(
@@ -91,6 +137,33 @@ public sealed class TextureImageCacheTests
 			styleKey: "district.default");
 		district.SetTextureFill("ground.test.01", 4.0);
 		layer.AddObject(district);
+		map.AddLayer(layer);
+		return map;
+	}
+
+	private static MapDocument CreateTexturedRoadAreaMap()
+	{
+		var map = new MapDocument(
+			Guid.NewGuid(),
+			"Texture Road Map",
+			MapScaleType.City,
+			new SizeD(32.0, 32.0),
+			gridSettings: new GridSettings(isEnabled: true, cellSizeMeters: 8.0, showGrid: false, snapToGrid: false));
+		var layer = new MapLayer(Guid.NewGuid(), "Roads", MapLayerType.Streets);
+		var roadArea = new RoadArea(
+			Guid.NewGuid(),
+			"Textured Road Area",
+			layer.Id,
+			new[]
+			{
+				new PointD(4.0, 12.0),
+				new PointD(28.0, 12.0),
+				new PointD(28.0, 20.0),
+				new PointD(4.0, 20.0)
+			},
+			styleKey: "road.area.secondary");
+		roadArea.SetTextureFill("ground.test.01", 4.0);
+		layer.AddObject(roadArea);
 		map.AddLayer(layer);
 		return map;
 	}

@@ -128,6 +128,33 @@ public sealed class GeometryEditingCommandTests
 	}
 
 	[Fact]
+	public void MoveMapObjectVertexCommand_UndoRedoWorksForRoadAreaVertex()
+	{
+		MapDocument map = TestData.CreateCityMap();
+		MapLayer layer = TestData.CreateLayer(layerType: MapLayerType.Streets);
+		RoadArea roadArea = TestData.CreateRoadArea(layer.Id);
+		HistoryService history = new HistoryService();
+
+		map.AddLayer(layer);
+		layer.AddObject(roadArea);
+
+		history.Execute(new MoveMapObjectVertexCommand(
+			map,
+			roadArea.Id,
+			2,
+			roadArea.PolygonPoints[2],
+			new PointD(95.0, 75.0)));
+
+		Assert.Equal(new PointD(95.0, 75.0), roadArea.PolygonPoints[2]);
+
+		history.Undo();
+		Assert.Equal(new PointD(80.0, 50.0), roadArea.PolygonPoints[2]);
+
+		history.Redo();
+		Assert.Equal(new PointD(95.0, 75.0), roadArea.PolygonPoints[2]);
+	}
+
+	[Fact]
 	public void MoveMapObjectVertexCommand_InvalidVertexIndexThrows()
 	{
 		MapDocument map = TestData.CreateCityMap();
@@ -316,5 +343,86 @@ public sealed class GeometryEditingCommandTests
 
 		history.Redo();
 		Assert.Equal(new PointD(500.0, 120.0), district.PolygonPoints[1]);
+	}
+
+	[Fact]
+	public void AddMapObjectVertexCommand_InsertsRoadAreaVertexAtExpectedIndex()
+	{
+		MapDocument map = TestData.CreateCityMap();
+		MapLayer layer = TestData.CreateLayer(layerType: MapLayerType.Streets);
+		RoadArea roadArea = TestData.CreateRoadArea(layer.Id);
+
+		map.AddLayer(layer);
+		layer.AddObject(roadArea);
+
+		new AddMapObjectVertexCommand(map, roadArea.Id, 2, new PointD(85.0, 35.0)).Execute();
+
+		Assert.Equal(new PointD(85.0, 35.0), roadArea.PolygonPoints[2]);
+		Assert.Equal(5, roadArea.PolygonPoints.Count);
+	}
+
+	[Fact]
+	public void RemoveMapObjectVertexCommand_RemovesRoadAreaVertexAtExpectedIndex()
+	{
+		MapDocument map = TestData.CreateCityMap();
+		MapLayer layer = TestData.CreateLayer(layerType: MapLayerType.Streets);
+		RoadArea roadArea = TestData.CreateRoadArea(layer.Id);
+
+		map.AddLayer(layer);
+		layer.AddObject(roadArea);
+
+		new RemoveMapObjectVertexCommand(map, roadArea.Id, 1).Execute();
+
+		Assert.Collection(
+			roadArea.PolygonPoints,
+			point => Assert.Equal(new PointD(10.0, 20.0), point),
+			point => Assert.Equal(new PointD(80.0, 50.0), point),
+			point => Assert.Equal(new PointD(10.0, 50.0), point));
+	}
+
+	[Fact]
+	public void RemoveMapObjectVertexCommand_CannotRemoveRoadAreaBelowThreePoints()
+	{
+		MapDocument map = TestData.CreateCityMap();
+		MapLayer layer = TestData.CreateLayer(layerType: MapLayerType.Streets);
+		RoadArea roadArea = TestData.CreateRoadArea(layer.Id);
+
+		map.AddLayer(layer);
+		layer.AddObject(roadArea);
+		new RemoveMapObjectVertexCommand(map, roadArea.Id, 1).Execute();
+
+		RemoveMapObjectVertexCommand command = new RemoveMapObjectVertexCommand(map, roadArea.Id, 1);
+
+		Assert.Throws<InvalidOperationException>(() => command.Execute());
+	}
+
+	[Fact]
+	public void AddRemoveMapObjectVertexCommands_UndoRedoWorksForRoadArea()
+	{
+		MapDocument map = TestData.CreateCityMap();
+		MapLayer layer = TestData.CreateLayer(layerType: MapLayerType.Streets);
+		RoadArea roadArea = TestData.CreateRoadArea(layer.Id);
+		HistoryService history = new HistoryService();
+
+		map.AddLayer(layer);
+		layer.AddObject(roadArea);
+
+		history.Execute(new AddMapObjectVertexCommand(map, roadArea.Id, 1, new PointD(45.0, 20.0)));
+		Assert.Equal(5, roadArea.PolygonPoints.Count);
+
+		history.Undo();
+		Assert.Equal(4, roadArea.PolygonPoints.Count);
+
+		history.Redo();
+		Assert.Equal(new PointD(45.0, 20.0), roadArea.PolygonPoints[1]);
+
+		history.Execute(new RemoveMapObjectVertexCommand(map, roadArea.Id, 1));
+		Assert.Equal(4, roadArea.PolygonPoints.Count);
+
+		history.Undo();
+		Assert.Equal(new PointD(45.0, 20.0), roadArea.PolygonPoints[1]);
+
+		history.Redo();
+		Assert.Equal(new PointD(80.0, 20.0), roadArea.PolygonPoints[1]);
 	}
 }

@@ -6,6 +6,7 @@ public enum EditorToolType
 	Pan,
 	District,
 	Road,
+	RoadArea,
 	PointOfInterest,
 	Label
 }

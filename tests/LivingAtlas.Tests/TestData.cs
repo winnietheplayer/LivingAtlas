@@ -88,6 +88,23 @@ internal static class TestData
             "road.primary");
     }
 
+    public static RoadArea CreateRoadArea(Guid layerId, Guid? id = null)
+    {
+        return new RoadArea(
+            id ?? Guid.NewGuid(),
+            "Market Road Surface",
+            layerId,
+            new[]
+            {
+                new PointD(10.0, 20.0),
+                new PointD(80.0, 20.0),
+                new PointD(80.0, 50.0),
+                new PointD(10.0, 50.0)
+            },
+            new[] { "road", "area" },
+            "road.area.secondary");
+    }
+
     public static DistrictShape CreateDistrict(Guid layerId, Guid? id = null, Guid? childMapId = null)
     {
         return new DistrictShape(

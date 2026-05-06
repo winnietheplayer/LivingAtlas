@@ -24,6 +24,8 @@ public readonly record struct DistrictRenderStyle(RenderColor Fill, RenderColor 
 
 public readonly record struct RoadRenderStyle(RenderColor Stroke, double StrokeWidth);
 
+public readonly record struct RoadAreaRenderStyle(RenderColor Fill, RenderColor Stroke, double StrokeWidth);
+
 public readonly record struct PoiRenderStyle(RenderColor Fill, RenderColor Stroke, double StrokeWidth, double Radius);
 
 public readonly record struct LabelRenderStyle(RenderColor Color, double FontSize, RenderTextWeight FontWeight);
@@ -51,6 +53,17 @@ public static class MapObjectStyleResolver
 			"road.secondary" => new RoadRenderStyle(RenderColor.FromRgb(198, 185, 154), 3.0),
 			"road.alley" => new RoadRenderStyle(RenderColor.FromArgb(190, 168, 161, 142), 1.5),
 			_ => GetRoadStyle("road.primary")
+		};
+	}
+
+	public static RoadAreaRenderStyle GetRoadAreaStyle(string styleKey)
+	{
+		return styleKey switch
+		{
+			"road.area.primary" => new RoadAreaRenderStyle(RenderColor.FromArgb(182, 133, 112, 83), RenderColor.FromRgb(232, 194, 128), 2.5),
+			"" or "road.area.secondary" => new RoadAreaRenderStyle(RenderColor.FromArgb(162, 112, 105, 91), RenderColor.FromRgb(205, 190, 157), 2.0),
+			"road.area.alley" => new RoadAreaRenderStyle(RenderColor.FromArgb(132, 82, 78, 70), RenderColor.FromArgb(220, 168, 161, 142), 1.5),
+			_ => GetRoadAreaStyle("road.area.secondary")
 		};
 	}
 

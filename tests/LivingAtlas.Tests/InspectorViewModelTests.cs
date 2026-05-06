@@ -19,9 +19,12 @@ public sealed class InspectorViewModelTests
 		inspector.SetSelection(road);
 
 		Assert.True(inspector.IsRoadLineSelected);
+		Assert.False(inspector.IsRoadAreaSelected);
+		Assert.True(inspector.IsRoadKindSelected);
 		Assert.False(inspector.IsMapLabelSelected);
 		Assert.False(inspector.IsPointOfInterestSelected);
 		Assert.False(inspector.IsDistrictShapeSelected);
+		Assert.False(inspector.IsTextureFillSelected);
 		Assert.Equal(RoadLine.DefaultRoadKind, inspector.EditableRoadKind);
 		Assert.Single(inspector.AvailableFillTextureAssets);
 
@@ -29,6 +32,7 @@ public sealed class InspectorViewModelTests
 
 		Assert.True(inspector.IsMapLabelSelected);
 		Assert.False(inspector.IsRoadLineSelected);
+		Assert.False(inspector.IsRoadKindSelected);
 		Assert.Equal(MapLabel.DefaultLabelKind, inspector.EditableLabelKind);
 
 		inspector.SetSelection(null);
@@ -52,6 +56,26 @@ public sealed class InspectorViewModelTests
 		Assert.Contains(inspector.AvailableFillTextureAssets, option => option.AssetId == null && option.DisplayName == "None");
 		Assert.Contains(inspector.AvailableFillTextureAssets, option => option.AssetId == "ground.dirt.01");
 		Assert.Equal("ground.dirt.01", inspector.SelectedFillTextureAsset?.AssetId);
+	}
+
+	[Fact]
+	public void SetSelection_ExposesRoadKindAndTextureFillFieldsForRoadAreas()
+	{
+		InspectorViewModel inspector = new InspectorViewModel(CreateTextureCatalog());
+		RoadArea roadArea = TestData.CreateRoadArea(Guid.NewGuid());
+		roadArea.SetRoadKind("primary");
+		roadArea.SetTextureFill("ground.dirt.01", 9.5);
+
+		inspector.SetSelection(roadArea);
+
+		Assert.True(inspector.IsRoadAreaSelected);
+		Assert.True(inspector.IsRoadKindSelected);
+		Assert.True(inspector.IsTextureFillSelected);
+		Assert.False(inspector.IsRoadLineSelected);
+		Assert.Equal("primary", inspector.EditableRoadKind);
+		Assert.Equal("9.5", inspector.EditableTextureTileSizeMeters);
+		Assert.Equal("ground.dirt.01", inspector.SelectedFillTextureAsset?.AssetId);
+		Assert.Contains("Polygon points: 4", inspector.SelectionDetails);
 	}
 
 	[Fact]
@@ -112,6 +136,23 @@ public sealed class InspectorViewModelTests
 	}
 
 	[Fact]
+	public void ApplyInspectorChanges_UpdatesRoadAreaRoadKindAndTextureFill()
+	{
+		(MainWindowViewModel viewModel, RoadArea roadArea) = CreateMainWindowWithSelectedRoadArea();
+		viewModel.Inspector.EditableRoadKind = "primary";
+		viewModel.Inspector.SelectedFillTextureAsset = new TextureAssetOptionViewModel("Dirt 01", "ground.dirt.01", 10.0);
+		viewModel.Inspector.EditableTextureTileSizeMeters = "8.25";
+
+		Assert.True(viewModel.ApplyInspectorChanges());
+
+		Assert.Equal("primary", roadArea.RoadKind);
+		Assert.Equal("ground.dirt.01", roadArea.FillTextureAssetId);
+		Assert.Equal(8.25, roadArea.TextureTileSizeMeters);
+		Assert.True(viewModel.MapViewport.History.CanUndo);
+		Assert.True(viewModel.IsDirty);
+	}
+
+	[Fact]
 	public void ApplyInspectorChanges_InvalidTextureTileSizeIsRejected()
 	{
 		(MainWindowViewModel viewModel, DistrictShape district) = CreateMainWindowWithSelectedDistrict();
@@ -121,6 +162,21 @@ public sealed class InspectorViewModelTests
 		Assert.False(viewModel.ApplyInspectorChanges());
 
 		Assert.Null(district.FillTextureAssetId);
+		Assert.False(viewModel.MapViewport.History.CanUndo);
+		Assert.False(viewModel.IsDirty);
+		Assert.Equal("Inspector apply failed: texture tile size must be positive.", viewModel.StatusBar.Message);
+	}
+
+	[Fact]
+	public void ApplyInspectorChanges_InvalidRoadAreaTextureTileSizeIsRejected()
+	{
+		(MainWindowViewModel viewModel, RoadArea roadArea) = CreateMainWindowWithSelectedRoadArea();
+		viewModel.Inspector.SelectedFillTextureAsset = new TextureAssetOptionViewModel("Dirt 01", "ground.dirt.01", 10.0);
+		viewModel.Inspector.EditableTextureTileSizeMeters = "-1";
+
+		Assert.False(viewModel.ApplyInspectorChanges());
+
+		Assert.Null(roadArea.FillTextureAssetId);
 		Assert.False(viewModel.MapViewport.History.CanUndo);
 		Assert.False(viewModel.IsDirty);
 		Assert.Equal("Inspector apply failed: texture tile size must be positive.", viewModel.StatusBar.Message);
@@ -156,6 +212,22 @@ public sealed class InspectorViewModelTests
 		viewModel.MapViewport.SelectAtScreenPoint(new PointD(200.0, 200.0), 20.0);
 
 		return (viewModel, district);
+	}
+
+	private static (MainWindowViewModel ViewModel, RoadArea RoadArea) CreateMainWindowWithSelectedRoadArea()
+	{
+		MapDocument map = TestData.CreateCityMap();
+		MapLayer layer = TestData.CreateLayer(layerType: MapLayerType.Streets);
+		RoadArea roadArea = TestData.CreateRoadArea(layer.Id);
+		layer.AddObject(roadArea);
+		map.AddLayer(layer);
+		CampaignMapProject project = TestData.CreateProject(map);
+		MainWindowViewModel viewModel = new MainWindowViewModel(project, CreateTextureCatalog());
+
+		viewModel.MapViewport.Camera.SetView(0.0, 0.0, 1.0);
+		viewModel.MapViewport.SelectAtScreenPoint(new PointD(30.0, 30.0), 20.0);
+
+		return (viewModel, roadArea);
 	}
 
 	private static TextureAssetCatalog CreateTextureCatalog()

@@ -398,6 +398,21 @@ public class MainWindowViewModel : ViewModelBase
 				roadKind = NormalizeRoadKind(Inspector.EditableRoadKind);
 				flag6 = !string.Equals(roadKind, roadLine.RoadKind, StringComparison.Ordinal);
 			}
+			else if (selectedObject is RoadArea roadArea)
+			{
+				roadKind = NormalizeRoadKind(Inspector.EditableRoadKind);
+				flag6 = !string.Equals(roadKind, roadArea.RoadKind, StringComparison.Ordinal);
+				if (!TryParseTextureTileSize(Inspector.EditableTextureTileSizeMeters, out double parsedTileSize, out string? tileSizeError))
+				{
+					StatusBar.SetMessage("Inspector apply failed: " + tileSizeError);
+					return false;
+				}
+
+				fillTextureAssetId = NormalizeTextureAssetId(Inspector.SelectedFillTextureAsset?.AssetId);
+				textureTileSizeMeters = fillTextureAssetId == null ? RoadArea.DefaultTextureTileSizeMeters : parsedTileSize;
+				flag9 = !string.Equals(fillTextureAssetId, roadArea.FillTextureAssetId, StringComparison.Ordinal)
+					|| (fillTextureAssetId != null && Math.Abs(textureTileSizeMeters.Value - roadArea.TextureTileSizeMeters) > 1E-06);
+			}
 			else if (selectedObject is DistrictShape districtShape)
 			{
 				districtKind = NormalizeDistrictKind(Inspector.EditableDistrictKind);
@@ -435,7 +450,7 @@ public class MainWindowViewModel : ViewModelBase
 				newRoadKind: flag6 ? roadKind : null,
 				newDistrictKind: flag7 ? districtKind : null,
 				newLabelKind: flag8 ? labelKind : null,
-				updateDistrictTextureFill: flag9,
+				updateTextureFill: flag9,
 				newFillTextureAssetId: flag9 ? fillTextureAssetId : null,
 				newTextureTileSizeMeters: flag9 ? textureTileSizeMeters : null);
 			MapViewport.ExecuteCommand(command, "Object updated: " + text);

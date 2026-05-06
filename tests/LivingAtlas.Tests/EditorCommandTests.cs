@@ -189,6 +189,41 @@ public sealed class EditorCommandTests
     }
 
     [Fact]
+    public void UpdateMapObjectPropertiesCommand_UpdatesRoadAreaRoadKindAndTextureFillWithUndoRedo()
+    {
+        MapDocument map = TestData.CreateCityMap();
+        MapLayer layer = TestData.CreateLayer(layerType: MapLayerType.Streets);
+        RoadArea roadArea = TestData.CreateRoadArea(layer.Id);
+        HistoryService history = new HistoryService();
+
+        map.AddLayer(layer);
+        layer.AddObject(roadArea);
+
+        history.Execute(new UpdateMapObjectPropertiesCommand(
+            map,
+            roadArea.Id,
+            roadArea.Name,
+            newRoadKind: "primary",
+            updateTextureFill: true,
+            newFillTextureAssetId: "road.cobble.01",
+            newTextureTileSizeMeters: 6.0));
+
+        Assert.Equal("primary", roadArea.RoadKind);
+        Assert.Equal("road.cobble.01", roadArea.FillTextureAssetId);
+        Assert.Equal(6.0, roadArea.TextureTileSizeMeters);
+
+        history.Undo();
+        Assert.Equal(RoadArea.DefaultRoadKind, roadArea.RoadKind);
+        Assert.Null(roadArea.FillTextureAssetId);
+        Assert.Equal(RoadArea.DefaultTextureTileSizeMeters, roadArea.TextureTileSizeMeters);
+
+        history.Redo();
+        Assert.Equal("primary", roadArea.RoadKind);
+        Assert.Equal("road.cobble.01", roadArea.FillTextureAssetId);
+        Assert.Equal(6.0, roadArea.TextureTileSizeMeters);
+    }
+
+    [Fact]
     public void UpdateMapObjectPropertiesCommand_UpdatesDistrictKindWithUndoRedo()
     {
         MapDocument map = TestData.CreateCityMap();
@@ -229,7 +264,7 @@ public sealed class EditorCommandTests
             map,
             district.Id,
             district.Name,
-            updateDistrictTextureFill: true,
+            updateTextureFill: true,
             newFillTextureAssetId: "ground.dirt.01",
             newTextureTileSizeMeters: 15.0));
 

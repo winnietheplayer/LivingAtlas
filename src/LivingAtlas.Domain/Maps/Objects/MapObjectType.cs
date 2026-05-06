@@ -4,6 +4,7 @@ public enum MapObjectType
 {
 	DistrictShape,
 	RoadLine,
+	RoadArea,
 	MapLabel,
 	PointOfInterest
 }

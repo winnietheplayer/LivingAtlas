@@ -49,4 +49,24 @@ public class LayerVisibilityTests
         hit = MapObjectHitTester.HitTest(map, new PointD(100, 100), 5.0);
         Assert.Null(hit);
     }
+
+    [Fact]
+    public void HitTester_CanHitRoadAreaAndIgnoresHiddenRoadAreaLayer()
+    {
+        var map = new MapDocument(Guid.NewGuid(), "Test Map", MapScaleType.Region, new SizeD(1000, 1000));
+        var layer = new MapLayer(Guid.NewGuid(), "Streets", MapLayerType.Streets);
+        map.AddLayer(layer);
+        RoadArea roadArea = TestData.CreateRoadArea(layer.Id);
+        layer.AddObject(roadArea);
+
+        MapObject? hit = MapObjectHitTester.HitTest(map, new PointD(30.0, 30.0), 5.0);
+
+        Assert.NotNull(hit);
+        Assert.Equal(roadArea.Id, hit.Id);
+
+        layer.SetVisibility(false);
+        hit = MapObjectHitTester.HitTest(map, new PointD(30.0, 30.0), 5.0);
+
+        Assert.Null(hit);
+    }
 }

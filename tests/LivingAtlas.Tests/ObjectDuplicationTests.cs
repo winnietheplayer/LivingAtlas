@@ -80,6 +80,41 @@ public class ObjectDuplicationTests
     }
 
     [Fact]
+    public void DuplicateRoadArea_CopiesMetadataTextureAndShiftsPolygon()
+    {
+        var originalPoints = new[]
+        {
+            new PointD(0, 0),
+            new PointD(20, 0),
+            new PointD(20, 10),
+            new PointD(0, 10)
+        };
+        var original = new RoadArea(Guid.NewGuid(), "Original Road Area", _layer.Id, originalPoints, new[] { "road", "surface" }, "road.area.primary");
+        original.SetDescription("Road area notes");
+        original.SetRoadKind("primary");
+        original.SetTextureFill("road.cobble.01", 7.0);
+        _layer.AddObject(original);
+
+        var command = new DuplicateMapObjectCommand(_map, original);
+        command.Execute();
+
+        var duplicate = (RoadArea)command.Duplicate;
+        Assert.NotEqual(original.Id, duplicate.Id);
+        Assert.Equal("Original Road Area Copy", duplicate.Name);
+        Assert.Equal(original.LayerId, duplicate.LayerId);
+        Assert.Equal(new PointD(20, 20), duplicate.PolygonPoints[0]);
+        Assert.Equal(new PointD(40, 20), duplicate.PolygonPoints[1]);
+        Assert.Equal(new PointD(40, 30), duplicate.PolygonPoints[2]);
+        Assert.Equal(new PointD(20, 30), duplicate.PolygonPoints[3]);
+        Assert.Equal("Road area notes", duplicate.Description);
+        Assert.Equal("primary", duplicate.RoadKind);
+        Assert.Equal("road.area.primary", duplicate.StyleKey);
+        Assert.Equal("road.cobble.01", duplicate.FillTextureAssetId);
+        Assert.Equal(7.0, duplicate.TextureTileSizeMeters);
+        Assert.Equal(new[] { "road", "surface" }, duplicate.Tags);
+    }
+
+    [Fact]
     public void DuplicateDistrictShape_CopiesPointsAndDoesNotCopyChildMapId()
     {
         var originalPoints = new[] { new PointD(0, 0), new PointD(10, 0), new PointD(0, 10) };

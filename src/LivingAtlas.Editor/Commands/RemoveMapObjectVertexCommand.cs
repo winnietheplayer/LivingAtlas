@@ -47,6 +47,11 @@ public sealed class RemoveMapObjectVertexCommand : IEditorCommand
 			road.RemovePoint(_removeIndex);
 			return;
 		}
+		if (mapObject is RoadArea roadArea)
+		{
+			roadArea.RemovePoint(_removeIndex);
+			return;
+		}
 		if (mapObject is DistrictShape district)
 		{
 			district.RemovePoint(_removeIndex);
@@ -61,6 +66,11 @@ public sealed class RemoveMapObjectVertexCommand : IEditorCommand
 		if (mapObject is RoadLine road)
 		{
 			road.InsertPoint(_removeIndex, _removedPoint);
+			return;
+		}
+		if (mapObject is RoadArea roadArea)
+		{
+			roadArea.InsertPoint(_removeIndex, _removedPoint);
 			return;
 		}
 		if (mapObject is DistrictShape district)
@@ -80,6 +90,14 @@ public sealed class RemoveMapObjectVertexCommand : IEditorCommand
 				throw new ArgumentOutOfRangeException("index", index, "Point index is outside the road point bounds.");
 			}
 			return road.Points[index];
+		}
+		if (mapObject is RoadArea roadArea)
+		{
+			if (index < 0 || index >= roadArea.PolygonPoints.Count)
+			{
+				throw new ArgumentOutOfRangeException("index", index, "Point index is outside the road area polygon point bounds.");
+			}
+			return roadArea.PolygonPoints[index];
 		}
 		if (mapObject is DistrictShape district)
 		{
