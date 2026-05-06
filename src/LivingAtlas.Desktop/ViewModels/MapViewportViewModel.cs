@@ -1039,7 +1039,7 @@ public sealed class MapViewportViewModel : ViewModelBase
 			RulerMeasurement? measurement = CurrentRulerMeasurement;
 			if (measurement != null)
 			{
-				return $"{coordinates} | {toolText} | {measurement.FormatStatus()}";
+				return $"{coordinates} | {toolText} | {measurement.FormatStatus(Map.FeetPerUnit)}";
 			}
 			if (_rulerStartPoint.HasValue)
 			{
@@ -1106,7 +1106,7 @@ public sealed class MapViewportViewModel : ViewModelBase
 
 	private static string FormatCoordinates(PointD worldPoint, double zoom)
 	{
-		return string.Create(CultureInfo.InvariantCulture, $"X: {worldPoint.X:F2} m, Y: {worldPoint.Y:F2} m, Zoom: {zoom * 100.0:F0}%");
+		return string.Create(CultureInfo.InvariantCulture, $"X: {worldPoint.X:F2} units, Y: {worldPoint.Y:F2} units, Zoom: {zoom * 100.0:F0}%");
 	}
 
 	private static string FormatToolName(EditorToolType tool)

@@ -52,6 +52,8 @@ public static class ProjectJsonSerializer
 
 		public SizeDto RealSizeMeters { get; init; } = new SizeDto();
 
+		public double? FeetPerUnit { get; init; }
+
 		public Guid? ParentMapId { get; init; }
 
 		public GridSettingsDto GridSettings { get; init; } = new GridSettingsDto();
@@ -68,6 +70,7 @@ public static class ProjectJsonSerializer
 				Name = map.Name,
 				ScaleType = map.ScaleType,
 				RealSizeMeters = SizeDto.FromSize(map.RealSizeMeters),
+				FeetPerUnit = map.FeetPerUnit,
 				ParentMapId = map.ParentMapId,
 				GridSettings = GridSettingsDto.FromGridSettings(map.GridSettings),
 				Layers = map.Layers.Select(MapLayerDto.FromLayer).ToList(),
@@ -77,7 +80,7 @@ public static class ProjectJsonSerializer
 
 		public MapDocument ToMapDocument()
 		{
-			MapDocument mapDocument = new MapDocument(Id, Name, ScaleType, RealSizeMeters.ToSizeD(), ParentMapId, GridSettings.ToGridSettings());
+			MapDocument mapDocument = new MapDocument(Id, Name, ScaleType, RealSizeMeters.ToSizeD(), ParentMapId, GridSettings.ToGridSettings(), FeetPerUnit);
 			foreach (MapLayerDto layer in Layers)
 			{
 				mapDocument.AddLayer(layer.ToMapLayer());

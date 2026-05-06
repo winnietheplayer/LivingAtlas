@@ -1,141 +1,410 @@
 {
-  "id": "base_terrain_01",
-  "name": "Base Terrain Pack 01",
-  "version": "1.0.0",
+  "id": "core_textures_01",
+  "name": "Core Textures Pack 01",
+  "version": "0.1.0",
+  "kind": "assetPack",
+  "contentKind": "textures",
+  "description": "Starter seamless texture pack for LivingAtlas. Contains core ground, road, floor, and water textures generated for 2D top-down map editing.",
   "assets": [
     {
-      "id": "ground.dirt.01",
-      "name": "Dirt 01",
+      "id": "terrain.dirt.neutral.01",
+      "name": "Neutral Dirt 01",
       "kind": "texture",
       "category": "ground",
       "file": "textures/ground/ground_dirt_01.png",
       "isTileable": true,
+      "alpha": false,
+      "generator": "GPT Image 2.0",
+      "resolution": {
+        "width": 1254,
+        "height": 1254
+      },
+      "processing": {
+        "upscaled": false
+      },
       "defaultTileSizeMeters": 10.0,
-      "tags": ["ground", "dirt", "outdoor"]
+      "intendedUse": [
+        "terrain_fill",
+        "background"
+      ],
+      "tags": [
+        "terrain",
+        "ground",
+        "dirt",
+        "outdoor",
+        "neutral"
+      ]
     },
     {
-      "id": "ground.grass.01",
-      "name": "Grass 01",
-      "kind": "texture",
-      "category": "ground",
-      "file": "textures/ground/ground_grass_01.png",
-      "isTileable": true,
-      "defaultTileSizeMeters": 10.0,
-      "tags": ["ground", "grass", "outdoor"]
-    },
-    {
-      "id": "ground.mud.01",
-      "name": "Mud 01",
-      "kind": "texture",
-      "category": "ground",
-      "file": "textures/ground/ground_mud_01.png",
-      "isTileable": true,
-      "defaultTileSizeMeters": 10.0,
-      "tags": ["ground", "mud", "outdoor"]
-    },
-    {
-      "id": "ground.sand.01",
-      "name": "Sand 01",
-      "kind": "texture",
-      "category": "ground",
-      "file": "textures/ground/ground_sand_01.png",
-      "isTileable": true,
-      "defaultTileSizeMeters": 10.0,
-      "tags": ["ground", "sand", "outdoor"]
-    },
-    {
-      "id": "ground.stone.01",
-      "name": "Stone Ground 01",
-      "kind": "texture",
-      "category": "ground",
-      "file": "textures/ground/ground_stone_01.png",
-      "isTileable": true,
-      "defaultTileSizeMeters": 10.0,
-      "tags": ["ground", "stone", "outdoor"]
-    },
-    {
-      "id": "ground.dirt_packed.01",
+      "id": "terrain.dirt.packed.01",
       "name": "Packed Dirt 01",
       "kind": "texture",
       "category": "ground",
       "file": "textures/ground/ground_dirt_packed_01.png",
       "isTileable": true,
+      "alpha": false,
+      "generator": "GPT Image 2.0",
+      "resolution": {
+        "width": 1254,
+        "height": 1254
+      },
+      "processing": {
+        "upscaled": false
+      },
       "defaultTileSizeMeters": 10.0,
-      "tags": ["ground", "dirt", "packed", "road"]
+      "intendedUse": [
+        "terrain_fill",
+        "road_fill",
+        "background"
+      ],
+      "tags": [
+        "terrain",
+        "ground",
+        "dirt",
+        "packed",
+        "outdoor",
+        "road"
+      ]
     },
-
     {
-      "id": "floor.earth_cellar.01",
-      "name": "Earth Cellar Floor 01",
+      "id": "terrain.grass.short.01",
+      "name": "Short Grass 01",
       "kind": "texture",
-      "category": "floor",
-      "file": "textures/floor/floor_earth_cellar_01.png",
+      "category": "ground",
+      "file": "textures/ground/ground_grass_01.png",
       "isTileable": true,
+      "alpha": false,
+      "generator": "GPT Image 2.0",
+      "resolution": {
+        "width": 1254,
+        "height": 1254
+      },
+      "processing": {
+        "upscaled": false
+      },
       "defaultTileSizeMeters": 10.0,
-      "tags": ["floor", "earth", "cellar", "interior"]
+      "intendedUse": [
+        "terrain_fill",
+        "background"
+      ],
+      "tags": [
+        "terrain",
+        "ground",
+        "grass",
+        "outdoor",
+        "green",
+        "short"
+      ]
     },
     {
-      "id": "floor.stone.01",
-      "name": "Stone Floor 01",
+      "id": "terrain.mud.wet.01",
+      "name": "Wet Mud 01",
       "kind": "texture",
-      "category": "floor",
-      "file": "textures/floor/floor_stone_01.png",
+      "category": "ground",
+      "file": "textures/ground/ground_mud_01.png",
       "isTileable": true,
+      "alpha": false,
+      "generator": "GPT Image 2.0",
+      "resolution": {
+        "width": 1254,
+        "height": 1254
+      },
+      "processing": {
+        "upscaled": false
+      },
       "defaultTileSizeMeters": 10.0,
-      "tags": ["floor", "stone", "interior"]
+      "intendedUse": [
+        "terrain_fill",
+        "road_fill",
+        "background"
+      ],
+      "tags": [
+        "terrain",
+        "ground",
+        "mud",
+        "wet",
+        "outdoor"
+      ]
     },
     {
-      "id": "floor.wood.01",
-      "name": "Wood Floor 01",
+      "id": "terrain.sand.dry.01",
+      "name": "Dry Sand 01",
       "kind": "texture",
-      "category": "floor",
-      "file": "textures/floor/floor_wood_01.png",
+      "category": "ground",
+      "file": "textures/ground/ground_sand_01.png",
       "isTileable": true,
-      "defaultTileSizeMeters": 8.0,
-      "tags": ["floor", "wood", "interior"]
+      "alpha": false,
+      "generator": "GPT Image 2.0",
+      "resolution": {
+        "width": 1254,
+        "height": 1254
+      },
+      "processing": {
+        "upscaled": false
+      },
+      "defaultTileSizeMeters": 10.0,
+      "intendedUse": [
+        "terrain_fill",
+        "background"
+      ],
+      "tags": [
+        "terrain",
+        "ground",
+        "sand",
+        "dry",
+        "outdoor",
+        "desert"
+      ]
     },
-
     {
-      "id": "road.cobblestone.01",
-      "name": "Cobblestone Road 01",
+      "id": "terrain.gravel.basic.01",
+      "name": "Basic Gravel 01",
+      "kind": "texture",
+      "category": "ground",
+      "file": "textures/ground/ground_stone_01.png",
+      "isTileable": true,
+      "alpha": false,
+      "generator": "GPT Image 2.0",
+      "resolution": {
+        "width": 1254,
+        "height": 1254
+      },
+      "processing": {
+        "upscaled": false
+      },
+      "defaultTileSizeMeters": 10.0,
+      "intendedUse": [
+        "terrain_fill",
+        "road_fill",
+        "background"
+      ],
+      "tags": [
+        "terrain",
+        "ground",
+        "stone",
+        "gravel",
+        "rocky",
+        "outdoor"
+      ]
+    },
+    {
+      "id": "road.cobblestone.old.01",
+      "name": "Old Cobblestone Road 01",
       "kind": "texture",
       "category": "road",
       "file": "textures/road/road_cobblestone_01.png",
       "isTileable": true,
+      "alpha": false,
+      "generator": "GPT Image 2.0",
+      "resolution": {
+        "width": 1254,
+        "height": 1254
+      },
+      "processing": {
+        "upscaled": false
+      },
       "defaultTileSizeMeters": 8.0,
-      "tags": ["road", "cobblestone", "city"]
+      "intendedUse": [
+        "road_fill",
+        "plaza_fill",
+        "city_street"
+      ],
+      "tags": [
+        "road",
+        "cobblestone",
+        "stone",
+        "city",
+        "old",
+        "street"
+      ]
     },
     {
-      "id": "road.cobblestone_broken.01",
+      "id": "road.cobblestone.broken.01",
       "name": "Broken Cobblestone Road 01",
       "kind": "texture",
       "category": "road",
       "file": "textures/road/road_cobblestone_broken_01.png",
       "isTileable": true,
+      "alpha": false,
+      "generator": "GPT Image 2.0",
+      "resolution": {
+        "width": 1254,
+        "height": 1254
+      },
+      "processing": {
+        "upscaled": false
+      },
       "defaultTileSizeMeters": 8.0,
-      "tags": ["road", "cobblestone", "broken", "city"]
+      "intendedUse": [
+        "road_fill",
+        "plaza_fill",
+        "ruins",
+        "city_street"
+      ],
+      "tags": [
+        "road",
+        "cobblestone",
+        "stone",
+        "broken",
+        "city",
+        "ruins",
+        "old"
+      ]
     },
     {
-      "id": "road.dirt.01",
+      "id": "road.dirt.basic.01",
       "name": "Dirt Road 01",
       "kind": "texture",
       "category": "road",
       "file": "textures/road/road_dirt_01.png",
       "isTileable": true,
+      "alpha": false,
+      "generator": "GPT Image 2.0",
+      "resolution": {
+        "width": 1254,
+        "height": 1254
+      },
+      "processing": {
+        "upscaled": false
+      },
       "defaultTileSizeMeters": 10.0,
-      "tags": ["road", "dirt", "rural"]
+      "intendedUse": [
+        "road_fill",
+        "path_fill"
+      ],
+      "tags": [
+        "road",
+        "dirt",
+        "packed",
+        "rural",
+        "outdoor",
+        "path"
+      ]
     },
     {
-      "id": "road.wood_planks.01",
+      "id": "road.wood.planks.01",
       "name": "Wood Plank Road 01",
       "kind": "texture",
       "category": "road",
       "file": "textures/road/road_wood_planks_01.png",
       "isTileable": true,
+      "alpha": false,
+      "generator": "GPT Image 2.0",
+      "resolution": {
+        "width": 1254,
+        "height": 1254
+      },
+      "processing": {
+        "upscaled": false
+      },
       "defaultTileSizeMeters": 8.0,
-      "tags": ["road", "wood", "planks", "bridge"]
+      "intendedUse": [
+        "road_fill",
+        "bridge_fill",
+        "dock_fill"
+      ],
+      "tags": [
+        "road",
+        "wood",
+        "planks",
+        "bridge",
+        "dock",
+        "walkway"
+      ]
     },
-
+    {
+      "id": "floor.earth.cellar.01",
+      "name": "Earth Cellar Floor 01",
+      "kind": "texture",
+      "category": "floor",
+      "file": "textures/floor/floor_earth_cellar_01.png",
+      "isTileable": true,
+      "alpha": false,
+      "generator": "GPT Image 2.0",
+      "resolution": {
+        "width": 1254,
+        "height": 1254
+      },
+      "processing": {
+        "upscaled": false
+      },
+      "defaultTileSizeMeters": 6.0,
+      "intendedUse": [
+        "floor_fill",
+        "interior_floor",
+        "underground"
+      ],
+      "tags": [
+        "floor",
+        "earth",
+        "cellar",
+        "cave",
+        "interior",
+        "underground"
+      ]
+    },
+    {
+      "id": "floor.stone.slabs.01",
+      "name": "Stone Slab Floor 01",
+      "kind": "texture",
+      "category": "floor",
+      "file": "textures/floor/floor_stone_01.png",
+      "isTileable": true,
+      "alpha": false,
+      "generator": "GPT Image 2.0",
+      "resolution": {
+        "width": 1254,
+        "height": 1254
+      },
+      "processing": {
+        "upscaled": false
+      },
+      "defaultTileSizeMeters": 6.0,
+      "intendedUse": [
+        "floor_fill",
+        "interior_floor",
+        "dungeon_floor"
+      ],
+      "tags": [
+        "floor",
+        "stone",
+        "slabs",
+        "interior",
+        "castle",
+        "crypt",
+        "dungeon"
+      ]
+    },
+    {
+      "id": "floor.wood.tavern.01",
+      "name": "Wood Tavern Floor 01",
+      "kind": "texture",
+      "category": "floor",
+      "file": "textures/floor/floor_wood_01.png",
+      "isTileable": true,
+      "alpha": false,
+      "generator": "GPT Image 2.0",
+      "resolution": {
+        "width": 1254,
+        "height": 1254
+      },
+      "processing": {
+        "upscaled": false
+      },
+      "defaultTileSizeMeters": 6.0,
+      "intendedUse": [
+        "floor_fill",
+        "interior_floor"
+      ],
+      "tags": [
+        "floor",
+        "wood",
+        "planks",
+        "interior",
+        "tavern",
+        "house"
+      ]
+    },
     {
       "id": "water.calm.01",
       "name": "Calm Water 01",
@@ -143,8 +412,28 @@
       "category": "water",
       "file": "textures/water/water_calm_01.png",
       "isTileable": true,
+      "alpha": false,
+      "generator": "GPT Image 2.0",
+      "resolution": {
+        "width": 1254,
+        "height": 1254
+      },
+      "processing": {
+        "upscaled": false
+      },
       "defaultTileSizeMeters": 12.0,
-      "tags": ["water", "calm"]
+      "intendedUse": [
+        "water_fill",
+        "background"
+      ],
+      "tags": [
+        "water",
+        "calm",
+        "pond",
+        "lake",
+        "river",
+        "outdoor"
+      ]
     },
     {
       "id": "water.deep.01",
@@ -153,8 +442,28 @@
       "category": "water",
       "file": "textures/water/water_deep_01.png",
       "isTileable": true,
+      "alpha": false,
+      "generator": "GPT Image 2.0",
+      "resolution": {
+        "width": 1254,
+        "height": 1254
+      },
+      "processing": {
+        "upscaled": false
+      },
       "defaultTileSizeMeters": 12.0,
-      "tags": ["water", "deep"]
+      "intendedUse": [
+        "water_fill",
+        "background"
+      ],
+      "tags": [
+        "water",
+        "deep",
+        "dark",
+        "harbor",
+        "lake",
+        "ominous"
+      ]
     }
   ]
 }

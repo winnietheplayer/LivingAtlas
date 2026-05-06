@@ -19,6 +19,8 @@ public sealed class MapDocument
 
 	public SizeD RealSizeMeters { get; private set; }
 
+	public double FeetPerUnit { get; private set; }
+
 	public IReadOnlyList<MapLayer> Layers => _layers;
 
 	public Guid? ParentMapId { get; }
@@ -27,7 +29,7 @@ public sealed class MapDocument
 
 	public GridSettings GridSettings { get; private set; }
 
-	public MapDocument(Guid id, string name, MapScaleType scaleType, SizeD realSizeMeters, Guid? parentMapId = null, GridSettings? gridSettings = null)
+	public MapDocument(Guid id, string name, MapScaleType scaleType, SizeD realSizeMeters, Guid? parentMapId = null, GridSettings? gridSettings = null, double? feetPerUnit = null)
 	{
 		if (id == Guid.Empty)
 		{
@@ -45,8 +47,35 @@ public sealed class MapDocument
 		Name = name;
 		ScaleType = scaleType;
 		RealSizeMeters = realSizeMeters;
+		FeetPerUnit = feetPerUnit ?? GetDefaultFeetPerUnit(scaleType);
+		ValidateFeetPerUnit(FeetPerUnit);
 		ParentMapId = parentMapId;
 		GridSettings = gridSettings ?? GridSettings.Disabled;
+	}
+
+	public static double GetDefaultFeetPerUnit(MapScaleType scaleType)
+	{
+		return scaleType switch
+		{
+			MapScaleType.City => 100.0,
+			MapScaleType.District => 10.0,
+			MapScaleType.BattleMap => 5.0,
+			_ => 5.0,
+		};
+	}
+
+	public static MapScaleType GetDefaultChildScaleType(MapScaleType parentScaleType)
+	{
+		return parentScaleType switch
+		{
+			MapScaleType.World => MapScaleType.City,
+			MapScaleType.Region => MapScaleType.City,
+			MapScaleType.City => MapScaleType.District,
+			MapScaleType.District => MapScaleType.BattleMap,
+			MapScaleType.Building => MapScaleType.BattleMap,
+			MapScaleType.BattleMap => throw new InvalidOperationException("Battle maps cannot create child maps."),
+			_ => MapScaleType.District,
+		};
 	}
 
 	public void Rename(string name)
@@ -70,6 +99,12 @@ public sealed class MapDocument
 			throw new ArgumentException("Map size must be positive.");
 		}
 		RealSizeMeters = realSize;
+	}
+
+	public void SetFeetPerUnit(double feetPerUnit)
+	{
+		ValidateFeetPerUnit(feetPerUnit);
+		FeetPerUnit = feetPerUnit;
 	}
 
 	public void SetGridSettings(GridSettings gridSettings)
@@ -150,5 +185,13 @@ public sealed class MapDocument
 			throw new ArgumentException("Child map id cannot be empty.", "childMapId");
 		}
 		return _childrenMapIds.Remove(childMapId);
+	}
+
+	private static void ValidateFeetPerUnit(double feetPerUnit)
+	{
+		if (feetPerUnit <= 0.0 || double.IsNaN(feetPerUnit) || double.IsInfinity(feetPerUnit))
+		{
+			throw new ArgumentOutOfRangeException(nameof(feetPerUnit), feetPerUnit, "Feet per unit must be positive.");
+		}
 	}
 }

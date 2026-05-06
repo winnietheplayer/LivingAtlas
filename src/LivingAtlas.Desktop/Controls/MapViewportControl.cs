@@ -1079,7 +1079,7 @@ public sealed class MapViewportControl : Control
 			if (measurement != null)
 			{
 				Point midpoint = new Point((start.X + end.X) / 2.0 + 8.0, (start.Y + end.Y) / 2.0 - 20.0);
-				DrawText(context, measurement.FormatStatus(), midpoint, 12.0, RulerTextBrush, FontWeight.SemiBold);
+				DrawText(context, measurement.FormatStatus(viewModel.Map.FeetPerUnit), midpoint, 12.0, RulerTextBrush, FontWeight.SemiBold);
 			}
 		}
 

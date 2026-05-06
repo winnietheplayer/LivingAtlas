@@ -232,7 +232,13 @@ public partial class MainWindow : Window
             return;
         }
 
-        var createViewModel = new CreateChildMapViewModel(district);
+        if (viewModel.MapViewport.Map.ScaleType == LivingAtlas.Domain.Maps.MapScaleType.BattleMap)
+        {
+            viewModel.StatusBar.SetMessage("Battle maps cannot create child maps");
+            return;
+        }
+
+        var createViewModel = new CreateChildMapViewModel(district, viewModel.MapViewport.Map);
         var dialog = new CreateChildMapDialog(createViewModel);
         
         var result = await dialog.ShowDialog<bool>(this);

@@ -158,9 +158,12 @@ public class MainWindowViewModel : ViewModelBase
 
 	public bool IsSnapToGridEnabled => MapViewport?.Map?.GridSettings.SnapToGrid ?? false;
 
-	public bool CanUseSelectionChildMapAction => MapViewport.SelectedObject is DistrictShape;
+	public bool CanUseSelectionChildMapAction => MapViewport.SelectedObject is DistrictShape { ChildMapId: var childMapId }
+		&& (childMapId.HasValue || MapViewport.Map.ScaleType != MapScaleType.BattleMap);
 
-	public bool CanCreateChildMapFromSelection => MapViewport.SelectedObject is DistrictShape { ChildMapId: var childMapId } && !childMapId.HasValue;
+	public bool CanCreateChildMapFromSelection => MapViewport.SelectedObject is DistrictShape { ChildMapId: var childMapId }
+		&& !childMapId.HasValue
+		&& MapViewport.Map.ScaleType != MapScaleType.BattleMap;
 
 	public bool CanOpenSelectedChildMap => MapViewport.SelectedObject is DistrictShape { ChildMapId: var childMapId } && childMapId.HasValue;
 
@@ -290,13 +293,19 @@ public class MainWindowViewModel : ViewModelBase
 			StatusBar.SetMessage("District '" + districtShape.Name + "' already has a child map");
 			return false;
 		}
+		if (MapViewport.Map.ScaleType == MapScaleType.BattleMap)
+		{
+			StatusBar.SetMessage("Battle maps cannot create child maps");
+			return false;
+		}
 		try
 		{
 			SizeD? customSize = (settings != null && settings.UseCustomSize) ? new SizeD(settings.Width, settings.Height) : null;
 			string? name = settings?.Name;
 			MapScaleType? scaleType = settings?.ScaleType;
+			double? feetPerUnit = settings?.FeetPerUnit;
 
-			CreateChildMapCommand command = new CreateChildMapCommand(Project, MapViewport.Map, districtShape, name, customSize, scaleType);
+			CreateChildMapCommand command = new CreateChildMapCommand(Project, MapViewport.Map, districtShape, name, customSize, scaleType, childFeetPerUnit: feetPerUnit);
 			MapViewport.ExecuteCommand(command, "Created child map: " + command.ChildMap.Name);
 			
 			MarkDirty();
@@ -691,11 +700,26 @@ public class MainWindowViewModel : ViewModelBase
 	{
 		var map = Project.FindMap(mapId);
 		if (map == null) return;
+		if (!settings.IsValid())
+		{
+			StatusBar.SetMessage("Map settings are invalid");
+			return;
+		}
 
-		map.Rename(settings.Name);
+		string name = settings.Name.Trim();
+		SizeD size = new SizeD(settings.Width, settings.Height);
+		GridSettings gridSettings = new GridSettings(settings.GridEnabled, settings.GridCellSize, map.GridSettings.ShowGrid, settings.SnapToGrid);
+		if (!HasMapSettingsChanges(map, name, settings.ScaleType, size, settings.FeetPerUnit, gridSettings))
+		{
+			StatusBar.SetMessage("Map settings unchanged");
+			return;
+		}
+
+		map.Rename(name);
 		map.SetScaleType(settings.ScaleType);
-		map.SetRealSize(new LivingAtlas.Domain.Geometry.SizeD(settings.Width, settings.Height));
-		map.SetGridSettings(new GridSettings(settings.GridEnabled, settings.GridCellSize, true, settings.SnapToGrid));
+		map.SetRealSize(size);
+		map.SetFeetPerUnit(settings.FeetPerUnit);
+		map.SetGridSettings(gridSettings);
 
 		MarkDirty();
 		ProjectTree = new ProjectTreeViewModel(Project, MapViewport.Map.Id, GetActiveTargetLayer(MapViewport.Map.Id));
@@ -711,6 +735,25 @@ public class MainWindowViewModel : ViewModelBase
 		{
 			StatusBar.SetMessage($"Map settings updated: {map.Name}");
 		}
+	}
+
+	private static bool HasMapSettingsChanges(
+		MapDocument map,
+		string name,
+		MapScaleType scaleType,
+		SizeD size,
+		double feetPerUnit,
+		GridSettings gridSettings)
+	{
+		return map.Name != name
+			|| map.ScaleType != scaleType
+			|| map.RealSizeMeters.Width != size.Width
+			|| map.RealSizeMeters.Height != size.Height
+			|| map.FeetPerUnit != feetPerUnit
+			|| map.GridSettings.IsEnabled != gridSettings.IsEnabled
+			|| map.GridSettings.CellSizeMeters != gridSettings.CellSizeMeters
+			|| map.GridSettings.ShowGrid != gridSettings.ShowGrid
+			|| map.GridSettings.SnapToGrid != gridSettings.SnapToGrid;
 	}
 
 	public bool MoveLayerUp(Guid mapId, Guid layerId)

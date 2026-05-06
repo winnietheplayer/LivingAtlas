@@ -16,7 +16,10 @@ public sealed class RulerToolTests
 
 		Assert.Equal(3.0, measurement.DeltaX);
 		Assert.Equal(4.0, measurement.DeltaY);
-		Assert.Equal(5.0, measurement.DistanceMeters);
+		Assert.Equal(5.0, measurement.DistanceLocalUnits);
+		Assert.Equal(50.0, measurement.GetDistanceFeet(10.0));
+		Assert.Equal(10.0, measurement.GetBattleSquares(10.0));
+		Assert.Contains("Distance: 50.0 ft", measurement.FormatStatus(10.0));
 	}
 
 	[Fact]
@@ -32,7 +35,8 @@ public sealed class RulerToolTests
 		Assert.Equal(new PointD(30.0, 20.0), viewModel.RulerEndPoint);
 		RulerMeasurement? measurement = viewModel.CurrentRulerMeasurement;
 		Assert.NotNull(measurement);
-		Assert.Equal(20.0, measurement.DistanceMeters);
+		Assert.Equal(20.0, measurement.DistanceLocalUnits);
+		Assert.Equal(2000.0, measurement.GetDistanceFeet(viewModel.Map.FeetPerUnit));
 	}
 
 	[Fact]

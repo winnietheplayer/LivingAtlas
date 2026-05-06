@@ -461,6 +461,97 @@ public sealed class ProjectJsonSerializerTests
 	}
 
 	[Fact]
+	public async Task SaveAndLoadAsync_RoundTripsFeetPerUnit()
+	{
+		string tempFileName = Path.GetTempFileName();
+		try
+		{
+			MapDocument rootMap = TestData.CreateCityMap();
+			rootMap.SetFeetPerUnit(75.0);
+			CampaignMapProject project = TestData.CreateProject(rootMap);
+
+			await ProjectJsonSerializer.SaveAsync(project, tempFileName);
+
+			CampaignMapProject loaded = await ProjectJsonSerializer.LoadAsync(tempFileName);
+
+			Assert.Equal(75.0, loaded.RootMap.FeetPerUnit);
+		}
+		finally
+		{
+			if (File.Exists(tempFileName))
+			{
+				File.Delete(tempFileName);
+			}
+		}
+	}
+
+	[Fact]
+	public async Task LoadAsync_OldJsonWithoutFeetPerUnit_LoadsDefaultsByScaleType()
+	{
+		string tempFileName = Path.GetTempFileName();
+		Guid projectId = Guid.NewGuid();
+		Guid cityMapId = Guid.NewGuid();
+		Guid districtMapId = Guid.NewGuid();
+		Guid battleMapId = Guid.NewGuid();
+		try
+		{
+			string json = $$"""
+			{
+			  "id": "{{projectId}}",
+			  "name": "Old Scale Project",
+			  "rootMapId": "{{cityMapId}}",
+			  "maps": [
+			    {
+			      "id": "{{cityMapId}}",
+			      "name": "City",
+			      "scaleType": "City",
+			      "realSizeMeters": { "width": 2600.0, "height": 1800.0 },
+			      "parentMapId": null,
+			      "gridSettings": { "isEnabled": true, "cellSizeMeters": 10.0, "showGrid": true, "snapToGrid": false },
+			      "layers": [],
+			      "childrenMapIds": []
+			    },
+			    {
+			      "id": "{{districtMapId}}",
+			      "name": "District",
+			      "scaleType": "District",
+			      "realSizeMeters": { "width": 260.0, "height": 180.0 },
+			      "parentMapId": "{{cityMapId}}",
+			      "gridSettings": { "isEnabled": true, "cellSizeMeters": 10.0, "showGrid": true, "snapToGrid": false },
+			      "layers": [],
+			      "childrenMapIds": []
+			    },
+			    {
+			      "id": "{{battleMapId}}",
+			      "name": "Battle",
+			      "scaleType": "BattleMap",
+			      "realSizeMeters": { "width": 52.0, "height": 36.0 },
+			      "parentMapId": "{{districtMapId}}",
+			      "gridSettings": { "isEnabled": true, "cellSizeMeters": 1.0, "showGrid": true, "snapToGrid": true },
+			      "layers": [],
+			      "childrenMapIds": []
+			    }
+			  ]
+			}
+			""";
+			await File.WriteAllTextAsync(tempFileName, json);
+
+			CampaignMapProject loaded = await ProjectJsonSerializer.LoadAsync(tempFileName);
+
+			Assert.Equal(100.0, loaded.FindMap(cityMapId)!.FeetPerUnit);
+			Assert.Equal(10.0, loaded.FindMap(districtMapId)!.FeetPerUnit);
+			Assert.Equal(5.0, loaded.FindMap(battleMapId)!.FeetPerUnit);
+		}
+		finally
+		{
+			if (File.Exists(tempFileName))
+			{
+				File.Delete(tempFileName);
+			}
+		}
+	}
+
+	[Fact]
 	public async Task SaveAndLoadAsync_RoundTripsLayerVisibility()
 	{
 		string tempFileName = Path.GetTempFileName();

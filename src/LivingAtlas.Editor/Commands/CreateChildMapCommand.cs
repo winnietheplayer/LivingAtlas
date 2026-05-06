@@ -26,7 +26,8 @@ public sealed class CreateChildMapCommand : IEditorCommand
         string? customName = null,
         SizeD? customSize = null,
         MapScaleType? scaleType = null,
-        Guid? childMapId = null)
+        Guid? childMapId = null,
+        double? childFeetPerUnit = null)
     {
         ArgumentNullException.ThrowIfNull(project, nameof(project));
         ArgumentNullException.ThrowIfNull(parentMap, nameof(parentMap));
@@ -42,6 +43,11 @@ public sealed class CreateChildMapCommand : IEditorCommand
             throw new InvalidOperationException($"District '{district.Id}' already has a child map.");
         }
 
+        if (parentMap.ScaleType == MapScaleType.BattleMap)
+        {
+            throw new InvalidOperationException("Battle maps cannot create child maps.");
+        }
+
         Guid id = childMapId ?? Guid.NewGuid();
 
         if (id == Guid.Empty)
@@ -54,9 +60,11 @@ public sealed class CreateChildMapCommand : IEditorCommand
         _district = district;
 
         RectD boundingBox = GetBoundingBox(district.PolygonPoints);
-        SizeD size = customSize ?? boundingBox.Size;
         string name = string.IsNullOrWhiteSpace(customName) ? district.Name : customName.Trim();
-        MapScaleType st = scaleType ?? MapScaleType.District;
+        MapScaleType st = scaleType ?? MapDocument.GetDefaultChildScaleType(parentMap.ScaleType);
+        double feetPerUnit = childFeetPerUnit ?? MapDocument.GetDefaultFeetPerUnit(st);
+        SizeD computedSize = CalculateChildMapSize(boundingBox.Size, parentMap.FeetPerUnit, feetPerUnit);
+        SizeD size = customSize ?? computedSize;
 
         _childMap = new MapDocument(
             id,
@@ -64,7 +72,8 @@ public sealed class CreateChildMapCommand : IEditorCommand
             st,
             size,
             parentMap.Id,
-            parentMap.GridSettings);
+            parentMap.GridSettings,
+            feetPerUnit);
 
         AddStarterContent(_childMap, district, boundingBox, size);
     }
@@ -154,6 +163,23 @@ public sealed class CreateChildMapCommand : IEditorCommand
         return new PointD(
             (parentPoint.X - parentBounds.Left) * scaleX,
             (parentPoint.Y - parentBounds.Top) * scaleY);
+    }
+
+    public static SizeD CalculateChildMapSize(SizeD parentFootprintLocalSize, double parentFeetPerUnit, double childFeetPerUnit)
+    {
+        if (parentFeetPerUnit <= 0.0 || double.IsNaN(parentFeetPerUnit) || double.IsInfinity(parentFeetPerUnit))
+        {
+            throw new ArgumentOutOfRangeException(nameof(parentFeetPerUnit), parentFeetPerUnit, "Parent feet per unit must be positive.");
+        }
+
+        if (childFeetPerUnit <= 0.0 || double.IsNaN(childFeetPerUnit) || double.IsInfinity(childFeetPerUnit))
+        {
+            throw new ArgumentOutOfRangeException(nameof(childFeetPerUnit), childFeetPerUnit, "Child feet per unit must be positive.");
+        }
+
+        return new SizeD(
+            parentFootprintLocalSize.Width * parentFeetPerUnit / childFeetPerUnit,
+            parentFootprintLocalSize.Height * parentFeetPerUnit / childFeetPerUnit);
     }
 
     private static RectD GetBoundingBox(IReadOnlyList<PointD> points)

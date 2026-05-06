@@ -49,4 +49,37 @@ public class MapMetadataTests
         // SizeD(1000, -1) is invalid for SizeD constructor (ArgumentOutOfRangeException)
         Assert.Throws<ArgumentOutOfRangeException>(() => map.SetRealSize(new SizeD(1000, -1)));
     }
+
+    [Theory]
+    [InlineData(MapScaleType.BattleMap, 5.0)]
+    [InlineData(MapScaleType.District, 10.0)]
+    [InlineData(MapScaleType.City, 100.0)]
+    public void MapDocument_DefaultFeetPerUnit_ComesFromScaleType(MapScaleType scaleType, double expectedFeetPerUnit)
+    {
+        var map = new MapDocument(Guid.NewGuid(), "Name", scaleType, new SizeD(1000, 1000));
+
+        Assert.Equal(expectedFeetPerUnit, map.FeetPerUnit);
+    }
+
+    [Fact]
+    public void MapDocument_SetFeetPerUnit_UpdatesValue()
+    {
+        var map = new MapDocument(Guid.NewGuid(), "Name", MapScaleType.City, new SizeD(1000, 1000));
+
+        map.SetFeetPerUnit(25.0);
+
+        Assert.Equal(25.0, map.FeetPerUnit);
+    }
+
+    [Theory]
+    [InlineData(0.0)]
+    [InlineData(-1.0)]
+    [InlineData(double.NaN)]
+    [InlineData(double.PositiveInfinity)]
+    public void MapDocument_SetFeetPerUnit_ThrowsOnInvalidValue(double feetPerUnit)
+    {
+        var map = new MapDocument(Guid.NewGuid(), "Name", MapScaleType.City, new SizeD(1000, 1000));
+
+        Assert.Throws<ArgumentOutOfRangeException>(() => map.SetFeetPerUnit(feetPerUnit));
+    }
 }

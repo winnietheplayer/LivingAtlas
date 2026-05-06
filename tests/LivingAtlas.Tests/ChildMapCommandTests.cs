@@ -23,6 +23,7 @@ public sealed class ChildMapCommandTests
         Assert.Equal(childMapId, district.ChildMapId);
         Assert.Equal(parentMap.Id, childMap!.ParentMapId);
         Assert.Equal(MapScaleType.District, childMap.ScaleType);
+        Assert.Equal(10.0, childMap.FeetPerUnit);
     }
 
     [Fact]
@@ -38,6 +39,20 @@ public sealed class ChildMapCommandTests
         Assert.Null(project.FindMap(childMapId));
         Assert.Empty(parentMap.ChildrenMapIds);
         Assert.Null(district.ChildMapId);
+    }
+
+    [Fact]
+    public void CreateChildMapCommand_BlocksChildMapsFromBattleMaps()
+    {
+        MapDocument parentMap = new MapDocument(Guid.NewGuid(), "Battle", MapScaleType.BattleMap, new LivingAtlas.Domain.Geometry.SizeD(100, 100));
+        MapLayer districtLayer = TestData.CreateLayer(layerType: MapLayerType.Districts);
+        DistrictShape district = TestData.CreateDistrict(districtLayer.Id);
+        CampaignMapProject project = TestData.CreateProject(parentMap);
+
+        parentMap.AddLayer(districtLayer);
+        districtLayer.AddObject(district);
+
+        Assert.Throws<InvalidOperationException>(() => new CreateChildMapCommand(project, parentMap, district));
     }
 
     private static (CampaignMapProject Project, MapDocument ParentMap, DistrictShape District) CreateProjectWithDistrict()
