@@ -88,6 +88,54 @@ public sealed class PngMapExporter
 		data.SaveTo(stream);
 	}
 
+	public byte[] RenderPreviewPng(CampaignMapProject project, MapDocument map, int maxLongestSidePixels, TextureAssetCatalog? textureAssetCatalog = null, SkiaTextureImageCache? textureImageCache = null)
+	{
+		ArgumentNullException.ThrowIfNull(project);
+		ArgumentNullException.ThrowIfNull(map);
+		if (maxLongestSidePixels <= 0)
+		{
+			throw new ArgumentOutOfRangeException(nameof(maxLongestSidePixels), maxLongestSidePixels, "Preview size must be positive.");
+		}
+		if (map.RealSizeMeters.Width <= 0.0 || map.RealSizeMeters.Height <= 0.0)
+		{
+			throw new ArgumentException("Map size must be positive.", nameof(map));
+		}
+
+		double longestSide = Math.Max(map.RealSizeMeters.Width, map.RealSizeMeters.Height);
+		float scale = (float)Math.Min(1.0, maxLongestSidePixels / longestSide);
+		var imageSize = new PngExportImageSize(
+			Math.Max(1, (int)Math.Ceiling(map.RealSizeMeters.Width * scale)),
+			Math.Max(1, (int)Math.Ceiling(map.RealSizeMeters.Height * scale)));
+
+		var imageInfo = new SKImageInfo(imageSize.Width, imageSize.Height, SKColorType.Bgra8888, SKAlphaType.Premul);
+		using SKSurface surface = SKSurface.Create(imageInfo) ?? throw new InvalidOperationException("Preview render failed: could not create render surface.");
+		bool ownsTextureCache = textureImageCache == null;
+		textureImageCache ??= new SkiaTextureImageCache();
+		try
+		{
+			var options = new PngExportOptions("preview.png")
+			{
+				IncludeGrid = false,
+				IncludeChildMapPreviews = false,
+				TransparentBackground = true,
+				IncludeLabels = true,
+				IncludePointsOfInterest = true
+			};
+			Render(surface.Canvas, project, map, options, imageSize, textureAssetCatalog ?? TextureAssetCatalog.Empty, textureImageCache, scale);
+			surface.Canvas.Flush();
+			using SKImage image = surface.Snapshot();
+			using SKData data = image.Encode(SKEncodedImageFormat.Png, 100) ?? throw new InvalidOperationException("Preview render failed: could not encode image.");
+			return data.ToArray();
+		}
+		finally
+		{
+			if (ownsTextureCache)
+			{
+				textureImageCache.Dispose();
+			}
+		}
+	}
+
 	public static PngExportImageSize ValidateAndGetImageSize(MapDocument map, PngExportOptions options)
 	{
 		ArgumentNullException.ThrowIfNull(map);
@@ -129,7 +177,19 @@ public sealed class PngMapExporter
 		TextureAssetCatalog textureAssetCatalog,
 		SkiaTextureImageCache textureImageCache)
 	{
-		float scale = options.ResolutionScale;
+		Render(canvas, project, map, options, imageSize, textureAssetCatalog, textureImageCache, options.ResolutionScale);
+	}
+
+	private static void Render(
+		SKCanvas canvas,
+		CampaignMapProject project,
+		MapDocument map,
+		PngExportOptions options,
+		PngExportImageSize imageSize,
+		TextureAssetCatalog textureAssetCatalog,
+		SkiaTextureImageCache textureImageCache,
+		float scale)
+	{
 		canvas.Clear(options.TransparentBackground ? SKColors.Transparent : BackgroundColor);
 		if (!options.TransparentBackground)
 		{
@@ -142,12 +202,12 @@ public sealed class PngMapExporter
 			DrawGrid(canvas, map, scale, imageSize);
 		}
 
+		DrawMapObjects(canvas, project, map, options, scale, textureAssetCatalog, textureImageCache, MapLayerRenderPass.BaseFills);
 		if (options.IncludeChildMapPreviews)
 		{
 			DrawParentRoadOverlays(canvas, project, map, scale, textureAssetCatalog, textureImageCache);
 		}
-
-		DrawMapObjects(canvas, project, map, options, scale, textureAssetCatalog, textureImageCache);
+		DrawMapObjects(canvas, project, map, options, scale, textureAssetCatalog, textureImageCache, MapLayerRenderPass.EditableObjects);
 		DrawMapBounds(canvas, imageSize, scale);
 	}
 
@@ -180,11 +240,11 @@ public sealed class PngMapExporter
 		canvas.DrawRect(inset, inset, imageSize.Width - boundsPaint.StrokeWidth, imageSize.Height - boundsPaint.StrokeWidth, boundsPaint);
 	}
 
-	private static void DrawMapObjects(SKCanvas canvas, CampaignMapProject project, MapDocument map, PngExportOptions options, float scale, TextureAssetCatalog textureAssetCatalog, SkiaTextureImageCache textureImageCache)
+	private static void DrawMapObjects(SKCanvas canvas, CampaignMapProject project, MapDocument map, PngExportOptions options, float scale, TextureAssetCatalog textureAssetCatalog, SkiaTextureImageCache textureImageCache, MapLayerRenderPass renderPass)
 	{
 		foreach (MapLayer layer in map.Layers)
 		{
-			if (!layer.IsVisible)
+			if (!layer.IsVisible || !MapLayerRenderOrder.ShouldRenderInPass(layer.LayerType, renderPass))
 			{
 				continue;
 			}
@@ -194,7 +254,7 @@ public sealed class PngMapExporter
 				switch (mapObject)
 				{
 					case DistrictShape district:
-						DrawDistrict(canvas, district, scale, textureAssetCatalog, textureImageCache);
+						DrawDistrict(canvas, district, map.FeetPerUnit, scale, textureAssetCatalog, textureImageCache);
 						if (options.IncludeChildMapPreviews)
 						{
 							DrawChildMapPreview(canvas, project, map, district, options, scale);
@@ -204,7 +264,7 @@ public sealed class PngMapExporter
 						DrawRoad(canvas, road, scale);
 						break;
 					case RoadArea roadArea:
-						DrawRoadArea(canvas, roadArea, scale, textureAssetCatalog, textureImageCache);
+						DrawRoadArea(canvas, roadArea, map.FeetPerUnit, scale, textureAssetCatalog, textureImageCache);
 						break;
 					case PointOfInterest poi when options.IncludePointsOfInterest:
 						DrawPointOfInterest(canvas, poi, scale);
@@ -217,7 +277,7 @@ public sealed class PngMapExporter
 		}
 	}
 
-	private static void DrawDistrict(SKCanvas canvas, DistrictShape district, float scale, TextureAssetCatalog textureAssetCatalog, SkiaTextureImageCache textureImageCache)
+	private static void DrawDistrict(SKCanvas canvas, DistrictShape district, double feetPerUnit, float scale, TextureAssetCatalog textureAssetCatalog, SkiaTextureImageCache textureImageCache)
 	{
 		if (district.PolygonPoints.Count == 0)
 		{
@@ -228,12 +288,12 @@ public sealed class PngMapExporter
 		using SKPath path = BuildPolygonPath(district.PolygonPoints, scale);
 		using SKPaint fill = FillPaint(ToSkColor(style.Fill));
 		using SKPaint stroke = StrokePaint(ToSkColor(style.Stroke), (float)(style.StrokeWidth * scale));
-		using SKPaint? textureFill = CreateTextureFillPaint(district.FillTextureAssetId, district.TextureTileSizeMeters, scale, textureAssetCatalog, textureImageCache);
+		using SKPaint? textureFill = CreateTextureFillPaint(district.FillTextureAssetId, district.TextureTileSizeMeters, feetPerUnit, scale, textureAssetCatalog, textureImageCache);
 		canvas.DrawPath(path, textureFill ?? fill);
 		canvas.DrawPath(path, stroke);
 	}
 
-	private static SKPaint? CreateTextureFillPaint(string? fillTextureAssetId, double textureTileSizeMeters, float scale, TextureAssetCatalog textureAssetCatalog, SkiaTextureImageCache textureImageCache, float opacity = 1.0f)
+	private static SKPaint? CreateTextureFillPaint(string? fillTextureAssetId, double textureTileSizeMeters, double feetPerUnit, float scale, TextureAssetCatalog textureAssetCatalog, SkiaTextureImageCache textureImageCache, float opacity = 1.0f)
 	{
 		if (fillTextureAssetId == null || textureTileSizeMeters <= 0.0)
 		{
@@ -246,7 +306,12 @@ public sealed class PngMapExporter
 			return null;
 		}
 
-		float tilePixels = Math.Max(1.0f, (float)(textureTileSizeMeters * scale));
+		if (!TextureTileScale.TryGetRenderableLocalUnits(textureTileSizeMeters, feetPerUnit, out double tileLocalUnits))
+		{
+			return null;
+		}
+
+		float tilePixels = Math.Max(1.0f, (float)(tileLocalUnits * scale));
 		SKMatrix shaderMatrix = SKMatrix.CreateScale(bitmap.Width / tilePixels, bitmap.Height / tilePixels);
 		SKShader shader = SKShader.CreateBitmap(bitmap, SKShaderTileMode.Repeat, SKShaderTileMode.Repeat, shaderMatrix);
 		return new SKPaint
@@ -272,7 +337,7 @@ public sealed class PngMapExporter
 		}
 	}
 
-	private static void DrawRoadArea(SKCanvas canvas, RoadArea roadArea, float scale, TextureAssetCatalog textureAssetCatalog, SkiaTextureImageCache textureImageCache)
+	private static void DrawRoadArea(SKCanvas canvas, RoadArea roadArea, double feetPerUnit, float scale, TextureAssetCatalog textureAssetCatalog, SkiaTextureImageCache textureImageCache)
 	{
 		if (roadArea.PolygonPoints.Count == 0)
 		{
@@ -283,7 +348,7 @@ public sealed class PngMapExporter
 		using SKPath path = BuildPolygonPath(roadArea.PolygonPoints, scale);
 		using SKPaint fill = FillPaint(ToSkColor(style.Fill));
 		using SKPaint stroke = StrokePaint(ToSkColor(style.Stroke), (float)(style.StrokeWidth * scale));
-		using SKPaint? textureFill = CreateTextureFillPaint(roadArea.FillTextureAssetId, roadArea.TextureTileSizeMeters, scale, textureAssetCatalog, textureImageCache);
+		using SKPaint? textureFill = CreateTextureFillPaint(roadArea.FillTextureAssetId, roadArea.TextureTileSizeMeters, feetPerUnit, scale, textureAssetCatalog, textureImageCache);
 		canvas.DrawPath(path, textureFill ?? fill);
 		canvas.DrawPath(path, stroke);
 	}
@@ -302,7 +367,7 @@ public sealed class PngMapExporter
 			using SKPath path = BuildPolygonPath(overlay.ProjectedPolygonPoints, scale);
 			using SKPaint fill = FillPaint(ToSkColor(style.Fill, 0.65f));
 			using SKPaint stroke = StrokePaint(ToSkColor(style.Stroke, 0.65f), (float)(style.StrokeWidth * scale));
-			using SKPaint? textureFill = CreateTextureFillPaint(overlay.FillTextureAssetId, overlay.TextureTileSizeMeters, scale, textureAssetCatalog, textureImageCache, 0.65f);
+			using SKPaint? textureFill = CreateTextureFillPaint(overlay.FillTextureAssetId, overlay.TextureTileSizeMeters, map.FeetPerUnit, scale, textureAssetCatalog, textureImageCache, 0.65f);
 			canvas.DrawPath(path, textureFill ?? fill);
 			canvas.DrawPath(path, stroke);
 		}

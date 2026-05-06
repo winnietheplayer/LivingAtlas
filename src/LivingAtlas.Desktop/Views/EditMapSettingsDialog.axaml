@@ -43,6 +43,23 @@
                                FontWeight="SemiBold"
                                Margin="0,4,0,0"/>
                     <TextBlock Text="{Binding RepresentedSizeText}"/>
+                    <TextBlock Text="Grid:"
+                               FontWeight="SemiBold"
+                               Margin="0,4,0,0"/>
+                    <TextBlock Text="{Binding GridPhysicalSizeText}"/>
+                </StackPanel>
+
+                <StackPanel Spacing="3"
+                            IsVisible="{Binding HasChildScaleDiagnostics}">
+                    <Separator Margin="0,6"/>
+                    <TextBlock Text="Child Scale Diagnostics"
+                               FontWeight="SemiBold"/>
+                    <TextBlock Text="{Binding ChildScaleDiagnosticsText}"
+                               TextWrapping="Wrap"/>
+                    <TextBlock Text="{Binding ChildScaleWarningText}"
+                               TextWrapping="Wrap"
+                               Foreground="#E0A35A"
+                               IsVisible="{Binding HasChildScaleWarning}"/>
                 </StackPanel>
 
                 <Separator Margin="0,10"/>

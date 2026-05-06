@@ -16,7 +16,7 @@ public sealed class ExportPngViewModel : ViewModelBase
 
 	private bool _includePointsOfInterest = true;
 
-	private bool _includeChildMapPreviews = true;
+	private bool _includeChildMapPreviews;
 
 	private bool _transparentBackground;
 

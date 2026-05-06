@@ -8,7 +8,7 @@ public sealed record PngExportOptions(string OutputPath)
 
 	public bool IncludeGrid { get; init; }
 
-	public bool IncludeChildMapPreviews { get; init; } = true;
+	public bool IncludeChildMapPreviews { get; init; }
 
 	public bool TransparentBackground { get; init; }
 

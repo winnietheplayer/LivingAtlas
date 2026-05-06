@@ -119,7 +119,7 @@ public sealed class ParentRoadOverlaySnapperTests
 
 	private static MapViewportViewModel CreateChildMapViewport(bool snapToGrid)
 	{
-		MapDocument parentMap = new MapDocument(Guid.NewGuid(), "Parent", MapScaleType.City, new SizeD(400.0, 300.0));
+		MapDocument parentMap = new MapDocument(Guid.NewGuid(), "Parent", MapScaleType.City, new SizeD(40.0, 30.0));
 		MapDocument childMap = new MapDocument(
 			Guid.NewGuid(),
 			"Child",
@@ -136,9 +136,9 @@ public sealed class ParentRoadOverlaySnapperTests
 			new[]
 			{
 				new PointD(0.0, 0.0),
-				new PointD(400.0, 0.0),
-				new PointD(400.0, 300.0),
-				new PointD(0.0, 300.0)
+				new PointD(40.0, 0.0),
+				new PointD(40.0, 30.0),
+				new PointD(0.0, 30.0)
 			},
 			childMapId: childMap.Id);
 		RoadArea roadArea = new RoadArea(
@@ -147,10 +147,10 @@ public sealed class ParentRoadOverlaySnapperTests
 			roadLayer.Id,
 			new[]
 			{
-				new PointD(113.0, 100.0),
-				new PointD(180.0, 100.0),
-				new PointD(180.0, 130.0),
-				new PointD(113.0, 130.0)
+				new PointD(11.3, 10.0),
+				new PointD(18.0, 10.0),
+				new PointD(18.0, 13.0),
+				new PointD(11.3, 13.0)
 			});
 		districtLayer.AddObject(district);
 		roadLayer.AddObject(roadArea);

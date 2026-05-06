@@ -335,7 +335,7 @@ public partial class MainWindow : Window
         if (DataContext is not MainWindowViewModel viewModel) return;
 
         var map = viewModel.MapViewport.Map;
-        var editViewModel = new EditMapSettingsViewModel(map);
+        var editViewModel = new EditMapSettingsViewModel(map, viewModel.Project);
         var dialog = new EditMapSettingsDialog(editViewModel);
         
         var result = await dialog.ShowDialog<bool>(this);

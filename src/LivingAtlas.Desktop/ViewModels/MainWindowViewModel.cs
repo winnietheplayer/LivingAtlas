@@ -41,6 +41,8 @@ public class MainWindowViewModel : ViewModelBase
 
 	private readonly CameraStateCache _cameraStateCache = new CameraStateCache();
 
+	private readonly ChildMapPreviewCache _childMapPreviewCache = new ChildMapPreviewCache();
+
 	private readonly TextureAssetCatalog _textureAssetCatalog;
 
 	public CampaignMapProject Project
@@ -549,6 +551,7 @@ public class MainWindowViewModel : ViewModelBase
 		_mapViewportsByMapId.Clear();
 		_activeTargetLayers.Clear();
 		_cameraStateCache.Clear();
+		_childMapPreviewCache.Clear();
 		Project = project;
 		CurrentProjectPath = currentProjectPath;
 		ProjectTree = new ProjectTreeViewModel(project, project.RootMapId, GetActiveTargetLayer(project.RootMapId));
@@ -565,6 +568,7 @@ public class MainWindowViewModel : ViewModelBase
 		ProjectTree = new ProjectTreeViewModel(Project, MapViewport.Map.Id, GetActiveTargetLayer(MapViewport.Map.Id));
 		RefreshBreadcrumbs();
 		NotifyChildMapNavigationStateChanged();
+		_childMapPreviewCache.Invalidate(MapViewport.Map.Id);
 		MarkDirty();
 	}
 
@@ -637,6 +641,7 @@ public class MainWindowViewModel : ViewModelBase
 		if (layer != null && layer.IsVisible != e.IsVisible)
 		{
 			layer.SetVisibility(e.IsVisible);
+			_childMapPreviewCache.Invalidate(e.MapId);
 			MarkDirty();
 			
 			if (MapViewport.Map.Id == e.MapId)
@@ -661,6 +666,7 @@ public class MainWindowViewModel : ViewModelBase
 		if (layer != null && layer.IsLocked != e.IsLocked)
 		{
 			layer.SetLocked(e.IsLocked);
+			_childMapPreviewCache.Invalidate(e.MapId);
 			MarkDirty();
 
 			if (MapViewport.Map.Id == e.MapId && e.IsLocked && MapViewport.SelectedObject != null)
@@ -690,6 +696,7 @@ public class MainWindowViewModel : ViewModelBase
 		}
 
 		layer.Rename(trimmedName);
+		_childMapPreviewCache.Invalidate(mapId);
 		MarkDirty();
 		ProjectTree = new ProjectTreeViewModel(Project, MapViewport.Map.Id, GetActiveTargetLayer(MapViewport.Map.Id));
 		StatusBar.SetMessage($"Layer renamed: {trimmedName}");
@@ -721,6 +728,7 @@ public class MainWindowViewModel : ViewModelBase
 		map.SetFeetPerUnit(settings.FeetPerUnit);
 		map.SetGridSettings(gridSettings);
 
+		_childMapPreviewCache.Invalidate(map.Id);
 		MarkDirty();
 		ProjectTree = new ProjectTreeViewModel(Project, MapViewport.Map.Id, GetActiveTargetLayer(MapViewport.Map.Id));
 		RefreshBreadcrumbs();
@@ -765,6 +773,7 @@ public class MainWindowViewModel : ViewModelBase
 		}
 
 		MarkDirty();
+		_childMapPreviewCache.Invalidate(mapId);
 		ProjectTree = new ProjectTreeViewModel(Project, MapViewport.Map.Id, GetActiveTargetLayer(MapViewport.Map.Id));
 		MapViewport.RequestViewportRedraw();
 		StatusBar.SetMessage("Layer moved up");
@@ -780,6 +789,7 @@ public class MainWindowViewModel : ViewModelBase
 		}
 
 		MarkDirty();
+		_childMapPreviewCache.Invalidate(mapId);
 		ProjectTree = new ProjectTreeViewModel(Project, MapViewport.Map.Id, GetActiveTargetLayer(MapViewport.Map.Id));
 		MapViewport.RequestViewportRedraw();
 		StatusBar.SetMessage("Layer moved down");
@@ -823,6 +833,7 @@ public class MainWindowViewModel : ViewModelBase
 		var layer = new MapLayer(Guid.NewGuid(), name, type);
 		map.AddLayer(layer);
 		
+		_childMapPreviewCache.Invalidate(mapId);
 		MarkDirty();
 		ProjectTree = new ProjectTreeViewModel(Project, MapViewport.Map.Id, GetActiveTargetLayer(MapViewport.Map.Id));
 		MapViewport.RequestViewportRedraw();
@@ -850,6 +861,7 @@ public class MainWindowViewModel : ViewModelBase
 		}
 
 		map.RemoveLayer(layerId);
+		_childMapPreviewCache.Invalidate(mapId);
 		
 		if (GetActiveTargetLayer(mapId) == layerId)
 		{
@@ -885,7 +897,7 @@ public class MainWindowViewModel : ViewModelBase
 		{
 			return value!;
 		}
-		value = new MapViewportViewModel(map, Project, TextureAssetCatalog);
+		value = new MapViewportViewModel(map, Project, TextureAssetCatalog, _childMapPreviewCache);
 		_mapViewportsByMapId.Add(map.Id, value);
 		return value;
 	}

@@ -274,7 +274,7 @@
                                     </DataTemplate>
                                 </ComboBox.ItemTemplate>
                             </ComboBox>
-                            <TextBlock Text="Texture Tile Size (m)"
+                            <TextBlock Text="Texture Tile Size (ft)"
                                        FontWeight="SemiBold"
                                        IsVisible="{Binding Inspector.IsTextureFillSelected}"/>
                             <TextBox Text="{Binding Inspector.EditableTextureTileSizeMeters, Mode=TwoWay}"

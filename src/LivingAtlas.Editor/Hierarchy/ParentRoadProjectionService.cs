@@ -55,7 +55,7 @@ public static class ParentRoadProjectionService
 				}
 
 				List<PointD> projectedPoints = roadArea.PolygonPoints
-					.Select(point => ChildMapPreviewTransform.ParentToChild(point, districtBounds, activeMap.RealSizeMeters))
+					.Select(point => ProjectParentPointToChild(point, districtBounds, parentMap.FeetPerUnit, activeMap.FeetPerUnit))
 					.ToList();
 				overlays.Add(new ParentRoadOverlay(
 					roadArea.Id,
@@ -70,6 +70,23 @@ public static class ParentRoadProjectionService
 		}
 
 		return overlays;
+	}
+
+	public static PointD ProjectParentPointToChild(PointD parentPoint, RectD parentBounds, double parentFeetPerUnit, double childFeetPerUnit)
+	{
+		if (parentFeetPerUnit <= 0.0 || double.IsNaN(parentFeetPerUnit) || double.IsInfinity(parentFeetPerUnit))
+		{
+			throw new ArgumentOutOfRangeException(nameof(parentFeetPerUnit), parentFeetPerUnit, "Parent feet per unit must be positive.");
+		}
+		if (childFeetPerUnit <= 0.0 || double.IsNaN(childFeetPerUnit) || double.IsInfinity(childFeetPerUnit))
+		{
+			throw new ArgumentOutOfRangeException(nameof(childFeetPerUnit), childFeetPerUnit, "Child feet per unit must be positive.");
+		}
+
+		double scale = parentFeetPerUnit / childFeetPerUnit;
+		return new PointD(
+			(parentPoint.X - parentBounds.Left) * scale,
+			(parentPoint.Y - parentBounds.Top) * scale);
 	}
 
 	private static DistrictShape? FindLinkedParentDistrict(MapDocument parentMap, Guid childMapId)

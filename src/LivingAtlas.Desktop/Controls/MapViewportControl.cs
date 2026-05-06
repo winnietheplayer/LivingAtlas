@@ -163,10 +163,22 @@ public sealed class MapViewportControl : Control
 			}
 			DrawMapArea(context, mapViewportViewModel.Camera, mapViewportViewModel.Map.RealSizeMeters);
 			DrawGrid(context, bounds, mapViewportViewModel.Camera, mapViewportViewModel.GridStepMeters);
+			DrawMapObjects(
+				context,
+				mapViewportViewModel.Camera,
+				mapViewportViewModel.Map,
+				mapViewportViewModel.Project,
+				null,
+				mapViewportViewModel.TextureAssetCatalog,
+				mapViewportViewModel.TextureImageCache,
+				mapViewportViewModel.ChildPreviewCache,
+				MapLayerRenderPass.BaseFills,
+				mapViewportViewModel.ShowChildMapPreviews);
 			DrawParentRoadOverlays(
 				context,
 				mapViewportViewModel.Camera,
 				mapViewportViewModel.Map.RealSizeMeters,
+				mapViewportViewModel.Map.FeetPerUnit,
 				mapViewportViewModel.GetParentRoadOverlays(),
 				mapViewportViewModel.TextureAssetCatalog,
 				mapViewportViewModel.TextureImageCache);
@@ -175,9 +187,13 @@ public sealed class MapViewportControl : Control
 				mapViewportViewModel.Camera,
 				mapViewportViewModel.Map,
 				mapViewportViewModel.Project,
-				mapViewportViewModel.SelectedObjectId,
+				null,
 				mapViewportViewModel.TextureAssetCatalog,
-				mapViewportViewModel.TextureImageCache);
+				mapViewportViewModel.TextureImageCache,
+				mapViewportViewModel.ChildPreviewCache,
+				MapLayerRenderPass.EditableObjects,
+				includeChildMapPreviews: false);
+			DrawSelectionHighlight(context, mapViewportViewModel.Camera, mapViewportViewModel.SelectedObject);
 			DrawVertexHandles(context, mapViewportViewModel);
 			DrawDistrictPreview(context, mapViewportViewModel.Camera, mapViewportViewModel.DistrictPreviewPoints, mapViewportViewModel.DistrictPreviewPoint);
 			DrawRoadAreaPreview(context, mapViewportViewModel.Camera, mapViewportViewModel.RoadAreaPreviewPoints, mapViewportViewModel.RoadAreaPreviewPoint);
@@ -549,11 +565,14 @@ public sealed class MapViewportControl : Control
 		CampaignMapProject? project,
 		Guid? selectedObjectId,
 		TextureAssetCatalog textureAssetCatalog,
-		AvaloniaTextureImageCache textureImageCache)
+		AvaloniaTextureImageCache textureImageCache,
+		ChildMapPreviewCache childPreviewCache,
+		MapLayerRenderPass renderPass,
+		bool includeChildMapPreviews)
 	{
 		foreach (MapLayer layer in map.Layers)
 		{
-			if (!layer.IsVisible)
+			if (!layer.IsVisible || !MapLayerRenderOrder.ShouldRenderInPass(layer.LayerType, renderPass))
 			{
 				continue;
 			}
@@ -587,15 +606,52 @@ public sealed class MapViewportControl : Control
 					}
 					else
 					{
-						DrawRoadArea(context, camera, roadArea, isSelected, textureAssetCatalog, textureImageCache);
+						DrawRoadArea(context, camera, map.FeetPerUnit, roadArea, isSelected, textureAssetCatalog, textureImageCache);
 					}
 				}
 				else
 				{
-					DrawDistrictShape(context, camera, districtShape, isSelected, textureAssetCatalog, textureImageCache);
-					DrawChildMapPreview(context, camera, project, map, districtShape);
+					DrawDistrictShape(context, camera, map.FeetPerUnit, districtShape, isSelected, textureAssetCatalog, textureImageCache);
+					if (includeChildMapPreviews)
+					{
+						DrawChildMapPreview(context, camera, project, textureAssetCatalog, childPreviewCache, map, districtShape);
+					}
 				}
 			}
+		}
+	}
+
+	private static void DrawSelectionHighlight(DrawingContext context, Camera2D camera, MapObject? selectedObject)
+	{
+		switch (selectedObject)
+		{
+			case DistrictShape district:
+				context.DrawGeometry(null, SelectedDistrictPen, BuildPolygonGeometry(camera, district.PolygonPoints));
+				break;
+			case RoadArea roadArea:
+				context.DrawGeometry(null, SelectedRoadAreaPen, BuildPolygonGeometry(camera, roadArea.PolygonPoints));
+				break;
+			case RoadLine road:
+				for (int i = 1; i < road.Points.Count; i++)
+				{
+					context.DrawLine(
+						SelectedRoadPen,
+						ToAvaloniaPoint(camera.WorldToScreen(road.Points[i - 1])),
+						ToAvaloniaPoint(camera.WorldToScreen(road.Points[i])));
+				}
+				break;
+			case PointOfInterest poi:
+				PoiVisualStyle poiStyle = GetPoiStyle(poi.StyleKey);
+				Point center = ToAvaloniaPoint(camera.WorldToScreen(poi.Position));
+				double selectedRadius = poiStyle.Radius + 5.0;
+				context.DrawEllipse(null, SelectedPoiRingPen, center, selectedRadius, selectedRadius);
+				break;
+			case MapLabel label:
+				LabelVisualStyle labelStyle = GetLabelStyle(label.StyleKey);
+				Point origin = ToAvaloniaPoint(camera.WorldToScreen(label.Position));
+				double width = label.Text.Length * labelStyle.FontSize * 0.62 + 8.0;
+				context.DrawRectangle(null, SelectedLabelPen, new Rect(origin.X - 4.0, origin.Y - 2.0, width, labelStyle.FontSize + 8.0));
+				break;
 		}
 	}
 
@@ -676,6 +732,7 @@ public sealed class MapViewportControl : Control
 	private static void DrawDistrictShape(
 		DrawingContext context,
 		Camera2D camera,
+		double feetPerUnit,
 		DistrictShape district,
 		bool isSelected,
 		TextureAssetCatalog textureAssetCatalog,
@@ -696,7 +753,7 @@ public sealed class MapViewportControl : Control
 		{
 			context.DrawGeometry(null, SelectedDistrictPen, streamGeometry);
 		}
-		if (!DrawPolygonTextureFill(context, camera, district.PolygonPoints, district.FillTextureAssetId, district.TextureTileSizeMeters, streamGeometry, textureAssetCatalog, textureImageCache))
+		if (!DrawPolygonTextureFill(context, camera, feetPerUnit, district.PolygonPoints, district.FillTextureAssetId, district.TextureTileSizeMeters, streamGeometry, textureAssetCatalog, textureImageCache))
 		{
 			context.DrawGeometry(style.Fill, style.Stroke, streamGeometry);
 		}
@@ -709,6 +766,7 @@ public sealed class MapViewportControl : Control
 	private static bool DrawPolygonTextureFill(
 		DrawingContext context,
 		Camera2D camera,
+		double feetPerUnit,
 		IReadOnlyList<PointD> polygonPoints,
 		string? fillTextureAssetId,
 		double textureTileSizeMeters,
@@ -733,18 +791,22 @@ public sealed class MapViewportControl : Control
 			return false;
 		}
 
-		double tileSizeMeters = textureTileSizeMeters;
-		double startX = Math.Floor(bounds.Left / tileSizeMeters) * tileSizeMeters;
-		double startY = Math.Floor(bounds.Top / tileSizeMeters) * tileSizeMeters;
+		if (!TextureTileScale.TryGetRenderableLocalUnits(textureTileSizeMeters, feetPerUnit, out double tileLocalUnits))
+		{
+			return false;
+		}
+
+		double startX = Math.Floor(bounds.Left / tileLocalUnits) * tileLocalUnits;
+		double startY = Math.Floor(bounds.Top / tileLocalUnits) * tileLocalUnits;
 		Rect sourceRect = new Rect(bitmap.Size);
 		using (context.PushGeometryClip(clipGeometry))
 		{
-			for (double y = startY; y < bounds.Bottom; y += tileSizeMeters)
+			for (double y = startY; y < bounds.Bottom; y += tileLocalUnits)
 			{
-				for (double x = startX; x < bounds.Right; x += tileSizeMeters)
+				for (double x = startX; x < bounds.Right; x += tileLocalUnits)
 				{
 					PointD topLeft = camera.WorldToScreen(new PointD(x, y));
-					PointD bottomRight = camera.WorldToScreen(new PointD(x + tileSizeMeters, y + tileSizeMeters));
+					PointD bottomRight = camera.WorldToScreen(new PointD(x + tileLocalUnits, y + tileLocalUnits));
 					double left = Math.Min(topLeft.X, bottomRight.X);
 					double top = Math.Min(topLeft.Y, bottomRight.Y);
 					double right = Math.Max(topLeft.X, bottomRight.X);
@@ -776,6 +838,7 @@ public sealed class MapViewportControl : Control
 	private static void DrawRoadArea(
 		DrawingContext context,
 		Camera2D camera,
+		double feetPerUnit,
 		RoadArea roadArea,
 		bool isSelected,
 		TextureAssetCatalog textureAssetCatalog,
@@ -792,7 +855,7 @@ public sealed class MapViewportControl : Control
 		{
 			context.DrawGeometry(null, SelectedRoadAreaPen, streamGeometry);
 		}
-		if (!DrawPolygonTextureFill(context, camera, roadArea.PolygonPoints, roadArea.FillTextureAssetId, roadArea.TextureTileSizeMeters, streamGeometry, textureAssetCatalog, textureImageCache))
+		if (!DrawPolygonTextureFill(context, camera, feetPerUnit, roadArea.PolygonPoints, roadArea.FillTextureAssetId, roadArea.TextureTileSizeMeters, streamGeometry, textureAssetCatalog, textureImageCache))
 		{
 			context.DrawGeometry(style.Fill, style.Stroke, streamGeometry);
 		}
@@ -806,6 +869,7 @@ public sealed class MapViewportControl : Control
 		DrawingContext context,
 		Camera2D camera,
 		SizeD mapSizeMeters,
+		double feetPerUnit,
 		IReadOnlyList<ParentRoadOverlay> overlays,
 		TextureAssetCatalog textureAssetCatalog,
 		AvaloniaTextureImageCache textureImageCache)
@@ -826,7 +890,7 @@ public sealed class MapViewportControl : Control
 				}
 				RoadAreaVisualStyle style = GetRoadAreaStyle(overlay.StyleKey);
 				StreamGeometry geometry = BuildPolygonGeometry(camera, overlay.ProjectedPolygonPoints);
-				if (!DrawPolygonTextureFill(context, camera, overlay.ProjectedPolygonPoints, overlay.FillTextureAssetId, overlay.TextureTileSizeMeters, geometry, textureAssetCatalog, textureImageCache))
+				if (!DrawPolygonTextureFill(context, camera, feetPerUnit, overlay.ProjectedPolygonPoints, overlay.FillTextureAssetId, overlay.TextureTileSizeMeters, geometry, textureAssetCatalog, textureImageCache))
 				{
 					context.DrawGeometry(style.Fill, style.Stroke, geometry);
 				}
@@ -838,30 +902,32 @@ public sealed class MapViewportControl : Control
 		}
 	}
 
-	private static void DrawChildMapPreview(DrawingContext context, Camera2D camera, CampaignMapProject? project, MapDocument parentMap, DistrictShape parentDistrict)
+	private static void DrawChildMapPreview(
+		DrawingContext context,
+		Camera2D camera,
+		CampaignMapProject? project,
+		TextureAssetCatalog textureAssetCatalog,
+		ChildMapPreviewCache childPreviewCache,
+		MapDocument parentMap,
+		DistrictShape parentDistrict)
 	{
 		if (project == null)
 		{
 			return;
 		}
-		Guid? childMapId = parentDistrict.ChildMapId;
-		Guid valueOrDefault = default(Guid);
-		int num;
-		if (childMapId.HasValue)
-		{
-			valueOrDefault = childMapId.GetValueOrDefault();
-			num = 1;
-		}
-		else
-		{
-			num = 0;
-		}
-		if (num == 0)
+		if (!parentDistrict.ChildMapId.HasValue)
 		{
 			return;
 		}
-		MapDocument? mapDocument = project.FindMap(valueOrDefault);
-		if (mapDocument == null || mapDocument.Id == parentMap.Id || mapDocument.RealSizeMeters.Width <= 0.0 || mapDocument.RealSizeMeters.Height <= 0.0)
+		ChildMapPreviewCacheEntry? preview = childPreviewCache.GetOrCreate(
+			project,
+			parentDistrict.ChildMapId.Value,
+			textureAssetCatalog);
+		if (preview == null || preview.ChildMapId == parentMap.Id)
+		{
+			return;
+		}
+		if (preview.Bitmap == null)
 		{
 			return;
 		}
@@ -870,42 +936,17 @@ public sealed class MapViewportControl : Control
 		{
 			return;
 		}
-		foreach (MapLayer layer in mapDocument.Layers)
+		Rect destinationRect = ToScreenRect(camera, boundingBox);
+		if (!ChildPreviewLod.ShouldRenderPreview(destinationRect.Width, destinationRect.Height))
 		{
-			if (!layer.IsVisible)
-			{
-				continue;
-			}
-			foreach (MapObject @object in layer.Objects)
-			{
-				MapObject mapObject = @object;
-				MapObject mapObject2 = mapObject;
-				if (!(mapObject2 is DistrictShape district))
-				{
-					if (!(mapObject2 is RoadLine road))
-					{
-						if (!(mapObject2 is PointOfInterest poi))
-						{
-							if (mapObject2 is MapLabel label)
-							{
-								DrawChildPreviewLabel(context, camera, boundingBox, mapDocument.RealSizeMeters, label);
-							}
-						}
-						else
-						{
-							DrawChildPreviewPointOfInterest(context, camera, boundingBox, mapDocument.RealSizeMeters, poi);
-						}
-					}
-					else
-					{
-						DrawChildPreviewRoad(context, camera, boundingBox, mapDocument.RealSizeMeters, road);
-					}
-				}
-				else
-				{
-					DrawChildPreviewDistrict(context, camera, boundingBox, mapDocument.RealSizeMeters, district);
-				}
-			}
+			return;
+		}
+
+		StreamGeometry clipGeometry = BuildPolygonGeometry(camera, parentDistrict.PolygonPoints);
+		Rect sourceRect = new Rect(preview.Bitmap.Size);
+		using (context.PushGeometryClip(clipGeometry))
+		{
+			context.DrawImage(preview.Bitmap, sourceRect, destinationRect);
 		}
 	}
 
@@ -1175,6 +1216,17 @@ public sealed class MapViewportControl : Control
 		double num3 = Math.Max(pointD.X, pointD2.X);
 		double num4 = Math.Max(pointD.Y, pointD2.Y);
 		return new Rect(num, num2, num3 - num, num4 - num2);
+	}
+
+	private static Rect ToScreenRect(Camera2D camera, RectD worldRect)
+	{
+		PointD topLeft = camera.WorldToScreen(new PointD(worldRect.Left, worldRect.Top));
+		PointD bottomRight = camera.WorldToScreen(new PointD(worldRect.Right, worldRect.Bottom));
+		double left = Math.Min(topLeft.X, bottomRight.X);
+		double top = Math.Min(topLeft.Y, bottomRight.Y);
+		double right = Math.Max(topLeft.X, bottomRight.X);
+		double bottom = Math.Max(topLeft.Y, bottomRight.Y);
+		return new Rect(left, top, right - left, bottom - top);
 	}
 
 	private static RectD GetBoundingBox(IReadOnlyList<PointD> points)

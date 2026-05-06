@@ -2,6 +2,7 @@ using LivingAtlas.Assets;
 using LivingAtlas.Desktop.ViewModels;
 using LivingAtlas.Domain.Geometry;
 using LivingAtlas.Domain.Maps;
+using LivingAtlas.Domain.Maps.Objects;
 using LivingAtlas.Domain.Projects;
 
 namespace LivingAtlas.Tests;
@@ -19,6 +20,7 @@ public sealed class MapSettingsViewModelTests
 		Assert.Equal(100.0, viewModel.FeetPerUnit);
 		Assert.Equal(5000.0, viewModel.RepresentedWidthFeet);
 		Assert.Equal(4000.0, viewModel.RepresentedHeightFeet);
+		Assert.Equal("1 units = 100 ft", viewModel.GridPhysicalSizeText);
 		Assert.Equal("50 × 40 units", viewModel.LocalSizeText);
 		Assert.Equal("1 unit = 100 ft", viewModel.ScaleText);
 		Assert.Equal("5000 × 4000 ft", viewModel.RepresentedSizeText);
@@ -77,5 +79,44 @@ public sealed class MapSettingsViewModelTests
 
 		Assert.Equal(75.0, map.FeetPerUnit);
 		Assert.True(viewModel.IsDirty);
+	}
+
+	[Fact]
+	public void EditMapSettingsViewModel_ShowsChildScaleDiagnostics()
+	{
+		(CampaignMapProject project, MapDocument childMap) = CreateCityToDistrictProject(new SizeD(500.0, 400.0));
+		EditMapSettingsViewModel viewModel = new EditMapSettingsViewModel(childMap, project);
+
+		Assert.True(viewModel.HasChildScaleDiagnostics);
+		Assert.False(viewModel.HasChildScaleWarning);
+		Assert.Contains("expected child 500x400 units", viewModel.ChildScaleDiagnosticsText);
+
+		viewModel.Width = 480.0;
+
+		Assert.True(viewModel.HasChildScaleWarning);
+		Assert.Contains("expected 500x400 units, actual 480x400", viewModel.ChildScaleWarningText);
+	}
+
+	private static (CampaignMapProject Project, MapDocument ChildMap) CreateCityToDistrictProject(SizeD childSize)
+	{
+		Guid childMapId = Guid.NewGuid();
+		MapDocument parentMap = new MapDocument(Guid.NewGuid(), "City", MapScaleType.City, new SizeD(100.0, 100.0));
+		MapDocument childMap = new MapDocument(childMapId, "District", MapScaleType.District, childSize, parentMap.Id);
+		MapLayer layer = new MapLayer(Guid.NewGuid(), "Districts", MapLayerType.Districts);
+		layer.AddObject(new DistrictShape(
+			Guid.NewGuid(),
+			"Linked District",
+			layer.Id,
+			new[]
+			{
+				new PointD(10.0, 20.0),
+				new PointD(60.0, 20.0),
+				new PointD(60.0, 60.0),
+				new PointD(10.0, 60.0)
+			},
+			childMapId: childMapId));
+		parentMap.AddLayer(layer);
+		parentMap.AddChildMapId(childMapId);
+		return (new CampaignMapProject(Guid.NewGuid(), "Project", parentMap.Id, new[] { parentMap, childMap }), childMap);
 	}
 }

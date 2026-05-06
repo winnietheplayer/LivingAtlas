@@ -436,6 +436,69 @@
       ]
     },
     {
+      "id": "terrain.grass.wild.01",
+      "name": "Wild Grass 01",
+      "kind": "texture",
+      "category": "ground",
+      "file": "textures/ground/terrain.grass.wild.01.png",
+      "isTileable": true,
+      "alpha": false,
+      "generator": "GPT Image 2.0",
+      "resolution": {
+        "width": 1254,
+        "height": 1254
+      },
+      "processing": {
+        "upscaled": false
+      },
+      "defaultTileSizeMeters": 10.0,
+      "intendedUse": [
+        "terrain_fill",
+        "background"
+      ],
+      "tags": [
+        "terrain",
+        "ground",
+        "grass",
+        "wild",
+        "outdoor",
+        "meadow",
+        "overgrown"
+      ]
+    },
+    {
+      "id": "terrain.dirt.dark.01",
+      "name": "Dark Dirt 01",
+      "kind": "texture",
+      "category": "ground",
+      "file": "textures/ground/terrain.dirt.dark.01.png",
+      "isTileable": true,
+      "alpha": false,
+      "generator": "GPT Image 2.0",
+      "resolution": {
+        "width": 1254,
+        "height": 1254
+      },
+      "processing": {
+        "upscaled": false
+      },
+      "defaultTileSizeMeters": 10.0,
+      "intendedUse": [
+        "terrain_fill",
+        "background"
+      ],
+      "tags": [
+        "terrain",
+        "ground",
+        "dirt",
+        "dark",
+        "outdoor",
+        "forest",
+        "shaded",
+        "natural"
+      ]
+    },
+    {
       "id": "water.deep.01",
       "name": "Deep Water 01",
       "kind": "texture",

@@ -61,6 +61,8 @@ public sealed class MapViewportViewModel : ViewModelBase
 
 	private string _statusText = FormatCoordinates(new PointD(0.0, 0.0), 1.0);
 
+	private bool _showChildMapPreviews;
+
 	public Camera2D Camera { get; } = new Camera2D();
 
 	public HistoryService History { get; } = new HistoryService();
@@ -74,6 +76,20 @@ public sealed class MapViewportViewModel : ViewModelBase
 	public TextureAssetCatalog TextureAssetCatalog { get; }
 
 	public AvaloniaTextureImageCache TextureImageCache { get; } = new AvaloniaTextureImageCache();
+
+	public ChildMapPreviewCache ChildPreviewCache { get; }
+
+	public bool ShowChildMapPreviews
+	{
+		get => _showChildMapPreviews;
+		set
+		{
+			if (SetProperty(ref _showChildMapPreviews, value, nameof(ShowChildMapPreviews)))
+			{
+				RequestViewportRedraw();
+			}
+		}
+	}
 
 	public Guid? ActiveTargetLayerId { get; set; }
 
@@ -180,11 +196,16 @@ public sealed class MapViewportViewModel : ViewModelBase
 
 	public event EventHandler? RedrawRequested;
 
-	public MapViewportViewModel(MapDocument map, CampaignMapProject? project = null, TextureAssetCatalog? textureAssetCatalog = null)
+	public MapViewportViewModel(
+		MapDocument map,
+		CampaignMapProject? project = null,
+		TextureAssetCatalog? textureAssetCatalog = null,
+		ChildMapPreviewCache? childPreviewCache = null)
 	{
 		Map = map ?? throw new ArgumentNullException("map");
 		Project = project;
 		TextureAssetCatalog = textureAssetCatalog ?? TextureAssetCatalog.Empty;
+		ChildPreviewCache = childPreviewCache ?? new ChildMapPreviewCache();
 		RefreshStatus();
 	}
 

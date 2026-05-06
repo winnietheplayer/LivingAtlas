@@ -31,6 +31,34 @@ public sealed class ParentRoadProjectionServiceTests
 	}
 
 	[Fact]
+	public void ProjectParentPointToChild_UsesParentAndChildFeetPerUnit()
+	{
+		RectD parentBounds = new RectD(10.0, 20.0, 50.0, 40.0);
+
+		PointD projected = ParentRoadProjectionService.ProjectParentPointToChild(
+			new PointD(11.0, 23.0),
+			parentBounds,
+			parentFeetPerUnit: 100.0,
+			childFeetPerUnit: 10.0);
+
+		Assert.Equal(new PointD(10.0, 30.0), projected);
+	}
+
+	[Fact]
+	public void ProjectParentPointToChild_DistrictToBattleScalesByTwo()
+	{
+		RectD parentBounds = new RectD(10.0, 20.0, 50.0, 40.0);
+
+		PointD projected = ParentRoadProjectionService.ProjectParentPointToChild(
+			new PointD(12.0, 24.0),
+			parentBounds,
+			parentFeetPerUnit: 10.0,
+			childFeetPerUnit: 5.0);
+
+		Assert.Equal(new PointD(4.0, 8.0), projected);
+	}
+
+	[Fact]
 	public void GetProjectedRoadAreas_SkipsRoadAreaOutsideLinkedDistrict()
 	{
 		(CampaignMapProject project, MapDocument childMap, _, MapLayer roadLayer, _) = CreateProjectionScenario();
@@ -126,7 +154,7 @@ public sealed class ParentRoadProjectionServiceTests
 
 	private static (CampaignMapProject Project, MapDocument ChildMap, RoadArea RoadArea, MapLayer RoadLayer, MapLayer DistrictLayer) CreateProjectionScenario()
 	{
-		MapDocument parentMap = new MapDocument(Guid.NewGuid(), "Parent", MapScaleType.City, new SizeD(1000.0, 1000.0));
+		MapDocument parentMap = new MapDocument(Guid.NewGuid(), "Parent", MapScaleType.City, new SizeD(100.0, 100.0));
 		MapDocument childMap = new MapDocument(Guid.NewGuid(), "Child", MapScaleType.District, new SizeD(400.0, 300.0), parentMap.Id);
 		MapLayer districtLayer = new MapLayer(Guid.NewGuid(), "Districts", MapLayerType.Districts);
 		MapLayer roadLayer = new MapLayer(Guid.NewGuid(), "Roads", MapLayerType.Streets);
@@ -136,10 +164,10 @@ public sealed class ParentRoadProjectionServiceTests
 			districtLayer.Id,
 			new[]
 			{
-				new PointD(100.0, 100.0),
-				new PointD(500.0, 100.0),
-				new PointD(500.0, 400.0),
-				new PointD(100.0, 400.0)
+				new PointD(10.0, 10.0),
+				new PointD(50.0, 10.0),
+				new PointD(50.0, 40.0),
+				new PointD(10.0, 40.0)
 			},
 			childMapId: childMap.Id);
 		RoadArea roadArea = new RoadArea(
@@ -148,10 +176,10 @@ public sealed class ParentRoadProjectionServiceTests
 			roadLayer.Id,
 			new[]
 			{
-				new PointD(200.0, 150.0),
-				new PointD(300.0, 150.0),
-				new PointD(300.0, 180.0),
-				new PointD(200.0, 180.0)
+				new PointD(20.0, 15.0),
+				new PointD(30.0, 15.0),
+				new PointD(30.0, 18.0),
+				new PointD(20.0, 18.0)
 			},
 			styleKey: "road.area.primary",
 			roadKind: "primary");

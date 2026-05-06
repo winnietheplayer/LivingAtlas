@@ -1,3 +1,4 @@
+using LivingAtlas.Desktop.ViewModels;
 using LivingAtlas.Domain.Geometry;
 using LivingAtlas.Domain.Maps;
 using LivingAtlas.Domain.Maps.Objects;
@@ -10,6 +11,22 @@ namespace LivingAtlas.Tests;
 
 public class PngExportTests
 {
+	[Fact]
+	public void PngExportOptions_DefaultDisablesChildMapPreviews()
+	{
+		var options = new PngExportOptions(CreateTempPngPath());
+
+		Assert.False(options.IncludeChildMapPreviews);
+	}
+
+	[Fact]
+	public void ExportPngViewModel_DefaultDisablesChildMapPreviews()
+	{
+		var viewModel = new ExportPngViewModel(CreateTempPngPath(), includeGrid: true);
+
+		Assert.False(viewModel.IncludeChildMapPreviews);
+	}
+
 	[Fact]
 	public void ValidateAndGetImageSize_RejectsInvalidScale()
 	{

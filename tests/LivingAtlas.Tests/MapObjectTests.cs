@@ -237,6 +237,21 @@ public sealed class MapObjectTests
     }
 
     [Fact]
+    public void DistrictShape_TextureFillIsIndependentFromChildMapTextures()
+    {
+        DistrictShape parentDistrict = TestData.CreateDistrict(Guid.NewGuid(), childMapId: Guid.NewGuid());
+        DistrictShape childDistrict = TestData.CreateDistrict(Guid.NewGuid());
+        parentDistrict.SetTextureFill("parent.texture", 40.0);
+
+        childDistrict.SetTextureFill("child.texture", 5.0);
+
+        Assert.Equal("parent.texture", parentDistrict.FillTextureAssetId);
+        Assert.Equal(40.0, parentDistrict.TextureTileSizeMeters);
+        Assert.Equal("child.texture", childDistrict.FillTextureAssetId);
+        Assert.Equal(5.0, childDistrict.TextureTileSizeMeters);
+    }
+
+    [Fact]
     public void MapLabel_StoresText()
     {
         Guid layerId = Guid.NewGuid();
