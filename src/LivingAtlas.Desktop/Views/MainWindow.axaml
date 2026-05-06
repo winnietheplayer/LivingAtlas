@@ -95,6 +95,8 @@
                             Click="RoadTool_Click"/>
                     <Button Content="Road Area"
                             Click="RoadAreaTool_Click"/>
+                    <Button Content="Ruler"
+                            Click="RulerTool_Click"/>
                     <Button Content="POI"
                             Click="PointOfInterestTool_Click"/>
                     <Button Content="Label"

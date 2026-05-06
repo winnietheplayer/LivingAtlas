@@ -576,8 +576,10 @@ public class MainWindowViewModel : ViewModelBase
 	private void SetActiveMap(MapDocument map, string? statusMessage)
 	{
 		SaveCameraStateForCurrentMap();
+		_mapViewport?.ClearRulerMeasurement();
 		DetachMapViewportEvents();
 		MapViewport = GetOrCreateMapViewport(map);
+		MapViewport.ClearRulerMeasurement();
 		if (!_cameraStateCache.TryRestore(map.Id, MapViewport.Camera))
 		{
 			MapViewport.ResetCameraFit();

@@ -7,6 +7,7 @@ public enum EditorToolType
 	District,
 	Road,
 	RoadArea,
+	Ruler,
 	PointOfInterest,
 	Label
 }

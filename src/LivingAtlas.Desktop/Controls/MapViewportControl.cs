@@ -64,6 +64,14 @@ public sealed class MapViewportControl : Control
 
 	private static readonly Pen RoadPreviewPen = new Pen(new SolidColorBrush(Color.FromArgb(190, byte.MaxValue, 241, 179)), 2.0);
 
+	private static readonly Pen RulerLinePen = new Pen(new SolidColorBrush(Color.FromArgb(235, 255, 241, 179)), 2.0);
+
+	private static readonly IBrush RulerEndpointFillBrush = new SolidColorBrush(Color.FromRgb(byte.MaxValue, 241, 179));
+
+	private static readonly Pen RulerEndpointPen = new Pen(new SolidColorBrush(Color.FromRgb(44, 50, 58)), 2.0);
+
+	private static readonly IBrush RulerTextBrush = new SolidColorBrush(Color.FromRgb(255, 245, 202));
+
 	private static readonly Pen SelectedDistrictPen = new Pen(new SolidColorBrush(Color.FromArgb(150, 255, 241, 179)), 3.0);
 
 	private static readonly Pen SelectedRoadAreaPen = new Pen(new SolidColorBrush(Color.FromArgb(165, 255, 225, 144)), 3.0);
@@ -174,6 +182,7 @@ public sealed class MapViewportControl : Control
 			DrawDistrictPreview(context, mapViewportViewModel.Camera, mapViewportViewModel.DistrictPreviewPoints, mapViewportViewModel.DistrictPreviewPoint);
 			DrawRoadAreaPreview(context, mapViewportViewModel.Camera, mapViewportViewModel.RoadAreaPreviewPoints, mapViewportViewModel.RoadAreaPreviewPoint);
 			DrawRoadPreview(context, mapViewportViewModel.Camera, mapViewportViewModel.RoadPreviewPoints, mapViewportViewModel.RoadPreviewPoint);
+			DrawRulerOverlay(context, mapViewportViewModel);
 			DrawMapBounds(context, mapViewportViewModel.Camera, mapViewportViewModel.Map.RealSizeMeters);
 			DrawTitle(context, mapViewportViewModel.Map.Name);
 			DrawScaleBar(context, bounds, mapViewportViewModel.Camera);
@@ -187,6 +196,14 @@ public sealed class MapViewportControl : Control
 		if (currentPoint.Properties.IsLeftButtonPressed)
 		{
 			MapViewportViewModel? mapViewportViewModel = base.DataContext as MapViewportViewModel;
+			if (mapViewportViewModel != null && mapViewportViewModel.ActiveTool == EditorToolType.Ruler)
+			{
+				Focus();
+				mapViewportViewModel.AddRulerPointAtScreenPoint(ToPointD(currentPoint.Position));
+				InvalidateVisual();
+				e.Handled = true;
+				return;
+			}
 			if (mapViewportViewModel != null && mapViewportViewModel.ActiveTool == EditorToolType.PointOfInterest)
 			{
 				Focus();
@@ -320,7 +337,7 @@ public sealed class MapViewportControl : Control
 			mapViewportViewModel.SetHoveredVertex(null);
 		}
 		mapViewportViewModel.UpdatePointerPosition(ToPointD(position));
-		if (mapViewportViewModel.IsDrawingRoad || mapViewportViewModel.IsDrawingRoadArea || mapViewportViewModel.IsDrawingDistrict)
+		if (mapViewportViewModel.IsDrawingRoad || mapViewportViewModel.IsDrawingRoadArea || mapViewportViewModel.IsDrawingDistrict || mapViewportViewModel.IsRulerMeasuring)
 		{
 			InvalidateVisual();
 		}
@@ -427,6 +444,11 @@ public sealed class MapViewportControl : Control
 		else if (e.KeyModifiers == KeyModifiers.None && e.Key == Key.Escape && mapViewportViewModel.ActiveTool == EditorToolType.RoadArea)
 		{
 			mapViewportViewModel.CancelRoadAreaDrawing();
+			InvalidateVisual();
+			e.Handled = true;
+		}
+		else if (e.KeyModifiers == KeyModifiers.None && e.Key == Key.Escape && mapViewportViewModel.ClearRulerMeasurement())
+		{
 			InvalidateVisual();
 			e.Handled = true;
 		}
@@ -1040,6 +1062,30 @@ public sealed class MapViewportControl : Control
 		}
 	}
 
+	private static void DrawRulerOverlay(DrawingContext context, MapViewportViewModel viewModel)
+	{
+		if (!viewModel.RulerStartPoint.HasValue)
+		{
+			return;
+		}
+
+		Point start = ToAvaloniaPoint(viewModel.Camera.WorldToScreen(viewModel.RulerStartPoint.Value));
+		if (viewModel.RulerEndPoint.HasValue)
+		{
+			Point end = ToAvaloniaPoint(viewModel.Camera.WorldToScreen(viewModel.RulerEndPoint.Value));
+			context.DrawLine(RulerLinePen, start, end);
+			context.DrawEllipse(RulerEndpointFillBrush, RulerEndpointPen, end, 5.0, 5.0);
+			RulerMeasurement? measurement = viewModel.CurrentRulerMeasurement;
+			if (measurement != null)
+			{
+				Point midpoint = new Point((start.X + end.X) / 2.0 + 8.0, (start.Y + end.Y) / 2.0 - 20.0);
+				DrawText(context, measurement.FormatStatus(), midpoint, 12.0, RulerTextBrush, FontWeight.SemiBold);
+			}
+		}
+
+		context.DrawEllipse(RulerEndpointFillBrush, RulerEndpointPen, start, 5.0, 5.0);
+	}
+
 	private static void DrawPointOfInterest(DrawingContext context, Camera2D camera, PointOfInterest poi, bool isSelected)
 	{
 		PoiVisualStyle style = GetPoiStyle(poi.StyleKey);
@@ -1251,6 +1297,9 @@ public sealed class MapViewportControl : Control
 			break;
 		case Key.A:
 			editorToolType = EditorToolType.RoadArea;
+			break;
+		case Key.M:
+			editorToolType = EditorToolType.Ruler;
 			break;
 		case Key.P:
 			editorToolType = EditorToolType.PointOfInterest;

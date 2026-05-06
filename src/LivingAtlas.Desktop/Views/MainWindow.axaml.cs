@@ -526,6 +526,11 @@ public partial class MainWindow : Window
         SetActiveTool(EditorToolType.RoadArea);
     }
 
+    private void RulerTool_Click(object? sender, RoutedEventArgs e)
+    {
+        SetActiveTool(EditorToolType.Ruler);
+    }
+
     private void PointOfInterestTool_Click(object? sender, RoutedEventArgs e)
     {
         SetActiveTool(EditorToolType.PointOfInterest);
@@ -615,6 +620,15 @@ public partial class MainWindow : Window
             && viewModel.MapViewport.ActiveTool == EditorToolType.District)
         {
             viewModel.MapViewport.CancelDistrictDrawing();
+            MapViewport.InvalidateVisual();
+            e.Handled = true;
+            return true;
+        }
+
+        if (e.KeyModifiers == KeyModifiers.None
+            && e.Key == Key.Escape
+            && viewModel.MapViewport.ClearRulerMeasurement())
+        {
             MapViewport.InvalidateVisual();
             e.Handled = true;
             return true;
@@ -740,6 +754,7 @@ public partial class MainWindow : Window
             Key.D => EditorToolType.District,
             Key.R => EditorToolType.Road,
             Key.A => EditorToolType.RoadArea,
+            Key.M => EditorToolType.Ruler,
             Key.P => EditorToolType.PointOfInterest,
             Key.T => EditorToolType.Label,
             _ => (EditorToolType?)null

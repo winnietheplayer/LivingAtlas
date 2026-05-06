@@ -47,6 +47,12 @@ public sealed class MapViewportViewModel : ViewModelBase
 
 	private readonly RoadAreaDrawingSession _roadAreaDrawingSession = new RoadAreaDrawingSession();
 
+	private PointD? _rulerStartPoint;
+
+	private PointD? _rulerEndPoint;
+
+	private bool _isRulerComplete;
+
 	private bool _hasInitialCameraFit;
 
 	private bool _isMovingSelectedObject;
@@ -100,6 +106,18 @@ public sealed class MapViewportViewModel : ViewModelBase
 	public PointD? RoadAreaPreviewPoint => _roadAreaDrawingSession.PreviewPoint;
 
 	public bool IsDrawingRoadArea => _roadAreaDrawingSession.IsDrawing;
+
+	public PointD? RulerStartPoint => _rulerStartPoint;
+
+	public PointD? RulerEndPoint => _rulerEndPoint;
+
+	public bool HasRulerOverlay => _rulerStartPoint.HasValue;
+
+	public bool IsRulerMeasuring => ActiveTool == EditorToolType.Ruler && _rulerStartPoint.HasValue && !_isRulerComplete;
+
+	public RulerMeasurement? CurrentRulerMeasurement => _rulerStartPoint.HasValue && _rulerEndPoint.HasValue
+		? new RulerMeasurement(_rulerStartPoint.Value, _rulerEndPoint.Value)
+		: null;
 
 	public MapObject? SelectedObject
 	{
@@ -198,6 +216,10 @@ public sealed class MapViewportViewModel : ViewModelBase
 			{
 				CancelDistrictDrawingCore();
 			}
+			if (ActiveTool == EditorToolType.Ruler && activeTool != EditorToolType.Ruler)
+			{
+				ClearRulerCore();
+			}
 			Tools.SetActiveTool(activeTool);
 			if (activeTool != EditorToolType.SelectMove)
 			{
@@ -209,6 +231,7 @@ public sealed class MapViewportViewModel : ViewModelBase
 			OnPropertyChanged("IsSelectMoveToolActive");
 			OnPropertyChanged("IsPanToolActive");
 			OnPropertyChanged("IsDrawingToolActive");
+			OnPropertyChanged("IsRulerMeasuring");
 			OnPropertyChanged("IsSelectedGeometryEditable");
 			RefreshStatus();
 		}
@@ -343,6 +366,35 @@ public sealed class MapViewportViewModel : ViewModelBase
 	public bool CancelRoadAreaDrawing()
 	{
 		if (!CancelRoadAreaDrawingCore())
+		{
+			return false;
+		}
+		RefreshStatus();
+		return true;
+	}
+
+	public void AddRulerPointAtScreenPoint(PointD screenPoint)
+	{
+		_lastScreenPoint = screenPoint;
+		PointD snappedPoint = SnapRulerPoint(screenPoint);
+		if (!_rulerStartPoint.HasValue || _isRulerComplete)
+		{
+			_rulerStartPoint = snappedPoint;
+			_rulerEndPoint = null;
+			_isRulerComplete = false;
+		}
+		else
+		{
+			_rulerEndPoint = snappedPoint;
+			_isRulerComplete = true;
+		}
+		NotifyRulerChanged();
+		RefreshStatus();
+	}
+
+	public bool ClearRulerMeasurement()
+	{
+		if (!ClearRulerCore())
 		{
 			return false;
 		}
@@ -925,6 +977,11 @@ public sealed class MapViewportViewModel : ViewModelBase
 			_districtDrawingSession.UpdatePreviewPoint(GridSnapper.Snap(Camera.ScreenToWorld(screenPoint), Map.GridSettings));
 			OnPropertyChanged("DistrictPreviewPoint");
 		}
+		if (ActiveTool == EditorToolType.Ruler && _rulerStartPoint.HasValue && !_isRulerComplete)
+		{
+			_rulerEndPoint = SnapRulerPoint(screenPoint);
+			NotifyRulerChanged();
+		}
 		RefreshStatus();
 	}
 
@@ -943,6 +1000,11 @@ public sealed class MapViewportViewModel : ViewModelBase
 			GetParentRoadOverlays(),
 			Camera,
 			ParentRoadOverlaySnapTolerancePixels);
+	}
+
+	private PointD SnapRulerPoint(PointD screenPoint)
+	{
+		return GridSnapper.Snap(Camera.ScreenToWorld(screenPoint), Map.GridSettings);
 	}
 
 	private void RefreshStatus()
@@ -971,6 +1033,20 @@ public sealed class MapViewportViewModel : ViewModelBase
 		if (_isMovingSelectedObject && SelectedObject != null)
 		{
 			return $"{coordinates} | {toolText} | Moving: {SelectedObject.Name}";
+		}
+		if (ActiveTool == EditorToolType.Ruler)
+		{
+			RulerMeasurement? measurement = CurrentRulerMeasurement;
+			if (measurement != null)
+			{
+				return $"{coordinates} | {toolText} | {measurement.FormatStatus()}";
+			}
+			if (_rulerStartPoint.HasValue)
+			{
+				return $"{coordinates} | {toolText} | {FormatRulerStart(_rulerStartPoint.Value)}";
+			}
+
+			return $"{coordinates} | {toolText} | Ruler Tool: click to set start";
 		}
 		if (ActiveTool == EditorToolType.PointOfInterest)
 		{
@@ -1042,10 +1118,16 @@ public sealed class MapViewportViewModel : ViewModelBase
 			EditorToolType.District => "District", 
 			EditorToolType.Road => "Road", 
 			EditorToolType.RoadArea => "Road Area", 
+			EditorToolType.Ruler => "Ruler", 
 			EditorToolType.PointOfInterest => "POI", 
 			EditorToolType.Label => "Label", 
 			_ => tool.ToString(), 
 		};
+	}
+
+	private static string FormatRulerStart(PointD start)
+	{
+		return string.Create(CultureInfo.InvariantCulture, $"Ruler start: {start.X:F1}, {start.Y:F1}");
 	}
 
 	private void RefreshSelectedObjectReference()
@@ -1107,6 +1189,19 @@ public sealed class MapViewportViewModel : ViewModelBase
 		return true;
 	}
 
+	private bool ClearRulerCore()
+	{
+		if (!_rulerStartPoint.HasValue && !_rulerEndPoint.HasValue && !_isRulerComplete)
+		{
+			return false;
+		}
+		_rulerStartPoint = null;
+		_rulerEndPoint = null;
+		_isRulerComplete = false;
+		NotifyRulerChanged();
+		return true;
+	}
+
 	private void NotifyRoadPreviewChanged()
 	{
 		OnPropertyChanged("RoadPreviewPoints");
@@ -1126,6 +1221,15 @@ public sealed class MapViewportViewModel : ViewModelBase
 		OnPropertyChanged("DistrictPreviewPoints");
 		OnPropertyChanged("DistrictPreviewPoint");
 		OnPropertyChanged("IsDrawingDistrict");
+	}
+
+	private void NotifyRulerChanged()
+	{
+		OnPropertyChanged("RulerStartPoint");
+		OnPropertyChanged("RulerEndPoint");
+		OnPropertyChanged("HasRulerOverlay");
+		OnPropertyChanged("IsRulerMeasuring");
+		OnPropertyChanged("CurrentRulerMeasurement");
 	}
 
 	private void NotifyProjectMutated()
