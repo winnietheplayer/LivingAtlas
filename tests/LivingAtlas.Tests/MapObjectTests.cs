@@ -116,6 +116,27 @@ public sealed class MapObjectTests
     }
 
     [Fact]
+    public void DistrictShape_TextureFillDefaultsSetAndClear()
+    {
+        DistrictShape district = TestData.CreateDistrict(Guid.NewGuid());
+
+        Assert.Null(district.FillTextureAssetId);
+        Assert.Equal(DistrictShape.DefaultTextureTileSizeMeters, district.TextureTileSizeMeters);
+
+        district.SetTextureFill(" ground.dirt.01 ", 12.5);
+
+        Assert.Equal("ground.dirt.01", district.FillTextureAssetId);
+        Assert.Equal(12.5, district.TextureTileSizeMeters);
+
+        district.SetTextureFill(null, 8.0);
+
+        Assert.Null(district.FillTextureAssetId);
+        Assert.Equal(DistrictShape.DefaultTextureTileSizeMeters, district.TextureTileSizeMeters);
+
+        Assert.Throws<ArgumentOutOfRangeException>(() => district.SetTextureFill("ground.dirt.01", 0.0));
+    }
+
+    [Fact]
     public void MapLabel_StoresText()
     {
         Guid layerId = Guid.NewGuid();

@@ -1,3 +1,4 @@
+using LivingAtlas.Assets;
 using LivingAtlas.Desktop.ViewModels;
 using LivingAtlas.Domain.Geometry;
 using LivingAtlas.Domain.Maps;
@@ -22,6 +23,7 @@ public sealed class InspectorViewModelTests
 		Assert.False(inspector.IsPointOfInterestSelected);
 		Assert.False(inspector.IsDistrictShapeSelected);
 		Assert.Equal(RoadLine.DefaultRoadKind, inspector.EditableRoadKind);
+		Assert.Single(inspector.AvailableFillTextureAssets);
 
 		inspector.SetSelection(label);
 
@@ -34,6 +36,35 @@ public sealed class InspectorViewModelTests
 		Assert.False(inspector.HasSelection);
 		Assert.Equal("No selection", inspector.ObjectTypeText);
 		Assert.Equal("No selection", inspector.SelectionDetails);
+	}
+
+	[Fact]
+	public void SetSelection_ExposesTextureFillFieldsForDistricts()
+	{
+		InspectorViewModel inspector = new InspectorViewModel(CreateTextureCatalog());
+		DistrictShape district = TestData.CreateDistrict(Guid.NewGuid());
+		district.SetTextureFill("ground.dirt.01", 12.5);
+
+		inspector.SetSelection(district);
+
+		Assert.True(inspector.IsDistrictShapeSelected);
+		Assert.Equal("12.5", inspector.EditableTextureTileSizeMeters);
+		Assert.Contains(inspector.AvailableFillTextureAssets, option => option.AssetId == null && option.DisplayName == "None");
+		Assert.Contains(inspector.AvailableFillTextureAssets, option => option.AssetId == "ground.dirt.01");
+		Assert.Equal("ground.dirt.01", inspector.SelectedFillTextureAsset?.AssetId);
+	}
+
+	[Fact]
+	public void SetSelection_PreservesMissingTextureAssetSelection()
+	{
+		InspectorViewModel inspector = new InspectorViewModel(TextureAssetCatalog.Empty);
+		DistrictShape district = TestData.CreateDistrict(Guid.NewGuid());
+		district.SetTextureFill("ground.missing.01", 18.0);
+
+		inspector.SetSelection(district);
+
+		Assert.Equal("ground.missing.01", inspector.SelectedFillTextureAsset?.AssetId);
+		Assert.Equal("Missing: ground.missing.01", inspector.SelectedFillTextureAsset?.DisplayName);
 	}
 
 	[Fact]
@@ -65,6 +96,36 @@ public sealed class InspectorViewModelTests
 		Assert.StartsWith("Inspector apply failed:", viewModel.StatusBar.Message);
 	}
 
+	[Fact]
+	public void ApplyInspectorChanges_UpdatesDistrictTextureFill()
+	{
+		(MainWindowViewModel viewModel, DistrictShape district) = CreateMainWindowWithSelectedDistrict();
+		viewModel.Inspector.SelectedFillTextureAsset = new TextureAssetOptionViewModel("Dirt 01", "ground.dirt.01", 10.0);
+		viewModel.Inspector.EditableTextureTileSizeMeters = "16.5";
+
+		Assert.True(viewModel.ApplyInspectorChanges());
+
+		Assert.Equal("ground.dirt.01", district.FillTextureAssetId);
+		Assert.Equal(16.5, district.TextureTileSizeMeters);
+		Assert.True(viewModel.MapViewport.History.CanUndo);
+		Assert.True(viewModel.IsDirty);
+	}
+
+	[Fact]
+	public void ApplyInspectorChanges_InvalidTextureTileSizeIsRejected()
+	{
+		(MainWindowViewModel viewModel, DistrictShape district) = CreateMainWindowWithSelectedDistrict();
+		viewModel.Inspector.SelectedFillTextureAsset = new TextureAssetOptionViewModel("Dirt 01", "ground.dirt.01", 10.0);
+		viewModel.Inspector.EditableTextureTileSizeMeters = "0";
+
+		Assert.False(viewModel.ApplyInspectorChanges());
+
+		Assert.Null(district.FillTextureAssetId);
+		Assert.False(viewModel.MapViewport.History.CanUndo);
+		Assert.False(viewModel.IsDirty);
+		Assert.Equal("Inspector apply failed: texture tile size must be positive.", viewModel.StatusBar.Message);
+	}
+
 	private static (MainWindowViewModel ViewModel, PointOfInterest Poi) CreateMainWindowWithSelectedPoi()
 	{
 		MapDocument map = TestData.CreateCityMap();
@@ -79,5 +140,40 @@ public sealed class InspectorViewModelTests
 		viewModel.MapViewport.SelectAtScreenPoint(new PointD(100.0, 200.0), 20.0);
 
 		return (viewModel, poi);
+	}
+
+	private static (MainWindowViewModel ViewModel, DistrictShape District) CreateMainWindowWithSelectedDistrict()
+	{
+		MapDocument map = TestData.CreateCityMap();
+		MapLayer layer = TestData.CreateLayer(layerType: MapLayerType.Districts);
+		DistrictShape district = TestData.CreateDistrict(layer.Id);
+		layer.AddObject(district);
+		map.AddLayer(layer);
+		CampaignMapProject project = TestData.CreateProject(map);
+		MainWindowViewModel viewModel = new MainWindowViewModel(project, CreateTextureCatalog());
+
+		viewModel.MapViewport.Camera.SetView(0.0, 0.0, 1.0);
+		viewModel.MapViewport.SelectAtScreenPoint(new PointD(200.0, 200.0), 20.0);
+
+		return (viewModel, district);
+	}
+
+	private static TextureAssetCatalog CreateTextureCatalog()
+	{
+		return new TextureAssetCatalog(new[]
+		{
+			new TextureAssetDefinition(
+				"base_terrain_01",
+				"ground.dirt.01",
+				"Dirt 01",
+				"texture",
+				"ground",
+				"textures/ground/ground_dirt_01.png",
+				@"C:\textures\ground_dirt_01.png",
+				IsTileable: true,
+				DefaultTileSizeMeters: 10.0,
+				new[] { "ground", "dirt" },
+				FileExists: false)
+		});
 	}
 }

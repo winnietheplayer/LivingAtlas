@@ -5,6 +5,9 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Media;
+using Avalonia.Media.Imaging;
+using LivingAtlas.Assets;
+using LivingAtlas.Desktop.Services;
 using LivingAtlas.Desktop.ViewModels;
 using LivingAtlas.Domain.Geometry;
 using LivingAtlas.Domain.Maps;
@@ -146,7 +149,14 @@ public sealed class MapViewportControl : Control
 			}
 			DrawMapArea(context, mapViewportViewModel.Camera, mapViewportViewModel.Map.RealSizeMeters);
 			DrawGrid(context, bounds, mapViewportViewModel.Camera, mapViewportViewModel.GridStepMeters);
-			DrawMapObjects(context, mapViewportViewModel.Camera, mapViewportViewModel.Map, mapViewportViewModel.Project, mapViewportViewModel.SelectedObjectId);
+			DrawMapObjects(
+				context,
+				mapViewportViewModel.Camera,
+				mapViewportViewModel.Map,
+				mapViewportViewModel.Project,
+				mapViewportViewModel.SelectedObjectId,
+				mapViewportViewModel.TextureAssetCatalog,
+				mapViewportViewModel.TextureImageCache);
 			DrawVertexHandles(context, mapViewportViewModel);
 			DrawDistrictPreview(context, mapViewportViewModel.Camera, mapViewportViewModel.DistrictPreviewPoints, mapViewportViewModel.DistrictPreviewPoint);
 			DrawRoadPreview(context, mapViewportViewModel.Camera, mapViewportViewModel.RoadPreviewPoints, mapViewportViewModel.RoadPreviewPoint);
@@ -476,7 +486,14 @@ public sealed class MapViewportControl : Control
 		context.DrawRectangle(null, MapBoundsPen, ToScreenRect(camera, mapSizeMeters));
 	}
 
-	private static void DrawMapObjects(DrawingContext context, Camera2D camera, MapDocument map, CampaignMapProject? project, Guid? selectedObjectId)
+	private static void DrawMapObjects(
+		DrawingContext context,
+		Camera2D camera,
+		MapDocument map,
+		CampaignMapProject? project,
+		Guid? selectedObjectId,
+		TextureAssetCatalog textureAssetCatalog,
+		AvaloniaTextureImageCache textureImageCache)
 	{
 		foreach (MapLayer layer in map.Layers)
 		{
@@ -512,7 +529,7 @@ public sealed class MapViewportControl : Control
 				}
 				else
 				{
-					DrawDistrictShape(context, camera, districtShape, isSelected);
+					DrawDistrictShape(context, camera, districtShape, isSelected, textureAssetCatalog, textureImageCache);
 					DrawChildMapPreview(context, camera, project, map, districtShape);
 				}
 			}
@@ -592,7 +609,13 @@ public sealed class MapViewportControl : Control
 		};
 	}
 
-	private static void DrawDistrictShape(DrawingContext context, Camera2D camera, DistrictShape district, bool isSelected)
+	private static void DrawDistrictShape(
+		DrawingContext context,
+		Camera2D camera,
+		DistrictShape district,
+		bool isSelected,
+		TextureAssetCatalog textureAssetCatalog,
+		AvaloniaTextureImageCache textureImageCache)
 	{
 		DistrictVisualStyle style = GetDistrictStyle(district.StyleKey);
 		StreamGeometry streamGeometry = new StreamGeometry();
@@ -609,7 +632,64 @@ public sealed class MapViewportControl : Control
 		{
 			context.DrawGeometry(null, SelectedDistrictPen, streamGeometry);
 		}
-		context.DrawGeometry(style.Fill, style.Stroke, streamGeometry);
+		if (!DrawDistrictTextureFill(context, camera, district, streamGeometry, textureAssetCatalog, textureImageCache))
+		{
+			context.DrawGeometry(style.Fill, style.Stroke, streamGeometry);
+		}
+		else
+		{
+			context.DrawGeometry(null, style.Stroke, streamGeometry);
+		}
+	}
+
+	private static bool DrawDistrictTextureFill(
+		DrawingContext context,
+		Camera2D camera,
+		DistrictShape district,
+		Geometry clipGeometry,
+		TextureAssetCatalog textureAssetCatalog,
+		AvaloniaTextureImageCache textureImageCache)
+	{
+		if (district.FillTextureAssetId == null || district.TextureTileSizeMeters <= 0.0)
+		{
+			return false;
+		}
+
+		Bitmap? bitmap = textureImageCache.Get(textureAssetCatalog, district.FillTextureAssetId);
+		if (bitmap == null)
+		{
+			return false;
+		}
+
+		RectD bounds = GetBoundingBox(district.PolygonPoints);
+		if (bounds.Size.Width <= 0.0 || bounds.Size.Height <= 0.0)
+		{
+			return false;
+		}
+
+		double tileSizeMeters = district.TextureTileSizeMeters;
+		double startX = Math.Floor(bounds.Left / tileSizeMeters) * tileSizeMeters;
+		double startY = Math.Floor(bounds.Top / tileSizeMeters) * tileSizeMeters;
+		Rect sourceRect = new Rect(bitmap.Size);
+		using (context.PushGeometryClip(clipGeometry))
+		{
+			for (double y = startY; y < bounds.Bottom; y += tileSizeMeters)
+			{
+				for (double x = startX; x < bounds.Right; x += tileSizeMeters)
+				{
+					PointD topLeft = camera.WorldToScreen(new PointD(x, y));
+					PointD bottomRight = camera.WorldToScreen(new PointD(x + tileSizeMeters, y + tileSizeMeters));
+					double left = Math.Min(topLeft.X, bottomRight.X);
+					double top = Math.Min(topLeft.Y, bottomRight.Y);
+					double right = Math.Max(topLeft.X, bottomRight.X);
+					double bottom = Math.Max(topLeft.Y, bottomRight.Y);
+					Rect destinationRect = new Rect(left, top, right - left, bottom - top);
+					context.DrawImage(bitmap, sourceRect, destinationRect);
+				}
+			}
+		}
+
+		return true;
 	}
 
 	private static void DrawRoadLine(DrawingContext context, Camera2D camera, RoadLine road, bool isSelected)

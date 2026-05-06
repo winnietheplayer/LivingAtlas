@@ -256,6 +256,26 @@
                             <TextBox Text="{Binding Inspector.EditableDistrictKind, Mode=TwoWay}"
                                      IsEnabled="{Binding Inspector.IsDistrictShapeSelected}"
                                      IsVisible="{Binding Inspector.IsDistrictShapeSelected}"/>
+                            <TextBlock Text="Fill Texture"
+                                       FontWeight="SemiBold"
+                                       IsVisible="{Binding Inspector.IsDistrictShapeSelected}"/>
+                            <ComboBox ItemsSource="{Binding Inspector.AvailableFillTextureAssets}"
+                                      SelectedItem="{Binding Inspector.SelectedFillTextureAsset, Mode=TwoWay}"
+                                      IsEnabled="{Binding Inspector.IsDistrictShapeSelected}"
+                                      IsVisible="{Binding Inspector.IsDistrictShapeSelected}"
+                                      HorizontalAlignment="Stretch">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate DataType="{x:Type vm:TextureAssetOptionViewModel}">
+                                        <TextBlock Text="{Binding DisplayName}"/>
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
+                            <TextBlock Text="Texture Tile Size (m)"
+                                       FontWeight="SemiBold"
+                                       IsVisible="{Binding Inspector.IsDistrictShapeSelected}"/>
+                            <TextBox Text="{Binding Inspector.EditableTextureTileSizeMeters, Mode=TwoWay}"
+                                     IsEnabled="{Binding Inspector.IsDistrictShapeSelected}"
+                                     IsVisible="{Binding Inspector.IsDistrictShapeSelected}"/>
                             <TextBlock Text="Label Kind"
                                        FontWeight="SemiBold"
                                        IsVisible="{Binding Inspector.IsMapLabelSelected}"/>

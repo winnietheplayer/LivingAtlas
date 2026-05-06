@@ -1,6 +1,7 @@
 <Solution>
   <Folder Name="/src/">
     <Project Path="src/LivingAtlas.AI/LivingAtlas.AI.csproj" />
+    <Project Path="src/LivingAtlas.Assets/LivingAtlas.Assets.csproj" />
     <Project Path="src/LivingAtlas.Desktop/LivingAtlas.Desktop.csproj" />
     <Project Path="src/LivingAtlas.Domain/LivingAtlas.Domain.csproj" />
     <Project Path="src/LivingAtlas.Editor/LivingAtlas.Editor.csproj" />

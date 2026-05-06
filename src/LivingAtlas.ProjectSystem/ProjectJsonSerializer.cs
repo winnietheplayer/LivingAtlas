@@ -200,6 +200,10 @@ public static class ProjectJsonSerializer
 
 		public string? LabelKind { get; init; }
 
+		public string? FillTextureAssetId { get; init; }
+
+		public double? TextureTileSizeMeters { get; init; }
+
 		public List<PointDto> Points { get; init; } = new List<PointDto>();
 
 		public PointDto? Position { get; init; }
@@ -218,7 +222,9 @@ public static class ProjectJsonSerializer
 				{
 					Points = districtShape.PolygonPoints.Select(PointDto.FromPoint).ToList(),
 					ChildMapId = districtShape.ChildMapId,
-					DistrictKind = districtShape.DistrictKind
+					DistrictKind = districtShape.DistrictKind,
+					FillTextureAssetId = districtShape.FillTextureAssetId,
+					TextureTileSizeMeters = districtShape.TextureTileSizeMeters
 				},
 				RoadLine roadLine => CreateBase(mapObject)with
 				{
@@ -259,7 +265,7 @@ public static class ProjectJsonSerializer
 		{
 			return ObjectType switch
 			{
-				MapObjectType.DistrictShape => new DistrictShape(Id, Name, LayerId, Points.Select((PointDto point) => point.ToPointD()), Tags, StyleKey, ChildMapId, Description, DistrictKind), 
+				MapObjectType.DistrictShape => new DistrictShape(Id, Name, LayerId, Points.Select((PointDto point) => point.ToPointD()), Tags, StyleKey, ChildMapId, Description, DistrictKind, FillTextureAssetId, TextureTileSizeMeters ?? DistrictShape.DefaultTextureTileSizeMeters), 
 				MapObjectType.RoadLine => new RoadLine(Id, Name, LayerId, Points.Select((PointDto point) => point.ToPointD()), Tags, StyleKey, Description, RoadKind), 
 				MapObjectType.MapLabel => new MapLabel(Id, Name, LayerId, RequirePosition().ToPointD(), RequireText(), Tags, StyleKey, Description, LabelKind), 
 				MapObjectType.PointOfInterest => new PointOfInterest(Id, Name, LayerId, RequirePosition().ToPointD(), RequireIconKey(), Tags, StyleKey, Description, Category), 

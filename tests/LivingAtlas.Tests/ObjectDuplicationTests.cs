@@ -86,6 +86,7 @@ public class ObjectDuplicationTests
         var original = new DistrictShape(Guid.NewGuid(), "Original District", _layer.Id, originalPoints, childMapId: Guid.NewGuid());
         original.SetDescription("District notes");
         original.SetDistrictKind("industrial");
+        original.SetTextureFill("ground.dirt.01", 14.0);
         _layer.AddObject(original);
 
         var command = new DuplicateMapObjectCommand(_map, original);
@@ -96,6 +97,8 @@ public class ObjectDuplicationTests
         Assert.Equal(new PointD(20, 20), duplicate.PolygonPoints[0]);
         Assert.Equal("District notes", duplicate.Description);
         Assert.Equal("industrial", duplicate.DistrictKind);
+        Assert.Equal("ground.dirt.01", duplicate.FillTextureAssetId);
+        Assert.Equal(14.0, duplicate.TextureTileSizeMeters);
     }
 
     [Fact]

@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using LivingAtlas.Assets;
+using LivingAtlas.Desktop.Services;
 using LivingAtlas.Domain.Geometry;
 using LivingAtlas.Domain.Maps;
 using LivingAtlas.Domain.Maps.Objects;
@@ -57,6 +59,10 @@ public sealed class MapViewportViewModel : ViewModelBase
 	public MapDocument Map { get; }
 
 	public CampaignMapProject? Project { get; }
+
+	public TextureAssetCatalog TextureAssetCatalog { get; }
+
+	public AvaloniaTextureImageCache TextureImageCache { get; } = new AvaloniaTextureImageCache();
 
 	public Guid? ActiveTargetLayerId { get; set; }
 
@@ -145,10 +151,11 @@ public sealed class MapViewportViewModel : ViewModelBase
 
 	public event EventHandler? RedrawRequested;
 
-	public MapViewportViewModel(MapDocument map, CampaignMapProject? project = null)
+	public MapViewportViewModel(MapDocument map, CampaignMapProject? project = null, TextureAssetCatalog? textureAssetCatalog = null)
 	{
 		Map = map ?? throw new ArgumentNullException("map");
 		Project = project;
+		TextureAssetCatalog = textureAssetCatalog ?? TextureAssetCatalog.Empty;
 		RefreshStatus();
 	}
 

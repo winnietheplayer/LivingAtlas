@@ -110,6 +110,7 @@ public sealed class ProjectJsonSerializerTests
 			MapLabel label = TestData.CreateLabel(labelsLayer.Id);
 
 			district.SetDistrictKind("market");
+			district.SetTextureFill("ground.dirt.01", 12.5);
 			road.SetRoadKind("primary");
 			poi.SetCategory("landmark");
 			label.SetLabelKind("map-title");
@@ -136,9 +137,92 @@ public sealed class ProjectJsonSerializerTests
 				loaded.RootMap.Layers.Single(l => l.Id == labelsLayer.Id).Objects.Single());
 
 			Assert.Equal("market", loadedDistrict.DistrictKind);
+			Assert.Equal("ground.dirt.01", loadedDistrict.FillTextureAssetId);
+			Assert.Equal(12.5, loadedDistrict.TextureTileSizeMeters);
 			Assert.Equal("primary", loadedRoad.RoadKind);
 			Assert.Equal("landmark", loadedPoi.Category);
 			Assert.Equal("map-title", loadedLabel.LabelKind);
+		}
+		finally
+		{
+			if (File.Exists(tempFileName))
+			{
+				File.Delete(tempFileName);
+			}
+		}
+	}
+
+	[Fact]
+	public async Task LoadAsync_OldJsonWithoutTextureFill_LoadsDistrictTextureDefaults()
+	{
+		string tempFileName = Path.GetTempFileName();
+		Guid projectId = Guid.NewGuid();
+		Guid mapId = Guid.NewGuid();
+		Guid layerId = Guid.NewGuid();
+		Guid objectId = Guid.NewGuid();
+		try
+		{
+			string json = $$"""
+			{
+			  "id": "{{projectId}}",
+			  "name": "Old Project",
+			  "rootMapId": "{{mapId}}",
+			  "maps": [
+			    {
+			      "id": "{{mapId}}",
+			      "name": "Old Map",
+			      "scaleType": "City",
+			      "realSizeMeters": {
+			        "width": 2600.0,
+			        "height": 1800.0
+			      },
+			      "parentMapId": null,
+			      "gridSettings": {
+			        "isEnabled": true,
+			        "cellSizeMeters": 10.0,
+			        "showGrid": true,
+			        "snapToGrid": false
+			      },
+			      "layers": [
+			        {
+			          "id": "{{layerId}}",
+			          "name": "Districts",
+			          "layerType": "Districts",
+			          "isVisible": true,
+			          "isLocked": false,
+			          "objects": [
+			            {
+			              "id": "{{objectId}}",
+			              "name": "Old District",
+			              "objectType": "DistrictShape",
+			              "layerId": "{{layerId}}",
+			              "tags": [],
+			              "styleKey": "district.old",
+			              "description": "",
+			              "districtKind": "generic",
+			              "points": [
+			                { "x": 0.0, "y": 0.0 },
+			                { "x": 100.0, "y": 0.0 },
+			                { "x": 0.0, "y": 100.0 }
+			              ],
+			              "childMapId": null
+			            }
+			          ]
+			        }
+			      ],
+			      "childrenMapIds": []
+			    }
+			  ]
+			}
+			""";
+
+			await File.WriteAllTextAsync(tempFileName, json);
+
+			CampaignMapProject loaded = await ProjectJsonSerializer.LoadAsync(tempFileName);
+			DistrictShape loadedDistrict = Assert.IsType<DistrictShape>(
+				loaded.RootMap.Layers.Single().Objects.Single());
+			Assert.Null(loadedDistrict.FillTextureAssetId);
+			Assert.Equal(DistrictShape.DefaultTextureTileSizeMeters, loadedDistrict.TextureTileSizeMeters);
 		}
 		finally
 		{

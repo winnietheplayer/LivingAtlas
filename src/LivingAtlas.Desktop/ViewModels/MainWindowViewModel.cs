@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using LivingAtlas.Assets;
 using LivingAtlas.Desktop.Services;
 using LivingAtlas.Domain.Geometry;
 using LivingAtlas.Domain.Maps;
@@ -38,6 +40,8 @@ public class MainWindowViewModel : ViewModelBase
 	private readonly Dictionary<Guid, Guid> _activeTargetLayers = new Dictionary<Guid, Guid>();
 
 	private readonly CameraStateCache _cameraStateCache = new CameraStateCache();
+
+	private readonly TextureAssetCatalog _textureAssetCatalog;
 
 	public CampaignMapProject Project
 	{
@@ -150,6 +154,8 @@ public class MainWindowViewModel : ViewModelBase
 
 	public string WindowTitle => "Living Atlas - " + Project.Name + (IsDirty ? "*" : string.Empty);
 
+	public TextureAssetCatalog TextureAssetCatalog => _textureAssetCatalog;
+
 	public bool IsSnapToGridEnabled => MapViewport?.Map?.GridSettings.SnapToGrid ?? false;
 
 	public bool CanUseSelectionChildMapAction => MapViewport.SelectedObject is DistrictShape;
@@ -169,11 +175,17 @@ public class MainWindowViewModel : ViewModelBase
 	{
 	}
 
-	public MainWindowViewModel(CampaignMapProject project)
+	public MainWindowViewModel(CampaignMapProject project, TextureAssetCatalog? textureAssetCatalog = null)
 	{
 		ArgumentNullException.ThrowIfNull(project, "project");
 		StatusBar = new StatusBarViewModel();
+		IReadOnlyList<string> textureCatalogWarnings = Array.Empty<string>();
+		_textureAssetCatalog = textureAssetCatalog ?? TextureAssetCatalogLocator.LoadDefaultCatalog(out textureCatalogWarnings);
 		ApplyProject(project, null);
+		if (textureAssetCatalog == null && textureCatalogWarnings.Count > 0)
+		{
+			StatusBar.SetMessage("Texture catalog warning: " + textureCatalogWarnings[0]);
+		}
 	}
 
 	public void NewProject()
@@ -232,7 +244,7 @@ public class MainWindowViewModel : ViewModelBase
 		try
 		{
 			var exporter = new PngMapExporter();
-			await exporter.ExportAsync(Project, MapViewport.Map, options).ConfigureAwait(continueOnCapturedContext: true);
+			await exporter.ExportAsync(Project, MapViewport.Map, options, TextureAssetCatalog).ConfigureAwait(continueOnCapturedContext: true);
 			StatusBar.SetMessage("Exported PNG: " + options.OutputPath);
 			return true;
 		}
@@ -368,10 +380,13 @@ public class MainWindowViewModel : ViewModelBase
 			string? roadKind = null;
 			string? districtKind = null;
 			string? labelKind = null;
+			string? fillTextureAssetId = null;
+			double? textureTileSizeMeters = null;
 			bool flag5 = false;
 			bool flag6 = false;
 			bool flag7 = false;
 			bool flag8 = false;
+			bool flag9 = false;
 
 			if (selectedObject is PointOfInterest pointOfInterest)
 			{
@@ -387,6 +402,16 @@ public class MainWindowViewModel : ViewModelBase
 			{
 				districtKind = NormalizeDistrictKind(Inspector.EditableDistrictKind);
 				flag7 = !string.Equals(districtKind, districtShape.DistrictKind, StringComparison.Ordinal);
+				if (!TryParseTextureTileSize(Inspector.EditableTextureTileSizeMeters, out double parsedTileSize, out string? tileSizeError))
+				{
+					StatusBar.SetMessage("Inspector apply failed: " + tileSizeError);
+					return false;
+				}
+
+				fillTextureAssetId = NormalizeTextureAssetId(Inspector.SelectedFillTextureAsset?.AssetId);
+				textureTileSizeMeters = fillTextureAssetId == null ? DistrictShape.DefaultTextureTileSizeMeters : parsedTileSize;
+				flag9 = !string.Equals(fillTextureAssetId, districtShape.FillTextureAssetId, StringComparison.Ordinal)
+					|| (fillTextureAssetId != null && Math.Abs(textureTileSizeMeters.Value - districtShape.TextureTileSizeMeters) > 1E-06);
 			}
 			else if (selectedObject is MapLabel label)
 			{
@@ -394,7 +419,7 @@ public class MainWindowViewModel : ViewModelBase
 				flag8 = !string.Equals(labelKind, label.LabelKind, StringComparison.Ordinal);
 			}
 
-			if (!flag && !flag2 && !flag3 && !flag4 && !flag5 && !flag6 && !flag7 && !flag8)
+			if (!flag && !flag2 && !flag3 && !flag4 && !flag5 && !flag6 && !flag7 && !flag8 && !flag9)
 			{
 				StatusBar.SetMessage("No inspector changes");
 				return false;
@@ -409,7 +434,10 @@ public class MainWindowViewModel : ViewModelBase
 				newCategory: flag5 ? category : null,
 				newRoadKind: flag6 ? roadKind : null,
 				newDistrictKind: flag7 ? districtKind : null,
-				newLabelKind: flag8 ? labelKind : null);
+				newLabelKind: flag8 ? labelKind : null,
+				updateDistrictTextureFill: flag9,
+				newFillTextureAssetId: flag9 ? fillTextureAssetId : null,
+				newTextureTileSizeMeters: flag9 ? textureTileSizeMeters : null);
 			MapViewport.ExecuteCommand(command, "Object updated: " + text);
 			MapViewport.RequestViewportRedraw();
 			Inspector.SetSelection(MapViewport.SelectedObject);
@@ -430,6 +458,29 @@ public class MainWindowViewModel : ViewModelBase
 	private static string NormalizeDistrictKind(string? districtKind)
 	{
 		return string.IsNullOrWhiteSpace(districtKind) ? DistrictShape.DefaultDistrictKind : districtKind.Trim();
+	}
+
+	private static string? NormalizeTextureAssetId(string? assetId)
+	{
+		return string.IsNullOrWhiteSpace(assetId) ? null : assetId.Trim();
+	}
+
+	private static bool TryParseTextureTileSize(string value, out double tileSizeMeters, out string? error)
+	{
+		if (!double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out tileSizeMeters))
+		{
+			error = "texture tile size must be a number.";
+			return false;
+		}
+
+		if (tileSizeMeters <= 0.0)
+		{
+			error = "texture tile size must be positive.";
+			return false;
+		}
+
+		error = null;
+		return true;
 	}
 
 	private static string NormalizeLabelKind(string? labelKind)
@@ -516,7 +567,7 @@ public class MainWindowViewModel : ViewModelBase
 		{
 			MapViewport.ResetCameraFit();
 		}
-		Inspector = new InspectorViewModel();
+		Inspector = new InspectorViewModel(TextureAssetCatalog);
 		Inspector.SetSelection(MapViewport.SelectedObject);
 		MapViewport.ActiveTargetLayerId = GetActiveTargetLayer(map.Id);
 		MapViewport.PropertyChanged += OnMapViewportPropertyChanged;
@@ -774,7 +825,7 @@ public class MainWindowViewModel : ViewModelBase
 		{
 			return value!;
 		}
-		value = new MapViewportViewModel(map, Project);
+		value = new MapViewportViewModel(map, Project, TextureAssetCatalog);
 		_mapViewportsByMapId.Add(map.Id, value);
 		return value;
 	}

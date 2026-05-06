@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
+using LivingAtlas.Assets;
 using LivingAtlas.Domain.Geometry;
 using LivingAtlas.Domain.Maps.Objects;
 
@@ -8,6 +10,10 @@ namespace LivingAtlas.Desktop.ViewModels;
 
 public sealed class InspectorViewModel : ViewModelBase
 {
+	private static readonly TextureAssetOptionViewModel NoneTextureOption = new TextureAssetOptionViewModel("None", null, DistrictShape.DefaultTextureTileSizeMeters);
+
+	private readonly TextureAssetCatalog _textureAssetCatalog;
+
 	private MapObject? _selectedObject;
 
 	private string _editableName = string.Empty;
@@ -26,7 +32,13 @@ public sealed class InspectorViewModel : ViewModelBase
 
 	private string _editableLabelKind = string.Empty;
 
+	private string _editableTextureTileSizeMeters = FormatNumber(DistrictShape.DefaultTextureTileSizeMeters);
+
 	private IReadOnlyList<string> _availableStylePresets = Array.Empty<string>();
+
+	private IReadOnlyList<TextureAssetOptionViewModel> _availableFillTextureAssets = new[] { NoneTextureOption };
+
+	private TextureAssetOptionViewModel? _selectedFillTextureAsset = NoneTextureOption;
 
 	private string _selectionDetails = "No selection";
 
@@ -45,6 +57,16 @@ public sealed class InspectorViewModel : ViewModelBase
 	private bool _isRoadLineSelected;
 
 	private bool _isDistrictShapeSelected;
+
+	public InspectorViewModel()
+		: this(TextureAssetCatalog.Empty)
+	{
+	}
+
+	public InspectorViewModel(TextureAssetCatalog textureAssetCatalog)
+	{
+		_textureAssetCatalog = textureAssetCatalog ?? TextureAssetCatalog.Empty;
+	}
 
 	public MapObject? SelectedObject
 	{
@@ -154,10 +176,34 @@ public sealed class InspectorViewModel : ViewModelBase
 		}
 	}
 
+	public string EditableTextureTileSizeMeters
+	{
+		get
+		{
+			return _editableTextureTileSizeMeters;
+		}
+		set
+		{
+			SetProperty(ref _editableTextureTileSizeMeters, value, "EditableTextureTileSizeMeters");
+		}
+	}
+
 	public IReadOnlyList<string> AvailableStylePresets
 	{
 		get => _availableStylePresets;
 		private set => SetProperty(ref _availableStylePresets, value, nameof(AvailableStylePresets));
+	}
+
+	public IReadOnlyList<TextureAssetOptionViewModel> AvailableFillTextureAssets
+	{
+		get => _availableFillTextureAssets;
+		private set => SetProperty(ref _availableFillTextureAssets, value, nameof(AvailableFillTextureAssets));
+	}
+
+	public TextureAssetOptionViewModel? SelectedFillTextureAsset
+	{
+		get => _selectedFillTextureAsset;
+		set => SetProperty(ref _selectedFillTextureAsset, value, nameof(SelectedFillTextureAsset));
 	}
 
 	public IReadOnlyList<string> RoadKindPresets { get; } = new[] { "primary", "secondary", "alley" };
@@ -290,6 +336,7 @@ public sealed class InspectorViewModel : ViewModelBase
 		EditableRoadKind = ((selectedObject is RoadLine roadLine) ? roadLine.RoadKind : string.Empty);
 		EditableDistrictKind = ((selectedObject is DistrictShape districtShape) ? districtShape.DistrictKind : string.Empty);
 		EditableLabelKind = ((selectedObject is MapLabel label) ? label.LabelKind : string.Empty);
+		UpdateTextureFillSelection(selectedObject as DistrictShape);
 		AvailableStylePresets = selectedObject != null ? LivingAtlas.Editor.Creation.MapObjectStylePresets.GetPresetsForType(selectedObject.ObjectType) : Array.Empty<string>();
 		ObjectTypeText = selectedObject == null ? "No selection" : "Object type: " + selectedObject.ObjectType;
 		LayerText = selectedObject == null ? "Layer: -" : "Layer: " + selectedObject.LayerId;
@@ -300,6 +347,57 @@ public sealed class InspectorViewModel : ViewModelBase
 	private static string FormatTags(MapObject mapObject)
 	{
 		return mapObject.Tags.Count == 0 ? "-" : string.Join(", ", mapObject.Tags);
+	}
+
+	private void UpdateTextureFillSelection(DistrictShape? districtShape)
+	{
+		List<TextureAssetOptionViewModel> options = CreateTextureOptions(districtShape?.FillTextureAssetId);
+		AvailableFillTextureAssets = options;
+		SelectedFillTextureAsset = SelectTextureOption(options, districtShape?.FillTextureAssetId);
+		EditableTextureTileSizeMeters = FormatNumber(districtShape?.TextureTileSizeMeters ?? DistrictShape.DefaultTextureTileSizeMeters);
+	}
+
+	private List<TextureAssetOptionViewModel> CreateTextureOptions(string? selectedAssetId)
+	{
+		var options = new List<TextureAssetOptionViewModel> { NoneTextureOption };
+		options.AddRange(_textureAssetCatalog.Textures
+			.OrderBy(asset => asset.Category, StringComparer.OrdinalIgnoreCase)
+			.ThenBy(asset => asset.Name, StringComparer.OrdinalIgnoreCase)
+			.Select(asset => new TextureAssetOptionViewModel(
+				FormatTextureAssetName(asset),
+				asset.Id,
+				asset.DefaultTileSizeMeters)));
+
+		if (!string.IsNullOrWhiteSpace(selectedAssetId) && !options.Any(option => string.Equals(option.AssetId, selectedAssetId, StringComparison.Ordinal)))
+		{
+			options.Add(new TextureAssetOptionViewModel("Missing: " + selectedAssetId, selectedAssetId, DistrictShape.DefaultTextureTileSizeMeters));
+		}
+
+		return options;
+	}
+
+	private static TextureAssetOptionViewModel SelectTextureOption(IReadOnlyList<TextureAssetOptionViewModel> options, string? assetId)
+	{
+		if (!string.IsNullOrWhiteSpace(assetId))
+		{
+			TextureAssetOptionViewModel? matchingOption = options.FirstOrDefault(option => string.Equals(option.AssetId, assetId, StringComparison.Ordinal));
+			if (matchingOption != null)
+			{
+				return matchingOption;
+			}
+		}
+
+		return options.First();
+	}
+
+	private static string FormatTextureAssetName(TextureAssetDefinition asset)
+	{
+		if (string.IsNullOrWhiteSpace(asset.Category))
+		{
+			return asset.Name;
+		}
+
+		return asset.Category + " / " + asset.Name;
 	}
 
 	private static string FormatGeometryDetails(MapObject mapObject)
@@ -325,6 +423,11 @@ public sealed class InspectorViewModel : ViewModelBase
 	private static string FormatPoint(PointD point)
 	{
 		return string.Create(CultureInfo.InvariantCulture, $"X: {point.X:F2} m, Y: {point.Y:F2} m");
+	}
+
+	private static string FormatNumber(double value)
+	{
+		return value.ToString("0.###", CultureInfo.InvariantCulture);
 	}
 
 	private static string FormatOptionalId(Guid? id)

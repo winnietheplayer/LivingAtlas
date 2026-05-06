@@ -86,7 +86,7 @@ public sealed class DuplicateMapObjectCommand : IEditorCommand
         {
             IEnumerable<PointD> shiftedPoints = district.PolygonPoints.Select(p => new PointD(p.X + offset.X, p.Y + offset.Y)).ToList();
             // ChildMapId MUST NOT be copied
-            return new DistrictShape(newId, newName, district.LayerId, shiftedPoints, district.Tags, district.StyleKey, null, district.Description, district.DistrictKind);
+            return new DistrictShape(newId, newName, district.LayerId, shiftedPoints, district.Tags, district.StyleKey, null, district.Description, district.DistrictKind, district.FillTextureAssetId, district.TextureTileSizeMeters);
         }
 
         throw new NotSupportedException($"Duplication is not supported for object type '{original.GetType().Name}'.");

@@ -27,7 +27,10 @@ public sealed class UpdateMapObjectPropertiesCommand : IEditorCommand
 		string? newCategory = null,
 		string? newRoadKind = null,
 		string? newDistrictKind = null,
-		string? newLabelKind = null)
+		string? newLabelKind = null,
+		bool updateDistrictTextureFill = false,
+		string? newFillTextureAssetId = null,
+		double? newTextureTileSizeMeters = null)
 	{
 		ArgumentNullException.ThrowIfNull(map, "map");
 		if (objectId == Guid.Empty)
@@ -44,7 +47,7 @@ public sealed class UpdateMapObjectPropertiesCommand : IEditorCommand
 
 		MapObject mapObject = ResolveObject();
 		_oldSnapshot = MapObjectPropertySnapshot.FromObject(mapObject);
-		_newSnapshot = CreateNewSnapshot(mapObject, newName, newLabelText, newStyleKey, newDescription, newCategory, newRoadKind, newDistrictKind, newLabelKind);
+		_newSnapshot = CreateNewSnapshot(mapObject, newName, newLabelText, newStyleKey, newDescription, newCategory, newRoadKind, newDistrictKind, newLabelKind, updateDistrictTextureFill, newFillTextureAssetId, newTextureTileSizeMeters);
 	}
 
 	public void Execute()
@@ -66,13 +69,18 @@ public sealed class UpdateMapObjectPropertiesCommand : IEditorCommand
 		string? newCategory,
 		string? newRoadKind,
 		string? newDistrictKind,
-		string? newLabelKind)
+		string? newLabelKind,
+		bool updateDistrictTextureFill,
+		string? newFillTextureAssetId,
+		double? newTextureTileSizeMeters)
 	{
 		string? labelText = null;
 		string? category = null;
 		string? roadKind = null;
 		string? districtKind = null;
 		string? labelKind = null;
+		string? fillTextureAssetId = null;
+		double? textureTileSizeMeters = null;
 
 		if (mapObject is PointOfInterest pointOfInterest)
 		{
@@ -80,6 +88,7 @@ public sealed class UpdateMapObjectPropertiesCommand : IEditorCommand
 			ThrowIfProvided(newRoadKind, "Only road lines can update road kind.", "newRoadKind");
 			ThrowIfProvided(newDistrictKind, "Only district shapes can update district kind.", "newDistrictKind");
 			ThrowIfProvided(newLabelKind, "Only map labels can update label kind.", "newLabelKind");
+			ThrowIfDistrictTextureProvided(updateDistrictTextureFill, newFillTextureAssetId, newTextureTileSizeMeters);
 			category = newCategory ?? pointOfInterest.Category;
 		}
 		else if (mapObject is RoadLine roadLine)
@@ -88,6 +97,7 @@ public sealed class UpdateMapObjectPropertiesCommand : IEditorCommand
 			ThrowIfProvided(newCategory, "Only points of interest can update category.", "newCategory");
 			ThrowIfProvided(newDistrictKind, "Only district shapes can update district kind.", "newDistrictKind");
 			ThrowIfProvided(newLabelKind, "Only map labels can update label kind.", "newLabelKind");
+			ThrowIfDistrictTextureProvided(updateDistrictTextureFill, newFillTextureAssetId, newTextureTileSizeMeters);
 			roadKind = newRoadKind ?? roadLine.RoadKind;
 		}
 		else if (mapObject is DistrictShape districtShape)
@@ -97,12 +107,20 @@ public sealed class UpdateMapObjectPropertiesCommand : IEditorCommand
 			ThrowIfProvided(newRoadKind, "Only road lines can update road kind.", "newRoadKind");
 			ThrowIfProvided(newLabelKind, "Only map labels can update label kind.", "newLabelKind");
 			districtKind = newDistrictKind ?? districtShape.DistrictKind;
+			fillTextureAssetId = districtShape.FillTextureAssetId;
+			textureTileSizeMeters = districtShape.TextureTileSizeMeters;
+			if (updateDistrictTextureFill)
+			{
+				fillTextureAssetId = newFillTextureAssetId;
+				textureTileSizeMeters = newTextureTileSizeMeters ?? throw new ArgumentException("Texture tile size must be provided when updating district texture fill.", "newTextureTileSizeMeters");
+			}
 		}
 		else if (mapObject is MapLabel mapLabel)
 		{
 			ThrowIfProvided(newCategory, "Only points of interest can update category.", "newCategory");
 			ThrowIfProvided(newRoadKind, "Only road lines can update road kind.", "newRoadKind");
 			ThrowIfProvided(newDistrictKind, "Only district shapes can update district kind.", "newDistrictKind");
+			ThrowIfDistrictTextureProvided(updateDistrictTextureFill, newFillTextureAssetId, newTextureTileSizeMeters);
 			labelText = mapLabel.Text;
 			labelKind = newLabelKind ?? mapLabel.LabelKind;
 			if (newLabelText != null)
@@ -127,7 +145,9 @@ public sealed class UpdateMapObjectPropertiesCommand : IEditorCommand
 			category,
 			roadKind,
 			districtKind,
-			labelKind);
+			labelKind,
+			fillTextureAssetId,
+			textureTileSizeMeters);
 	}
 
 	private void Apply(MapObjectPropertySnapshot snapshot)
@@ -147,6 +167,17 @@ public sealed class UpdateMapObjectPropertiesCommand : IEditorCommand
 		else if (mapObject is DistrictShape districtShape && snapshot.DistrictKind != null)
 		{
 			districtShape.SetDistrictKind(snapshot.DistrictKind);
+			if (snapshot.TextureTileSizeMeters.HasValue)
+			{
+				if (snapshot.FillTextureAssetId == null)
+				{
+					districtShape.ClearTextureFill();
+				}
+				else
+				{
+					districtShape.SetTextureFill(snapshot.FillTextureAssetId, snapshot.TextureTileSizeMeters.Value);
+				}
+			}
 		}
 		else if (mapObject is MapLabel mapLabel)
 		{
@@ -166,6 +197,14 @@ public sealed class UpdateMapObjectPropertiesCommand : IEditorCommand
 		if (value != null)
 		{
 			throw new ArgumentException(message, parameterName);
+		}
+	}
+
+	private static void ThrowIfDistrictTextureProvided(bool updateDistrictTextureFill, string? fillTextureAssetId, double? textureTileSizeMeters)
+	{
+		if (updateDistrictTextureFill || fillTextureAssetId != null || textureTileSizeMeters.HasValue)
+		{
+			throw new ArgumentException("Only district shapes can update texture fill.");
 		}
 	}
 
@@ -190,7 +229,9 @@ public sealed class UpdateMapObjectPropertiesCommand : IEditorCommand
 		string? Category,
 		string? RoadKind,
 		string? DistrictKind,
-		string? LabelKind)
+		string? LabelKind,
+		string? FillTextureAssetId,
+		double? TextureTileSizeMeters)
 	{
 		public static MapObjectPropertySnapshot FromObject(MapObject mapObject)
 		{
@@ -202,7 +243,9 @@ public sealed class UpdateMapObjectPropertiesCommand : IEditorCommand
 				mapObject is PointOfInterest pointOfInterest ? pointOfInterest.Category : null,
 				mapObject is RoadLine roadLine ? roadLine.RoadKind : null,
 				mapObject is DistrictShape districtShape ? districtShape.DistrictKind : null,
-				mapObject is MapLabel label ? label.LabelKind : null);
+				mapObject is MapLabel label ? label.LabelKind : null,
+				mapObject is DistrictShape districtForTexture ? districtForTexture.FillTextureAssetId : null,
+				mapObject is DistrictShape districtForTileSize ? districtForTileSize.TextureTileSizeMeters : null);
 		}
 	}
 }

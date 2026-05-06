@@ -20,6 +20,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\LivingAtlas.Domain\LivingAtlas.Domain.csproj" />
+    <ProjectReference Include="..\..\src\LivingAtlas.Assets\LivingAtlas.Assets.csproj" />
     <ProjectReference Include="..\..\src\LivingAtlas.Desktop\LivingAtlas.Desktop.csproj" />
     <ProjectReference Include="..\..\src\LivingAtlas.Editor\LivingAtlas.Editor.csproj" />
     <ProjectReference Include="..\..\src\LivingAtlas.Export\LivingAtlas.Export.csproj" />

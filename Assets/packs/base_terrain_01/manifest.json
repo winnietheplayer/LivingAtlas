@@ -1,0 +1,160 @@
+{
+  "id": "base_terrain_01",
+  "name": "Base Terrain Pack 01",
+  "version": "1.0.0",
+  "assets": [
+    {
+      "id": "ground.dirt.01",
+      "name": "Dirt 01",
+      "kind": "texture",
+      "category": "ground",
+      "file": "textures/ground/ground_dirt_01.png",
+      "isTileable": true,
+      "defaultTileSizeMeters": 10.0,
+      "tags": ["ground", "dirt", "outdoor"]
+    },
+    {
+      "id": "ground.grass.01",
+      "name": "Grass 01",
+      "kind": "texture",
+      "category": "ground",
+      "file": "textures/ground/ground_grass_01.png",
+      "isTileable": true,
+      "defaultTileSizeMeters": 10.0,
+      "tags": ["ground", "grass", "outdoor"]
+    },
+    {
+      "id": "ground.mud.01",
+      "name": "Mud 01",
+      "kind": "texture",
+      "category": "ground",
+      "file": "textures/ground/ground_mud_01.png",
+      "isTileable": true,
+      "defaultTileSizeMeters": 10.0,
+      "tags": ["ground", "mud", "outdoor"]
+    },
+    {
+      "id": "ground.sand.01",
+      "name": "Sand 01",
+      "kind": "texture",
+      "category": "ground",
+      "file": "textures/ground/ground_sand_01.png",
+      "isTileable": true,
+      "defaultTileSizeMeters": 10.0,
+      "tags": ["ground", "sand", "outdoor"]
+    },
+    {
+      "id": "ground.stone.01",
+      "name": "Stone Ground 01",
+      "kind": "texture",
+      "category": "ground",
+      "file": "textures/ground/ground_stone_01.png",
+      "isTileable": true,
+      "defaultTileSizeMeters": 10.0,
+      "tags": ["ground", "stone", "outdoor"]
+    },
+    {
+      "id": "ground.dirt_packed.01",
+      "name": "Packed Dirt 01",
+      "kind": "texture",
+      "category": "ground",
+      "file": "textures/ground/ground_dirt_packed_01.png",
+      "isTileable": true,
+      "defaultTileSizeMeters": 10.0,
+      "tags": ["ground", "dirt", "packed", "road"]
+    },
+
+    {
+      "id": "floor.earth_cellar.01",
+      "name": "Earth Cellar Floor 01",
+      "kind": "texture",
+      "category": "floor",
+      "file": "textures/floor/floor_earth_cellar_01.png",
+      "isTileable": true,
+      "defaultTileSizeMeters": 10.0,
+      "tags": ["floor", "earth", "cellar", "interior"]
+    },
+    {
+      "id": "floor.stone.01",
+      "name": "Stone Floor 01",
+      "kind": "texture",
+      "category": "floor",
+      "file": "textures/floor/floor_stone_01.png",
+      "isTileable": true,
+      "defaultTileSizeMeters": 10.0,
+      "tags": ["floor", "stone", "interior"]
+    },
+    {
+      "id": "floor.wood.01",
+      "name": "Wood Floor 01",
+      "kind": "texture",
+      "category": "floor",
+      "file": "textures/floor/floor_wood_01.png",
+      "isTileable": true,
+      "defaultTileSizeMeters": 8.0,
+      "tags": ["floor", "wood", "interior"]
+    },
+
+    {
+      "id": "road.cobblestone.01",
+      "name": "Cobblestone Road 01",
+      "kind": "texture",
+      "category": "road",
+      "file": "textures/road/road_cobblestone_01.png",
+      "isTileable": true,
+      "defaultTileSizeMeters": 8.0,
+      "tags": ["road", "cobblestone", "city"]
+    },
+    {
+      "id": "road.cobblestone_broken.01",
+      "name": "Broken Cobblestone Road 01",
+      "kind": "texture",
+      "category": "road",
+      "file": "textures/road/road_cobblestone_broken_01.png",
+      "isTileable": true,
+      "defaultTileSizeMeters": 8.0,
+      "tags": ["road", "cobblestone", "broken", "city"]
+    },
+    {
+      "id": "road.dirt.01",
+      "name": "Dirt Road 01",
+      "kind": "texture",
+      "category": "road",
+      "file": "textures/road/road_dirt_01.png",
+      "isTileable": true,
+      "defaultTileSizeMeters": 10.0,
+      "tags": ["road", "dirt", "rural"]
+    },
+    {
+      "id": "road.wood_planks.01",
+      "name": "Wood Plank Road 01",
+      "kind": "texture",
+      "category": "road",
+      "file": "textures/road/road_wood_planks_01.png",
+      "isTileable": true,
+      "defaultTileSizeMeters": 8.0,
+      "tags": ["road", "wood", "planks", "bridge"]
+    },
+
+    {
+      "id": "water.calm.01",
+      "name": "Calm Water 01",
+      "kind": "texture",
+      "category": "water",
+      "file": "textures/water/water_calm_01.png",
+      "isTileable": true,
+      "defaultTileSizeMeters": 12.0,
+      "tags": ["water", "calm"]
+    },
+    {
+      "id": "water.deep.01",
+      "name": "Deep Water 01",
+      "kind": "texture",
+      "category": "water",
+      "file": "textures/water/water_deep_01.png",
+      "isTileable": true,
+      "defaultTileSizeMeters": 12.0,
+      "tags": ["water", "deep"]
+    }
+  ]
+}

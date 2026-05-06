@@ -9,6 +9,8 @@ public sealed class DistrictShape : MapObject
 {
 	public const string DefaultDistrictKind = "generic";
 
+	public const double DefaultTextureTileSizeMeters = 10.0;
+
 	private readonly List<PointD> _polygonPoints;
 
 	public IReadOnlyList<PointD> PolygonPoints => _polygonPoints;
@@ -17,7 +19,11 @@ public sealed class DistrictShape : MapObject
 
 	public string DistrictKind { get; private set; }
 
-	public DistrictShape(Guid id, string name, Guid layerId, IEnumerable<PointD> polygonPoints, IEnumerable<string>? tags = null, string? styleKey = null, Guid? childMapId = null, string? description = null, string? districtKind = null)
+	public string? FillTextureAssetId { get; private set; }
+
+	public double TextureTileSizeMeters { get; private set; }
+
+	public DistrictShape(Guid id, string name, Guid layerId, IEnumerable<PointD> polygonPoints, IEnumerable<string>? tags = null, string? styleKey = null, Guid? childMapId = null, string? description = null, string? districtKind = null, string? fillTextureAssetId = null, double textureTileSizeMeters = DefaultTextureTileSizeMeters)
 		: base(id, name, MapObjectType.DistrictShape, layerId, tags, styleKey, description)
 	{
 		ArgumentNullException.ThrowIfNull(polygonPoints, "polygonPoints");
@@ -33,6 +39,7 @@ public sealed class DistrictShape : MapObject
 		_polygonPoints = list;
 		ChildMapId = childMapId;
 		DistrictKind = NormalizeDistrictKind(districtKind);
+		SetTextureFill(fillTextureAssetId, textureTileSizeMeters);
 	}
 
 	public void SetChildMapId(Guid? childMapId)
@@ -83,6 +90,30 @@ public sealed class DistrictShape : MapObject
 		DistrictKind = NormalizeDistrictKind(districtKind);
 	}
 
+	public void SetTextureFill(string? assetId, double tileSizeMeters)
+	{
+		if (tileSizeMeters <= 0.0)
+		{
+			throw new ArgumentOutOfRangeException("tileSizeMeters", tileSizeMeters, "Texture tile size must be positive.");
+		}
+
+		string? normalizedAssetId = NormalizeTextureAssetId(assetId);
+		if (normalizedAssetId == null)
+		{
+			ClearTextureFill();
+			return;
+		}
+
+		FillTextureAssetId = normalizedAssetId;
+		TextureTileSizeMeters = tileSizeMeters;
+	}
+
+	public void ClearTextureFill()
+	{
+		FillTextureAssetId = null;
+		TextureTileSizeMeters = DefaultTextureTileSizeMeters;
+	}
+
 	private void ValidatePointIndex(int index)
 	{
 		if (index < 0 || index >= _polygonPoints.Count)
@@ -94,5 +125,10 @@ public sealed class DistrictShape : MapObject
 	private static string NormalizeDistrictKind(string? districtKind)
 	{
 		return string.IsNullOrWhiteSpace(districtKind) ? DefaultDistrictKind : districtKind.Trim();
+	}
+
+	private static string? NormalizeTextureAssetId(string? assetId)
+	{
+		return string.IsNullOrWhiteSpace(assetId) ? null : assetId.Trim();
 	}
 }
